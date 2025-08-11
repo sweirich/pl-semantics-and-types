@@ -3,7 +3,7 @@
 CIS 7000-01 Fall 2025
 
 > [!IMPORTANT]
-> The first class will be on Wednesday, September 3rd.
+> The first class will be Wednesday, September 3rd. There is no class on 8/27.
 
 ## Course Description
 
@@ -20,12 +20,16 @@ view of computation.
 ## Course Information 
 
 * *Instructor*: [Stephanie Weirich](http://www.seas.upenn.edu/~sweirich)
+
 * *Meeting Times*: MW 1:45pm-3:14pm (9/03 to 12/8)
+
 * *Location*: TBA
+
 * *Office Hours*: TBA
+
 * *Prerequisites*: We will start from the beginning, so there are no real
   prerequisites. However, we will move quickly, so even if you have seen some
-  of this before, we will get to new stuff soon.  Familiarity wth functional
+  of this before, we will get to new stuff soon.  Familiarity with basic functional
   programming (e.g. OCaml, Haskell or Rocq) is highly recommended. You should
   be comfortable programming with first-class functions and
   inductive/algebraic datatypes. CIS 5000 is recommended, especially
@@ -33,16 +37,7 @@ view of computation.
   
 * *Textbook*: Lecture notes (in development) will be provided.
 
-## Grading and Assignments
-
-* **Homework (60%)**: There will be approximately five homework assignments
-  throughout the semester. These will involve written proofs, with
-  opportunities for machine assistance. These assignments are designed to
-  solidify your understanding of the core concepts.
-
-* **Midterm Exam (20%)**: 90 minute in-class exam sometime in October.
-
-* **Final Exam (20%)**: 3-hour exam during the final exam period.
+* [*Syllabus*](syllabus.md): *Under construction*
 
 ## Potential Topics
 
