@@ -42,9 +42,10 @@ view of computation.
 ## Potential Topics
 
 * Operational semantics (environments, big step semantics, small step semantics)
-* Denotational semantics (i.e. interpreting language semantics using type theory, similar to interaction trees than domain theory)
+* Relational semantics (logical relations, step-indexed logical relations)
+* Denotational semantics (i.e. interpreting language semantics using type theory)
 * Contextual equivalence (i.e. can we explain the meanings of programs through equality?)
-* How do types interact with semantics? (e.g. normalization-by-evaluation, parametricity?)
+* How do types interact with semantics? (e.g. type abstraction and parametricity?)
 * Values vs. computations. How does evaluation order interact with all of this? Especially in the presence of effects? Where do monads come from?
 * Continuations. What is the relationship between type systems and control effects?
 
