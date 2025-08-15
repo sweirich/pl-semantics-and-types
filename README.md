@@ -23,7 +23,7 @@ view of computation.
 
 * *Meeting Times*: MW 1:45pm-3:14pm (9/03 to 12/8)
 
-* *Location*: TBA
+* *Location*: 3401 Walnut, 401B
 
 * *Office Hours*: TBA
 
