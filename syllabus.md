@@ -54,7 +54,7 @@ solidify your understanding of the core concepts.
 
 * **Midterm Exam (20%)**: 90 minute in-class exam sometime in October.
 
-* **Final Exam (30%)**: 3-hour exam during the final exam period.
+* **Final Exam (30%)**: 2-hour exam during the final exam period.
 
 ## Homework Policies
 
