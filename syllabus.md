@@ -30,7 +30,7 @@
 | W 11/12 | | 
 | M 11/17 | | 
 | W 11/19 | | 
-| M 11/24 | Wrap-up and semester review   | 
+| M 11/24 | | 
 | W 11/26 | **No Class**: Friday schedule |
 | M 12/1  | |
 | W 12/3  | | 
