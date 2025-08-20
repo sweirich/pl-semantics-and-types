@@ -1,0 +1,366 @@
+\newif\ifcomments     %% include author discussion
+\commentsfalse        %% toggle comments here
+
+\documentclass{article}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\newcommand\scw[1]{\ifcomments\emph{\textcolor{violet}{#1}}\fi}
+
+% requires dvipsnames
+%\usepackage{lstpi}
+%\usepackage{lsthaskell}
+\newcommand\cd[1]{\lstinline[language=Haskell]{#1}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{Programming Languages: Semantics and Types}
+\author{Stephanie Weirich}
+
+\begin{document}
+
+\maketitle
+
+\inputott{all-rules}
+
+\section{Introduction}
+
+\section{STLC}
+
+\section{Syntax}
+The syntax of the simply-typed lambda calculus is defined by a set of terms and a set of types.
+
+\begin{definition}[Types]
+The set of types is inductively defined by the following rules:
+\begin{enumerate}
+\item A base type, $[[Nat]]$, is a type.
+\item If $[[tau1]]$ and $[[tau2]]$ are types, then $[[tau1 -> tau2]]$ is a type.
+\end{enumerate}
+The type $[[tau1 -> tau2]]$ represents the type of functions that take an argument of type $[[tau1]]$ and return a value of type $[[tau2]]$.
+\end{definition}
+
+\begin{definition}[Terms]
+The set of terms is inductively defined by the following rules:
+\begin{enumerate}
+\item A variable $x$ is a term.
+\item If $[[e]]$ is a term and $x$ is a variable, then $[[\x.e]]$ is a term (lambda abstraction).
+\item If $[[e1]]$ and $[[e2]]$ are terms, then $[[e1 e2]]$ is a term (function application).
+\end{enumerate}
+\end{definition}
+
+This is a fairly wordy way of describing an inductively-defined grammar. In the future, we will use
+BNF (Backus-Naur form) for concisely stating this information. For example, in BNF form, we can 
+provide a concise definition of the grammars for types and terms as follows. This figure has the 
+same interprentation as the two definition above.
+
+\[
+\begin{array}{lcl}
+[[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] \\
+[[e]]   &::=& [[x]]\ |\ [[\x.e]]\ |\ [[e1 e2]] \\
+\end{array}
+\]
+
+Because types and terms are inductively design sets, they come equipped with
+recursion and induction principles.  For example, we can define recursive
+functions over terms and know that they are total, as long as we call the
+functions over smaller subterms. 
+
+For example, one function that we might define calculates the set of \emph{free} variables 
+in a term. We know that  
+
+\[
+\begin{array}{lcl}
+[[ fv(x)       ]] &=& [[ { x }  ]] \\
+[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] \\
+[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] \\
+\end{array}
+\]
+
+
+is a \emph{renaming} function. This 
+function updates the names of variables to new definitions. 
+
+\[
+\begin{array}{lcl}
+[[ (x) < xi >      ]] &=& [[ xi ]][[ x ]] \\
+[[ (e1 e2) < xi >  ]] &=& [[ (e1 <xi>) (e2 <xi>) ]] \\
+[[ (\x . e) < xi > ]] &=& [[ \y . (e < y/x , xi >) ]] \mbox{ when $[[y]]$ is not free in $[[e]]$ or $[[xi]]$  } \\
+\end{array}
+\]
+
+\section{Typing Rules}
+Typing judgments take the form $[[G |- e : tau]]$, which is read as ``in the
+typing context $[[G]]$, the term $[[e]]$ has type $[[tau]]$.'' The context
+$[[G]]$ is a finite map from variables to types.
+
+\begin{figure}
+\drules[t]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{var,abs,app}
+\caption{STLC}
+\label{fig:stlc-typing}
+\end{figure}
+
+In the variable rule, we look up the type of the variable in the typing context. This 
+variable must have a definition in $[[G]]$ for this rule to be used. If there is 
+no type associated with $[[x]]$, then we say that the variable is unbound and that 
+the term fails to \emph{scope-check}.
+
+\section{Operational Semantics and Type Safety}
+
+To understand the small-step operational semantics and the type safety proof
+of the simply-typed lambda calculus, we must first define the rules for term
+reduction and then prove that these rules preserve typing.
+
+Small-step operational semantics describe how a term evaluates in a sequence
+of single reduction steps. We use the notation $[[e ~> e']]$ to mean that the term $[[e]]$
+reduces to the term $[[e']]$ in one step. 
+
+The rules are as follows:
+
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
+{beta,app-cong,arg-cong}
+
+Type safety is a crucial property of a typed programming language. It ensures that a well-typed program will never ``go wrong'' during execution. For the simply-typed lambda calculus, this means a program will not get stuck in a state where it cannot take a reduction step but is not a final value.
+
+The type safety proof is usually conducted in two parts: Progress and Preservation.
+
+\begin{lemma}[Preservation]
+If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
+\end{lemma}
+
+Intuition: This property states that if a term e has type $[[tau]]$, and it takes a single reduction step to e', then the new term will have the exact same type $[[tau]]$. The type is ``preserved'' through evaluation.
+
+Proof Sketch: The proof is by induction on the derivation of the reduction.
+
+You examine each reduction rule from the small-step semantics and show that it preserves the type. The most complex case is beta reduction, which relies on a key lemma: the Substitution Lemma.
+
+\begin{lemma}[Substitution]
+If $[[ G |- e : tau ]]$ and forall $x$, $[[D |- sigma x : G x ]]$, then 
+$[[D |- e[sigma] : tau ]]$.
+\end{lemma}
+
+\begin{lemma}[Progress]
+If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ such that 
+$[[ e ~> e' ]]$.
+\end{lemma}
+
+Intuition: This property states that any well-typed term that is not a final
+value can always take at least one more reduction step. It ensures that 
+a well-typed term is not ``stuck.'' (i.e. not a value but cannot step).
+
+
+\section{Extending with Natural Numbers}
+We now extend the system with a base type for natural numbers, $[[Nat]]$, and
+associated constants and operations.
+
+\subsection{New Syntax}
+We add the following to our set of types and terms:
+\begin{itemize}
+\item \textbf{New base type:} $[[Nat]]$ is a type.
+\item \textbf{New terms:}
+\begin{itemize}
+\item The constant $[[zero]]$ is a term. Informally, we may write this term as $0$.
+\item If $[[e]]$ is a term, $[[succ e]]$ is a term (successor).
+\item If $[[e]]$, $[[e1]]$ and $[[e2]]$ are terms, then $[[natrec e e1 e2]]$ is a term.
+\end{itemize}
+\end{itemize}
+
+\subsection{New Typing Rules}
+We introduce new typing rules for the natural number constants and the successor function.
+
+\drules[t]{$[[G |- e :tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{zero,succ,nrec}
+
+
+\end{document}
+
+make sure that this is a call-by-value semantics
+
+
+You're right to point out that. The previous response described a call-by-name semantics for the application rule. Here is the corrected description of the small-step operational semantics and the type safety proof using a call-by-value strategy.
+
+Small-Step Operational Semantics (Call-by-Value)
+In a call-by-value strategy, we evaluate function arguments to a value before a function is applied. We need to explicitly define what a "value" is. In this system, values are terms that cannot be reduced further.
+
+Values:
+
+Lambda abstractions: v::=λx:τ.e
+
+Natural number constants: n::=0,1,2,...
+
+The reduction rules for the call-by-value semantics are:
+
+1. Function Application (Beta Reduction):
+
+(β-red): (λx:τ.e)v→e[x↦v]
+
+This is the core rule for call-by-value. It states that an application reduces only when the function part is a lambda abstraction and the argument part is a value.
+
+2. Congruence Rules:
+
+These rules specify how reduction propagates through larger terms. The key change from call-by-name is that we must evaluate the function part of an application to a value first, before we start evaluating the argument part.
+
+(app 
+1
+​
+ ):  
+e 
+1
+​
+ e 
+2
+​
+ →e 
+1
+′
+​
+ e 
+2
+​
+ 
+e 
+1
+​
+ →e 
+1
+′
+​
+ 
+​
+ 
+
+This rule is the same as before. If the function part of an application can reduce, the whole application reduces.
+
+(app 
+2
+​
+ ):  
+ve 
+2
+​
+ →ve 
+2
+′
+​
+ 
+e 
+2
+​
+ →e 
+2
+′
+​
+ 
+​
+ 
+
+This rule is different. It states that if the function part is already a value (v), we can then start reducing the argument part.
+
+(succ):  
+succ(e)→succ(e 
+′
+ )
+e→e 
+′
+ 
+​
+ 
+
+This rule for the successor function is the same. It reduces its argument.
+
+Type Safety Proof (Call-by-Value)
+The type safety proof for a call-by-value semantics follows the same structure as before, with a few key differences in the details of the proofs for Preservation and Progress.
+
+1. Preservation (Subject Reduction):
+
+Statement: If Γ⊢e:τ and e→e 
+′
+ , then Γ⊢e 
+′
+ :τ.
+
+Proof Sketch: The proof remains by induction on the derivation of the reduction e→e 
+′
+ . The most significant difference is in the β-reduction case, which now applies only when the argument is a value. The Substitution Lemma is still the key tool to prove this case correct. The other congruence rules are also straightforward.
+
+2. Progress:
+
+Statement: If Γ⊢e:τ, then either e is a value, or there exists an e 
+′
+  such that e→e 
+′
+ .
+
+Proof Sketch: This proof, by induction on the structure of the term e, is the more interesting one in the call-by-value setting. We examine each possible term form:
+
+Variables, Constants, Lambda Abstractions: These are values, so the property holds.
+
+Application (e 
+1
+​
+ e 
+2
+​
+ ):
+
+If e 
+1
+​
+  is a lambda abstraction and e 
+2
+​
+  is a value, then a β-reduction can occur.
+
+If e 
+1
+​
+  is a lambda abstraction and e 
+2
+​
+  is not a value, the induction hypothesis on e 
+2
+​
+  guarantees that it can take a step via the app 
+2
+​
+  rule.
+
+If e 
+1
+​
+  is not a lambda abstraction, the induction hypothesis on e 
+1
+​
+  guarantees that it can take a step via the app 
+1
+​
+  rule.
+
+Successor (succ(e)): If e is a natural number constant, the term is a value. Otherwise, the induction hypothesis on e guarantees that it can reduce.
+
+The two-part proof (Preservation and Progress) ensures the language is type-safe. The call-by-value evaluation strategy is very common in modern programming languages like Python and JavaScript, as it avoids re-evaluating arguments and provides a more predictable execution model.
+
+
+\end{document}

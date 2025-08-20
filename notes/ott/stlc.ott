@@ -1,0 +1,266 @@
+% This file includes the specification of the core grammar, operational semantics
+% and typing rules 
+%
+% It also includes typesetting directives that control how the language is presented
+% in the lecture notes.
+
+indexvar index, n ::= {{ coq nat }} 
+
+metavar tname, x, y, z, f, g, n ::=
+  {{ com variables }}
+  {{ lex alphanum }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% STLC language
+
+grammar
+
+varset , vs :: 'vs_' ::= 
+  | { x }           ::   :: Single
+  | emptyset        ::   :: Empty
+  | vs1 U vs2       ::   :: Union
+  | vs1 - vs2       ::   :: Minus
+  | fv e            :: M :: FV 
+  | ( vs )          :: S :: Paren
+
+renaming , xi {{ tex \xi }} :: 'ren_' ::= 
+  | y / x           ::   :: Single
+  | null            ::   :: Empty
+  | xi1 , xi2       ::   :: Append
+  | ( xi )          :: S :: Paren
+
+substitution, sigma {{ tex \sigma }} :: 'sub_' ::= {{ com substitutions }}
+  | e2 / x          ::   :: Single
+  | null            ::   :: Empty
+  | sigma1 , sigma2 ::   :: Append
+  | ( sigma )       :: S :: Paren
+
+context, G {{ tex \Gamma }}, D {{tex \Delta}} :: 'ctx_' ::= {{ com contexts }}
+
+   | x : tau         ::    :: Single {{ tex [[x]]\! :\![[tau]] }}
+
+   |                 ::    :: Nil
+   {{ tex \emptyset }}
+
+   | G , x : tau     ::    :: Cons   {{ tex [[G]], [[x]]\! :\![[tau]] }}
+
+   | ( G )           :: S  :: Paren
+
+
+ty, tau {{ tex \tau }} :: 'ty_' ::= {{ com types }}
+  | Nat             ::   :: Nat
+  | tau1 -> tau2    ::   :: Arrow
+    {{ com function types }}
+  | ( tau )         ::   :: Paren
+  | G x             :: M :: Ctx
+
+tm, e :: 'tm_' ::= {{ com terms }}
+
+  | Type            ::   :: Type
+    {{ com sort }}
+
+  | x               ::   :: Var
+    {{ com variable }}
+
+  | let x = e1 in e2 ::   :: Let
+
+  | \ x . e         ::   :: Abs
+    {{ tex \lambda [[x]]. [[e]] }}
+    {{ com function definition }}
+
+  | \ x : tau . e         :: S :: AAbs
+    {{ tex \lambda [[x]]\!:\![[tau]]. [[e]] }}
+    {{ com function definition (annotated with type) }}
+
+  | e1 e2           ::   :: App
+    {{ tex [[e1]] \; [[e2]] }}
+    {{ com function application }}
+
+  | e [ sigma ]     :: S :: SubstOp
+    {{ com substitution }}
+
+  | e < xi >        :: S :: RenOp
+    {{ com renaming }}
+
+  | sigma x         :: M :: SubLookup
+
+  | zero             ::   :: Zero
+   
+  | succ e           ::   :: Succ
+
+  | natrec e e0 e1   ::   :: Natrec
+
+
+  | ( e : tau )      ::   :: Ann
+    {{ com type annotation }}
+
+  | ( e )            :: S :: Paren
+    {{ com parenthesis }}
+
+v :: 'v_' ::= {{ com values }}
+
+  | \ x . e         ::   :: Lam
+
+  | zero            ::   :: Zero
+
+  | succ v          ::   :: Succ
+
+  | ( v )           :: S :: Paren
+
+subrules
+  v <:: e
+
+parsing
+ty_Arrow right ty_Arrow
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+
+terminals :: 'terminals_' ::=
+  | <->               ::   :: iso           {{ tex \leftrightarrow }}
+  | <=>               ::   :: lrarrow       {{ tex \Leftrightarrow }}
+  | -->               ::   :: step          {{ tex \longrightarrow }}
+  | min               ::   :: min           {{ tex \mathsf{min} }}
+  | ==                ::   :: definitional  {{ tex \equiv }}
+  | all               ::   :: forall        {{ tex \forall }}
+  | elem              ::   :: elem          {{ tex \in }}
+  | notin             ::   :: notin         {{ tex \not\in }}
+  | <=                ::   :: check         {{ tex \Leftarrow }}
+  | =>                ::   :: infer         {{ tex \Rightarrow }}
+  | =>*               ::   :: minfer        {{ tex \Rightarrow^{\ast} }}
+  | ->                ::   :: arrow         {{ tex \to }}
+  | /\                ::   :: ilam          {{ tex \mathrm{\Lambda} }}
+  | []                ::   :: box           {{ tex \Box }}
+  | |-                ::   :: entails       {{ tex \vdash }}
+  | |=                ::   :: hs_entails    {{ tex \vDash }}
+  | /=                ::   :: neq           {{ tex \neq }}
+  | |>                ::   :: cast          {{ tex \triangleright }}
+  | ok                ::   :: ok            {{ tex \ \mathsf{ok} }}
+  | _                 ::   :: blank         {{ tex \_ }}
+  | ~>                ::   :: produce       {{ tex \leadsto }}
+  | ~>*               ::   :: multistep     {{ tex \leadsto^{\ast} }}
+  | empty             ::   :: empty         {{ tex \varnothing }}
+  | hole              ::   :: hole          {{ tex \circ }}
+  | fv                ::   :: fv            {{ tex \mathsf{fv}\! }}
+  | dom               ::   :: dom           {{ tex \mathsf{dom} }}
+  | ~                 ::   :: twiddle       {{ tex \sim }}
+  | ~~                ::   :: compatible    {{ tex \asymp }}
+  | '|'               ::   :: bar           {{ tex | }}
+  | o                 ::   :: bullet        {{ tex \bullet }}
+  | fst               ::   :: fst
+  | snd               ::   :: snd
+  | ==>               ::   :: impl          {{ tex \implies }}
+  | U                 ::   :: cup           {{ tex \cup }}
+  | emptyset          ::   :: emptyset      {{ tex \emptyset }}
+
+formula :: 'formula_' ::=
+  | judgement                ::   :: judgement
+  | formula1 .. formulan     ::   :: dots
+  | x : tau elem G           ::   :: inG
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JOp :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+----------------------------------  :: let_v
+let x = v in e ~> e [v/x]
+
+e1 ~> e1'
+------------------------------------  :: let_cong
+let x = e1 in e2 ~> let x = e1' in e2
+
+----------------------------------  :: beta
+(\x. e) v ~> e [ v / x]
+
+
+e1 ~> e1'
+------------------------  :: app_cong
+e1 e2 ~> e1' e2
+
+e2 ~> e2'
+------------------------  :: arg_cong
+v e2 ~> v e2
+
+e ~> e'
+------------------------  :: succ_cong
+succ e ~> succ e'
+
+
+-------------------------- :: nrec_zero
+natrec zero e1 e2 ~> e1
+
+----------------------------------------------- :: nrec_succ
+natrec (succ v) e1 e2 ~> (e2[v/x]) (natrec v e1 e2)
+
+e ~> e'
+--------------------------------- :: nrec_cong
+natrec e e1 e2 ~> natrec e' e1 e2
+
+defn
+e ~>* e' ::  :: multi :: ''
+{{ com multi-step evaluation }}
+by
+
+------------------- :: refl
+e ~>* e
+
+e0 ~> e1
+e1 ~>* e2
+------------------- :: step
+e0 ~>* e2
+
+
+
+defns
+JTyping :: '' ::=
+
+defn
+
+G |- e : tau   ::   :: typing :: 't_'
+{{ com Typing }}
+by
+
+x : tau elem G
+----------- :: var
+G |- x : tau
+
+G |- e1 : tau1
+G , x : tau1 |- e2 : tau2
+----------------------------- :: let
+G |- let x = e1 in e2 : tau2
+
+
+---------------------- :: zero
+G |- zero : Nat
+
+
+G |- e : Nat 
+---------------------- :: succ
+G |- succ e : Nat
+
+G |- e : Nat 
+G |- e0 : tau
+G , x : Nat |- e1 : tau -> tau
+------------------------------- :: nrec
+G |- natrec e e0 e1 : tau
+
+
+G, x:tau1 |- e : tau2
+------------------------  ::  abs
+G |- \x.e : tau1 -> tau2
+
+
+G |- e1 : tau1 -> tau2
+G |- e2 : tau1
+--------------------------- ::  app
+G |- e1 e2 : tau2
+
