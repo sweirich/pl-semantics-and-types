@@ -3,6 +3,8 @@
 
 \documentclass{article}
 
+\usepackage{fullpage}
+
 \usepackage{bigfoot}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage[dvipsnames]{xcolor}
@@ -49,8 +51,17 @@
 
 \section{STLC}
 
-\section{Syntax}
-The syntax of the simply-typed lambda calculus is defined by a set of terms and a set of types.
+Here, we give a precise definition of the syntax of the simply-typed lambda
+calculus, its type system and operational semantics. If you are new to
+programming language theory, we use this opportunity to introduce some of the
+mathematical concepts that we will be using throughout the semester, such as
+inductively defined grammars, recursive definitions, and proofs by structural
+induction.
+
+\subsection{Syntax}
+The syntax of the simply-typed lambda calculus is defined by a set of terms
+and their associated set of types. By convention, we will use $[[e]]$ to refer
+to some arbitrary term and $[[e]]$ to refer to some arbitrary type.
 
 \begin{definition}[Types]
 The set of types is inductively defined by the following rules:
@@ -64,51 +75,76 @@ The type $[[tau1 -> tau2]]$ represents the type of functions that take an argume
 \begin{definition}[Terms]
 The set of terms is inductively defined by the following rules:
 \begin{enumerate}
-\item A variable $x$ is a term.
+\item A natural number $k$ is a term.
+\item A variable $x$ is a term. 
 \item If $[[e]]$ is a term and $x$ is a variable, then $[[\x.e]]$ is a term (lambda abstraction).
 \item If $[[e1]]$ and $[[e2]]$ are terms, then $[[e1 e2]]$ is a term (function application).
 \end{enumerate}
 \end{definition}
 
-This is a fairly wordy way of describing an inductively-defined grammar. In the future, we will use
-BNF (Backus-Naur form) for concisely stating this information. For example, in BNF form, we can 
-provide a concise definition of the grammars for types and terms as follows. This figure has the 
-same interprentation as the two definition above.
+The definition of terms refers to two other sets: natural numbers and
+variables. The set of natural numbers, $\mathbb{N}$, are an infinite set of
+numbers 0, 1, \ldots. We will treat variables more abstractly. We assume that
+there is some infinite set of variable names, called \mathcal{Vars}, and that
+given any finite set of variables, we can always find some variable that is
+not in contained in that set. (We call this variable \emph{fresh} because we
+haven't used it yet.)
+
+Now, the above is a wordy way of describing an inductively-defined grammar of
+abstract syntax trees.  In the future, we will use a more concise notation,
+called Bakus-Naur form. For example, in BNF form, we can provide a concise
+definition of the grammars for types and terms as follows. 
 
 \[
-\begin{array}{lcl}
-[[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] \\
-[[e]]   &::=& [[x]]\ |\ [[\x.e]]\ |\ [[e1 e2]] \\
+\begin{array}{llcl}
+\textit{numbers} & [[k]] & \in & \mathbbb{N} \\
+\textit{variables} & [[x]] & \in & \mathcal{Vars} \\
+\textit{types} & [[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] \\
+\textit{terms} & [[e]]   &::=& [[k]]\ |\ [[x]]\ |\ [[\x.e]]\ |\ [[e1 e2]] \\
 \end{array}
 \]
 
-Because types and terms are inductively design sets, they come equipped with
-recursion and induction principles.  For example, we can define recursive
-functions over terms and know that they are total, as long as we call the
-functions over smaller subterms. 
+Because types and terms are inductively design sets, we can reason about them
+using recursion and induction principles.  The recursion princple means that
+we define recursive functions that takes terms or types as arguments and know
+that the functions are total, as long as we call the functions over smaller
+subterms.
 
-For example, one function that we might define calculates the set of \emph{free} variables 
-in a term. We know that  
+For example, one function that we might define calculates the set of
+\emph{free} variables in a term.
 
+\begin{definition}[Free variables] 
+We define the operation $[[fv(e)]]$, which calculates the set of variables that 
+occur free in some term $[[e]]$, by structural recursion on the term.
 \[
-\begin{array}{lcl}
-[[ fv(x)       ]] &=& [[ { x }  ]] \\
-[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] \\
-[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] \\
+\begin{array}{lcll}
+[[ fv(k)       ]] &=& [[ emptyset ]]  & \mathit{ emptyset }  \\
+[[ fv(x)       ]] &=& [[ { x } ]]  & \mathit{ singleton set containing variable $x$} \\
+[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] & \mathit{ union of sets } \\
+[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] & \mathit{ remove variable $x$ } \\
 \end{array}
 \]
+\end{definition}
 
+Here is another example of a recursively defined function. Sometimes we would
+like to change the names of free variables in terms.
 
-is a \emph{renaming} function. This 
-function updates the names of variables to new definitions. 
+A \emph{renaming}, [[xi]], is a mapping from variables to variables. This
+renaming is a total mapping---if we don't say otherwise, it maps a variable to
+itself. We use the notation $[[< y/x, xi>]]$ to create the renaming that maps
+$[[x]]$ to $[[y]]$, but otherwise works like $[[xi]]$.
 
+\begin{definition}[Renaming application] We define the application of a
+  renaming function to a term, commonly written with postfix notation
+  $[[e<xi>]]$, as follows.
 \[
 \begin{array}{lcl}
-[[ (x) < xi >      ]] &=& [[ xi ]][[ x ]] \\
+[[ (x) < xi >      ]] &=& [[ xi x ]] \\
 [[ (e1 e2) < xi >  ]] &=& [[ (e1 <xi>) (e2 <xi>) ]] \\
-[[ (\x . e) < xi > ]] &=& [[ \y . (e < y/x , xi >) ]] \mbox{ when $[[y]]$ is not free in $[[e]]$ or $[[xi]]$  } \\
+[[ (\x . e) < xi > ]] &=& [[ \y . (e < y/x , xi >) ]] \mbox{ when $[[y]]$ is not in $[[fv e]]$ or $[[xi]]$  } \\
 \end{array}
 \]
+\end{definition}
 
 \section{Typing Rules}
 Typing judgments take the form $[[G |- e : tau]]$, which is read as ``in the
