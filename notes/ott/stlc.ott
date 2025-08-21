@@ -16,6 +16,13 @@ metavar tname, x, y, z, f, g, n ::=
 
 grammar
 
+nat , k :: 'k_' ::= 
+  | 0               ::   :: Zero
+  | 1               ::   :: One
+  | 2               ::   :: Two
+  | k1 + k2         ::   :: Plus
+  | ( k )           :: S :: Paren
+
 varset , vs :: 'vs_' ::= 
   | { x }           ::   :: Single
   | emptyset        ::   :: Empty
@@ -232,6 +239,9 @@ defn
 G |- e : tau   ::   :: typing :: 't_'
 {{ com Typing }}
 by
+
+------------ :: const
+G |- k : Nat
 
 x : tau elem G
 ----------- :: var

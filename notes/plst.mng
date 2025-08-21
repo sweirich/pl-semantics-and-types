@@ -77,15 +77,16 @@ The set of terms is inductively defined by the following rules:
 \begin{enumerate}
 \item A natural number $k$ is a term.
 \item A variable $x$ is a term. 
-\item If $[[e]]$ is a term and $x$ is a variable, then $[[\x.e]]$ is a term (lambda abstraction).
-\item If $[[e1]]$ and $[[e2]]$ are terms, then $[[e1 e2]]$ is a term (function application).
+\item If $[[e]]$ is a term and $x$ is a variable, then $[[\x.e]]$ is a term (called a lambda abstraction).
+The variable $x$ is the parameter and $e$ is the body is the body of the abstraction.
+\item If $[[e1]]$ and $[[e2]]$ are terms, then $[[e1 e2]]$ is a term (called a function application).
 \end{enumerate}
 \end{definition}
 
 The definition of terms refers to two other sets: natural numbers and
 variables. The set of natural numbers, $\mathbb{N}$, are an infinite set of
 numbers 0, 1, \ldots. We will treat variables more abstractly. We assume that
-there is some infinite set of variable names, called \mathcal{Vars}, and that
+there is some infinite set of variable names, called $\mathcal{V}$, and that
 given any finite set of variables, we can always find some variable that is
 not in contained in that set. (We call this variable \emph{fresh} because we
 haven't used it yet.)
@@ -97,8 +98,8 @@ definition of the grammars for types and terms as follows.
 
 \[
 \begin{array}{llcl}
-\textit{numbers} & [[k]] & \in & \mathbbb{N} \\
-\textit{variables} & [[x]] & \in & \mathcal{Vars} \\
+\textit{numbers} & [[k]] & \in & \mathbb{N} \\
+\textit{variables} & [[x]] & \in & \mathcal{V} \\
 \textit{types} & [[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] \\
 \textit{terms} & [[e]]   &::=& [[k]]\ |\ [[x]]\ |\ [[\x.e]]\ |\ [[e1 e2]] \\
 \end{array}
@@ -115,23 +116,29 @@ For example, one function that we might define calculates the set of
 
 \begin{definition}[Free variables] 
 We define the operation $[[fv(e)]]$, which calculates the set of variables that 
-occur free in some term $[[e]]$, by structural recursion on the term.
+occur \emph{free} in some term $[[e]]$, by structural recursion on the term. In the last line 
+of this function, we remove the argument $x$
 \[
 \begin{array}{lcll}
-[[ fv(k)       ]] &=& [[ emptyset ]]  & \mathit{ emptyset }  \\
-[[ fv(x)       ]] &=& [[ { x } ]]  & \mathit{ singleton set containing variable $x$} \\
-[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] & \mathit{ union of sets } \\
-[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] & \mathit{ remove variable $x$ } \\
+[[ fv(k)       ]] &=& [[ emptyset ]]  & \textit{ emptyset }  \\
+[[ fv(x)       ]] &=& [[ { x } ]]  & \textit{ singleton set } \\
+[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] & \textit{ union of sets } \\
+[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] & \textit{ remove variable } \\
 \end{array}
 \]
 \end{definition}
 
+Variables that appear in terms that are not free are called \emph{bound}. For
+example, in the term $[[\x. x y]]$, we have $x$ bound and $y$ free. Some
+variables may occur in both bound and free positions in terms; for example,
+$x$ in the term $[[(\x. x y) x]]$.
+
 Here is another example of a recursively defined function. Sometimes we would
 like to change the names of free variables in terms.
 
-A \emph{renaming}, [[xi]], is a mapping from variables to variables. This
+A \emph{renaming}, $[[xi]]$, is a mapping from variables to variables. This
 renaming is a total mapping---if we don't say otherwise, it maps a variable to
-itself. We use the notation $[[< y/x, xi>]]$ to create the renaming that maps
+itself. We use the notation $[[y/x, xi]]$ to create the renaming that maps
 $[[x]]$ to $[[y]]$, but otherwise works like $[[xi]]$.
 
 \begin{definition}[Renaming application] We define the application of a
@@ -139,35 +146,86 @@ $[[x]]$ to $[[y]]$, but otherwise works like $[[xi]]$.
   $[[e<xi>]]$, as follows.
 \[
 \begin{array}{lcl}
-[[ (x) < xi >      ]] &=& [[ xi x ]] \\
+[[ k< xi >      ]] &=& [[ k ]] \\
+[[ x< xi >      ]] &=& [[ xi x ]] \\
 [[ (e1 e2) < xi >  ]] &=& [[ (e1 <xi>) (e2 <xi>) ]] \\
-[[ (\x . e) < xi > ]] &=& [[ \y . (e < y/x , xi >) ]] \mbox{ when $[[y]]$ is not in $[[fv e]]$ or $[[xi]]$  } \\
+[[ (\x . e) < xi > ]] &=& [[ \x . (e < x/x, xi >) ]] \\
 \end{array}
 \]
 \end{definition}
 
-\section{Typing Rules}
-Typing judgments take the form $[[G |- e : tau]]$, which is read as ``in the
-typing context $[[G]]$, the term $[[e]]$ has type $[[tau]]$.'' The context
-$[[G]]$ is a finite map from variables to types.
+We have to be a bit careful in the last line of this definition. What if $[[xi]]$ maps 
+the variable $[[x]]$ to some other variable. Our goal with this function is to only 
+rename free variables: the function should leave the bound variables alone. By updating 
+the renaming to $[[x/x,xi]]$ we force the renaming that we use in the body of the 
+abstraction to not change $[[x]]$. 
+
+\paragraph{Variable binding, alpha-equivalence and all that} At this point, we will start to be somewhat informal when it comes to bound variables in terms. We don't really want to distinguish between terms that differ only in their use of bound variables, such as $[[\x.x]]$ and $[[\y.y]]$. The relation $\alpha$-equivalence relates such terms, and from this point forward we will ``work up-to-$\alpha$-equivalence. What this means practically is that on one hand, we must be sure that our definitions don't really depend on the names of bound variables. In return, we can always assume that any bound variable is distinct from any other variable, if we need it to be. 
+
+Here we have a conundrum: it is common practice to describe lambda calculus
+terms as we have done above (sometimes called using a named or nominal
+representation of variables). But getting the details right is difficult (it
+requires maintaining careful invariants about all definitions) and subtle. If
+you are working with a proof assistant, you really do need to get the details
+right, but it also makes sense to use an approach (such as de Bruijn indices)
+where the details are easier to get right. This is what we will do in the
+accompanying mechanized proofs. 
+
+However, because using a named representation is standard practice we will
+continue to use that approach in these notes, glossing over some details. This
+will allow us to stay roughly equivalent to the proof scripts (which have
+other details). Because of the informal nature of our discussion, threre will
+probably be minor errors related to variable naming; but we won't stress about
+them.
+
+\section{Type system}
+Next we will define a typing relation for STLC. This relation has the form
+$[[G |- e : tau]]$, which is read as ``in the typing context $[[G]]$, the term
+$[[e]]$ has type $[[tau]]$.''  The typing context $[[G]]$, tells us what the
+types of free variables should be. Therefore, we can view it as a finite map
+from variables to types, and write it by listing all of the associations
+$[[x:tau]]$.  If a term is in this relation we say that it ``type checks''.
+
+We define the typing relation inductively, using the following rules. A term
+type checks if we can find some tree that puts these rules together in a
+\emph{derivation}. In each rule, the part below the line is the conclusion of
+the rule, and the rule may have multiple premises. In a derivation tree, each
+premise must be satisfied by subderivations, bottoming out with rules such as
+\rref{t-var} or \rref{t-const} that do not have any premises for the same
+relation.
 
 \begin{figure}
-\drules[t]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
-{var,abs,app}
+\drules[h]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{const,var,abs,app}
 \caption{STLC}
 \label{fig:stlc-typing}
 \end{figure}
 
-In the variable rule, we look up the type of the variable in the typing context. This 
-variable must have a definition in $[[G]]$ for this rule to be used. If there is 
-no type associated with $[[x]]$, then we say that the variable is unbound and that 
-the term fails to \emph{scope-check}.
+In the variable rule, we look up the type of the variable in the typing
+context. This variable must have a definition in $[[G]]$ for this rule to be
+used. If there is no type associated with $[[x]]$, then we say that the
+variable is unbound and that the term fails to \emph{scope-check}.
+
+In \rref{t-abs}, the rule for abstractions, we type check the body of the
+function with a context that has been extended with a type for the bound
+variable. The type of an abstraction is a function type $[[tau1->tau2]]$, that
+states the required type of the parameter $[[tau1]]$ and the result type of
+the body $[[tau2]]$.
+
+\Rref{t-app}, which checks the application of functions, requires that the
+argument to the function has the same type required by the function.
 
 \section{Operational Semantics and Type Safety}
 
-To understand the small-step operational semantics and the type safety proof
-of the simply-typed lambda calculus, we must first define the rules for term
-reduction and then prove that these rules preserve typing.
+Is this type system meaningful? Our type system makes a distinction between
+terms that type check (such as $[[(\x.x)3]]$) and terms that do not, such as 
+$[[(2 5)]]$. But how do we know that this distinction is useful? Do we have the right
+rules?
+
+The key property that we want is called \emph{type safety}. If a term type
+checks, we should be able to evaluate it without triggering a certain class of
+errors. 
+
 
 Small-step operational semantics describe how a term evaluates in a sequence
 of single reduction steps. We use the notation $[[e ~> e']]$ to mean that the term $[[e]]$
