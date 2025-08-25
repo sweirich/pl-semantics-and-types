@@ -4,109 +4,100 @@
 % It also includes typesetting directives that control how the language is presented
 % in the lecture notes.
 
+%% STLC language
+
 indexvar index, n ::= {{ coq nat }} 
 
-metavar tname, x, y, z, f, g, n ::=
+metavar x, y, z, f, g ::=
   {{ com variables }}
   {{ lex alphanum }}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% STLC language
-
 grammar
 
-nat , k :: 'k_' ::= 
+nat , j, k :: 'k_' ::= 
+{{ com natural number constants }}
   | 0               ::   :: Zero
   | 1               ::   :: One
   | 2               ::   :: Two
+  | 3               ::   :: Three
+  | 4               ::   :: Four  
   | k1 + k2         ::   :: Plus
   | ( k )           :: S :: Paren
 
-varset , vs :: 'vs_' ::= 
+vs :: 'vs_' ::= 
+{{ com sets of variables }}
   | { x }           ::   :: Single
   | emptyset        ::   :: Empty
   | vs1 U vs2       ::   :: Union
   | vs1 - vs2       ::   :: Minus
+  | vars            ::   :: Total_set
+    {{ tex \mathcal{V} }}
   | fv e            :: M :: FV 
   | ( vs )          :: S :: Paren
 
-renaming , xi {{ tex \xi }} :: 'ren_' ::= 
+xi {{ tex \xi }} :: 'ren_' ::= 
+{{ com renaming: map all variables in scope to new names }}
   | y / x           ::   :: Single
   | null            ::   :: Empty
   | xi1 , xi2       ::   :: Append
   | ( xi )          :: S :: Paren
 
-substitution, sigma {{ tex \sigma }} :: 'sub_' ::= {{ com substitutions }}
-  | e2 / x          ::   :: Single
+sigma {{ tex \sigma }} , rho {{ tex \rho }} :: 'sub_' ::= 
+{{ com substitution and environments: map all variables in scope to tersm }}
+  | e / x           ::   :: Single
   | null            ::   :: Empty
   | sigma1 , sigma2 ::   :: Append
   | ( sigma )       :: S :: Paren
 
-context, G {{ tex \Gamma }}, D {{tex \Delta}} :: 'ctx_' ::= {{ com contexts }}
+G {{ tex \Gamma }}, D {{tex \Delta}} :: 'ctx_' ::= 
+{{ com typing contexts: map all variables in scope to types }}
+  | x : tau         ::    :: Single {{ tex [[x]]\! :\![[tau]] }}
+  |                 ::    :: Nil
+    {{ tex \emptyset }}
+  | G1 , G2         ::    :: Append 
+  | ( G )           :: S  :: Paren
 
-   | x : tau         ::    :: Single {{ tex [[x]]\! :\![[tau]] }}
-
-   |                 ::    :: Nil
-   {{ tex \emptyset }}
-
-   | G , x : tau     ::    :: Cons   {{ tex [[G]], [[x]]\! :\![[tau]] }}
-
-   | ( G )           :: S  :: Paren
+ty, tau {{ tex \tau }} :: 'ty_' ::= 
+{{ com types }}
+  | Nat             ::   :: Nat     {{ com base type: natural numbers }}
+  | tau1 -> tau2    ::   :: Arrow   {{ com function types }}
+  | G x             :: M :: Ctx     {{ com lookup from typing context }}
+  | ( tau )         :: S :: Paren
 
 
-ty, tau {{ tex \tau }} :: 'ty_' ::= {{ com types }}
-  | Nat             ::   :: Nat
-  | tau1 -> tau2    ::   :: Arrow
-    {{ com function types }}
-  | ( tau )         ::   :: Paren
-  | G x             :: M :: Ctx
-
-tm, e :: 'tm_' ::= {{ com terms }}
-
-  | k               ::   :: Const
-
-  | x               ::   :: Var
-    {{ com variable }}
-
-  | xi x            :: M :: Renaming
+tm, e :: 'tm_' ::= 
+{{ com terms }}
+  | k                ::   :: Const     {{ com natural number constant }}
+  | x                ::   :: Var       {{ com variable }}
+  | xi x             :: M :: Renaming  {{ com renamed variable }}
 
   | let x = e1 in e2 ::   :: Let
 
-  | \ x . e         ::   :: Abs
+  | \ x . e          ::   :: Abs       {{ com function definition }}
     {{ tex \lambda [[x]]. [[e]] }}
-    {{ com function definition }}
 
-  | \ x : tau . e         :: S :: AAbs
+  | \ x : tau . e    :: S :: AAbs {{ com function definition (annotated with type) }}
     {{ tex \lambda [[x]]\!:\![[tau]]. [[e]] }}
-    {{ com function definition (annotated with type) }}
 
-  | e1 e2           ::   :: App
-    {{ tex [[e1]] \; [[e2]] }}
-    {{ com function application }}
+  | e1 e2            ::   :: App        {{ com function application }}
+    {{ tex [[e1]] \; [[e2]] }}   
 
-  | e [ sigma ]     :: S :: SubstOp
-    {{ com substitution }}
-
-  | e < xi >        :: S :: RenOp
-    {{ com renaming }}
-
-  | sigma x         :: M :: SubLookup
+  | e [ sigma ]      :: M :: SubstOp    {{ com substitution }}
+ 
+  | e < xi >         :: M :: RenOp      {{ com renaming }}
 
   | zero             ::   :: Zero
    
   | succ e           ::   :: Succ
 
-  | natrec e e0 e1   ::   :: Natrec
+  | natrec e e0 e1   ::   :: Natrec     {{ com recursor for natural numbers }}
 
+  | ( e : tau )      ::   :: Ann        {{ com type annotation }}
 
-  | ( e : tau )      ::   :: Ann
-    {{ com type annotation }}
+  | ( e )            :: S :: Paren      {{ com parenthesis }}
 
-  | ( e )            :: S :: Paren
-    {{ com parenthesis }}
-
-v :: 'v_' ::= {{ com values }}
+v :: 'v_' ::= 
+{{ com values }}
 
   | \ x . e         ::   :: Lam
 
@@ -116,7 +107,15 @@ v :: 'v_' ::= {{ com values }}
 
   | succ v          ::   :: Succ
 
+  | v [ sigma ]     :: M :: SubstOp
+
+  | v < xi >        :: M :: RenOp
+
+  | v , rho         :: M :: Closure
+
   | ( v )           :: S :: Paren
+
+
 
 subrules
   v <:: e
@@ -175,63 +174,6 @@ formula :: 'formula_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defns
-JOp :: '' ::=
-
-defn
-e ~> e' ::   :: step :: 's_'
-{{ com small-step operational semantics }}
-by
-
-----------------------------------  :: let_v
-let x = v in e ~> e [v/x]
-
-e1 ~> e1'
-------------------------------------  :: let_cong
-let x = e1 in e2 ~> let x = e1' in e2
-
-----------------------------------  :: beta
-(\x. e) v ~> e [ v / x]
-
-
-e1 ~> e1'
-------------------------  :: app_cong
-e1 e2 ~> e1' e2
-
-e2 ~> e2'
-------------------------  :: arg_cong
-v e2 ~> v e2
-
-e ~> e'
-------------------------  :: succ_cong
-succ e ~> succ e'
-
-
--------------------------- :: nrec_zero
-natrec zero e1 e2 ~> e1
-
------------------------------------------------ :: nrec_succ
-natrec (succ v) e1 e2 ~> (e2[v/x]) (natrec v e1 e2)
-
-e ~> e'
---------------------------------- :: nrec_cong
-natrec e e1 e2 ~> natrec e' e1 e2
-
-defn
-e ~>* e' ::  :: multi :: ''
-{{ com multi-step evaluation }}
-by
-
-------------------- :: refl
-e ~>* e
-
-e0 ~> e1
-e1 ~>* e2
-------------------- :: step
-e0 ~>* e2
-
-
-
-defns
 JTyping :: '' ::=
 
 defn
@@ -267,7 +209,6 @@ G , x : Nat |- e1 : tau -> tau
 ------------------------------- :: nrec
 G |- natrec e e0 e1 : tau
 
-
 G, x:tau1 |- e : tau2
 ------------------------  ::  abs
 G |- \x.e : tau1 -> tau2
@@ -278,3 +219,159 @@ G |- e2 : tau1
 --------------------------- ::  app
 G |- e1 e2 : tau2
 
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 'small_'
+{{ com small-step operational semantics }}
+by
+
+----------------------------------  :: letv
+let x = v in e ~> e [v/x]
+
+e1 ~> e1'
+------------------------------------  :: let_cong
+let x = e1 in e2 ~> let x = e1' in e2
+
+----------------------------------  :: beta
+(\x. e) v ~> e [ v / x]
+
+
+e1 ~> e1'
+------------------------  :: app_cong1
+e1 e2 ~> e1' e2
+
+e2 ~> e2'
+------------------------  :: arg_cong2
+v e2 ~> v e2
+
+e ~> e'
+------------------------  :: succ_cong
+succ e ~> succ e'
+
+
+-------------------------- :: nrec_zero
+natrec zero e1 e2 ~> e1
+
+----------------------------------------------- :: nrec_succ
+natrec (succ v) e1 e2 ~> (e2[v/x]) (natrec v e1 e2)
+
+e ~> e'
+--------------------------------- :: nrec_cong
+natrec e e1 e2 ~> natrec e' e1 e2
+
+defn
+e ~>* e' ::  :: multi :: ''
+{{ com multi-step evaluation }}
+by
+
+------------------- :: refl
+e ~>* e
+
+e0 ~> e1
+e1 ~>* e2
+------------------- :: step
+e0 ~>* e2
+
+
+defn
+e ~> k e' ::  :: multi :: ''
+{{ com counted multi-step evaluation }}
+{{ tex [[e]] [[~>]]^{[[k]]} [[e']] }}
+
+by
+
+------------------- :: refl
+e ~>0 e
+
+e0 ~> e1
+e1 ~>k e2
+------------------- :: step
+e0 ~>1+k e2
+
+
+
+defns
+JBig :: 'big_' ::=
+
+defn
+e => v
+{{ com big-step semantics }}
+
+
+-------- :: val
+v => v
+
+e1 => v1
+e2 [ v1 / x ] => v2
+-----------------------   :: let
+let x = e1 in e2 => v2
+
+
+e1 => \x.e1'
+e2 => v1
+e1' [ v1 / x] => v2
+--------------------  :: app
+e1 e2 => v2
+
+e => k
+--------------------- :: succ
+succ e => succ k
+
+e => zero
+e1 => v
+------------------------- :: nrec_zero
+nrec e e1 e2 => v
+
+e => succ k
+e1 [k .: null] (nrec k e1 e2) => v2
+------------------------------------- :: nrec_succ
+nrec e e1 e2 => v2
+
+
+
+
+defns
+JBigEnv :: 'big_env_' ::=
+
+defn
+rho |- e => v
+{{ com big-step semantics }}
+
+
+---------------------- :: var
+rho |- x => x [rho]
+
+
+-------- :: val
+v => v
+
+rho |- e1 => v1
+[v1 / x] rho |- e2 => v2
+-----------------------   :: let
+let x = e1 in e2 => v2
+
+
+e1 => \x.e1'
+e2 => v1
+e1' [ v1 / x] => v2
+--------------------  :: app
+e1 e2 => v2
+
+e => v
+--------------------- :: succ
+succ e => succ v
+
+
+e => zero
+e1 => v
+------------------------- :: nrec_zero
+nrec e e1 e2 => v
+
+e => succ v1
+e1 [v .: null] (nrec v1 e1 e2) => v2
+------------------------------------- :: nrec_succ
+nrec e e1 e2 => v2

@@ -80,8 +80,3 @@ means that you will probably be able to find solutions via web search or
 asking LLMs to solve the problems for you. 
 
 
-## Resources
-
-### Proof assistants
-### Textbooks 
-### Related Courses

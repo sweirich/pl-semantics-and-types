@@ -194,8 +194,8 @@ premise must be satisfied by subderivations, bottoming out with rules such as
 \rref{t-var} or \rref{t-const} that do not have any premises for the same
 relation.
 
-\begin{figure}
-\drules[h]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+\begin{figure}[h]
+\drules[t]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
 {const,var,abs,app}
 \caption{STLC}
 \label{fig:stlc-typing}
