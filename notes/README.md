@@ -13,7 +13,7 @@ within the following source files.
 + [stlc.ott](ott/stlc.ott) - Simply-Typed Lambda Calculus
 
 LaTeX source files
-+ [oplss.mng](oplss.mng) - Main text of the document
-+ [lstpi.sty](lstpi.sty) - [Listings](https://ctan.mirrors.hoobly.com/macros/latex/contrib/listings/listings.pdf) specification for  typesetting `pi-forall` source code
++ [plst.mng](plst.mng) - Main text of the notes document
 + [ottalt.sty](ottalt.sty) - [Auxiliary style file](https://users.cs.northwestern.edu/~jesse/code/latex/ottalt/ottalt.pdf) for working with Ott produced LaTeX macros
++ [listproc.sty](listproc.sty) - Auxiliary style file for Ott
 + Makefile - how to put everything together

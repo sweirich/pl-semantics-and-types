@@ -29,13 +29,15 @@ can we use this definition in practice?
 Many programming languages come with static type systems, such as Rust, Java,
 OCaml or Rocq. Where do these type systems come from? What does it mean when a
 program type checks?  What does it mean when we say that a language is type
-safe? What can can we model using static types? How do types interact with the definition of equivalence?
+safe? What can can we model using static types? How do types interact with the
+definition of equivalence?
 
 ## How will we study these two questions? 
 
-Studying these two questions is a study in definitions. And constructing definitions involves design work. A given definition may not be intrinsically 
-wrong, it just may not be useful. So to evaluate our designs we need to 
-identify what we want to do with these definitions and judge them using that 
+Studying these two questions is a study in definitions. And constructing
+definitions involves design work. A given definition may not be intrinsically
+wrong, it just may not be useful. So to evaluate our designs we need to
+identify what we want to do with these definitions and judge them using that
 metric.
 
 In general, we will study these questions using the tools of programming
@@ -84,25 +86,27 @@ about programming language advances.
 ## What is the role of proof assistants? 
 
 If you have read [Software
-Foundations](https://softwarefoundations.cis.upenn.edu/) or have taken [CIS
+Foundations](https://softwarefoundations.cis.upenn.edu/) or have taken a
+course like [CIS
 5000](https://www.seas.upenn.edu/~cis5000/current/index.html), you have
-already seen the foundation of our study this semester. And have used the
-metalanguage of the Rocq proof assistant to mathematically model small
-programming languages, such as the simply-typed lambda calculus.
+already used the metalanguage of the Rocq proof assistant to mathematically
+model small programming languages, such as the simply-typed lambda calculus.
 
 I am a *strong* believer in the value of these tools. They both solidify your
-understanding of the metalogic that we are working in as well as provide
-strong confidence in your results and give immediate feedback on your progress. They are also fun to use.
+understanding of the metalogic that we are working in as well as give
+immediate feedback on your progress. They are also fun to use.
 
-However, this is not a course on the use of proof assistants. The homework
-assignments will be in LaTeX and the exams will be on paper. If you have not
-used a proof assistant before, you will still get a lot out of this course.
+However, this is *not* a course on the use of proof assistants. You do not
+need to have experience with Rocq or any similar tool in order to benefit from
+this course. The homework assignments will be in LaTeX and the exams will be
+on paper and will cover topics related to programming language theory.
 
-That said, I will ensure that the material we study this semester is amenable
-to mechanical development. I will be developing and checking the topics that
-we cover throughout the semester using Rocq and will make my code
-available. (I hope that I can keep up!) You can use this code as the basis for
-the homework assignments and will gladly answer any questions and provide
-assistance during office hours. Or, if you would like to translate this code
-to another context (i.e. Agda or LEAN), I can also provide assistance.
+That said, I will ensure that the material that we study this semester is
+amenable to mechanical development. I will be developing and checking the
+topics that we cover throughout the semester using Rocq and will make my code
+available. (Caveat: I hope that I can keep up!) You can use this code as the
+basis for the homework assignments and I will gladly answer any questions and
+provide assistance during office hours. If you want to learn how to use Rocq,
+this is a good opportunity. I will also assist if you would like to translate
+this code to another framework (such as Agda or LEAN).
 
