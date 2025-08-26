@@ -23,6 +23,7 @@ nat , j, k :: 'k_' ::=
   | 4               ::   :: Four  
   | 5               ::   :: Five
   | k1 + k2         ::   :: Plus
+  | k1 - k2         ::   :: Minus
   | ( k )           :: S :: Paren
 
 vs :: 'vs_' ::= 
@@ -72,7 +73,7 @@ tau {{ tex \tau }} :: 'ty_' ::=
 
 e :: 'tm_' ::= 
 {{ com terms }}
-  | k                ::   :: Const     {{ com natural number constant }}
+  | k                ::   :: Lit     {{ com natural number constant }}
   | x                ::   :: Var       {{ com variable }}
   | xi x             :: M :: Renaming  {{ com renamed variable }}
   | sigma x          :: M :: VarSub    {{ com lookup from substitution }}
@@ -94,8 +95,7 @@ e :: 'tm_' ::=
 
   | e , rho          :: M :: Closure    
 
-  | zero             ::   :: Zero
-   
+
   | succ e           ::   :: Succ
 
   | natrec e of { zero => e0 ; succ x => e1 }  ::   :: Natrec 
@@ -110,9 +110,7 @@ v :: 'v_' ::=
 
   | \ x . e         ::   :: Lam
 
-  | k               ::   :: Const
-
-  | zero            ::   :: Zero
+  | k               ::   :: Lit
 
   | succ v          ::   :: Succ
 
@@ -194,7 +192,7 @@ G |- e : tau   ::   :: typing :: 't_'
 {{ com Typing }}
 by
 
------------- :: const
+------------ :: lit
 G |- k : Nat
 
 x : tau elem G
@@ -205,11 +203,6 @@ G |- e1 : tau1
 G , x : tau1 |- e2 : tau2
 ----------------------------- :: let
 G |- let x = e1 in e2 : tau2
-
-
----------------------- :: zero
-G |- zero : Nat
-
 
 G |- e : Nat 
 ---------------------- :: succ
@@ -266,10 +259,10 @@ succ e ~> succ e'
 
 
 -------------------------- :: nrec_zero
-natrec zero of { zero => e1 ; succ x =>  e2 } ~> e1
+natrec 0 of { zero => e1 ; succ x =>  e2 } ~> e1
 
 ----------------------------------------------- :: nrec_succ
-natrec (succ v) of { zero => e1 ; succ x => e2 } ~> (e2[v/x]) (natrec v of {zero => e1 ; succ x => e2})
+natrec (1+k) of { zero => e1 ; succ x => e2 } ~> (e2[k/x]) (natrec v of {zero => e1 ; succ x => e2})
 
 e ~> e'
 --------------------------------- :: nrec_cong
@@ -292,7 +285,7 @@ e0 ~>* e2
 defn
 e ~ k >  e' ::  :: ms_k_ :: 'ms_k_'
 {{ com counted multi-step evaluation }}
-{{ tex [[e]] \leadsto{[[k]]} [[e']] }}
+{{ tex [[e]] \leadsto^{[[k]]} [[e']] }}
 
 by
 
@@ -334,15 +327,15 @@ e => k
 --------------------- :: succ
 succ e => succ k
 
-e => zero
+e => 0
 e1 => v
 ------------------------- :: nrec_zero
 natrec e of {zero => e1 ; succ x => e2 }  => v
 
-e => succ k
-e1 [k / x] (nrec k e1 e2) => v2
-------------------------------------- :: nrec_succ
-natrec e of {zero=> e1 ; succ x => e2 } => v2
+e => 1+k
+%% (e1 [k / x]) (natrec k e1 e2) => v
+--------------------------------------------- :: nrec_succ
+natrec e of {zero=> e1 ; succ x => e2 } => v
 
 
 
@@ -360,7 +353,7 @@ by
 rho |- x => rho x
 
 
------------------- :: const
+------------------ :: lit
 rho |- k => k
 
 ------------------------- :: cons
@@ -384,12 +377,12 @@ rho |- e => k
 rho |- succ e => succ k
 
 
-rho |- e => zero
+rho |- e => 0
 rho |- e1 => v
 ---------------------------------------------------- :: nrec_zero
 rho |- natrec e of { zero=> e1 ; succ x => e2 } => v
 
-rho |- e => succ v1
-rho |- e1 [v/x] (natrec v1 of { zero => e1 ; succ x => e2}) => v2
+rho |- e => 1+k
+rho |- e1 [k/x] (natrec v1 of { zero => e1 ; succ x => e2}) => v2
 ------------------------------------------------------------------ :: nrec_succ
 rho |- natrec e of { zero=> e1 ; succ x => e2 } => v2
