@@ -25,7 +25,7 @@ view of computation.
 
 * *Location*: 3401 Walnut, 401B
 
-* *Office Hours*: TBA
+* *Office Hours*: Mondays after class in Levine 510 (starting 9/08)
 
 * *Prerequisites*: We will start from the beginning, so there are no real
   prerequisites. However, we will move quickly, so even if you have seen some
@@ -35,17 +35,20 @@ view of computation.
   inductive/algebraic datatypes. CIS 5000 is recommended, especially
   familiarity with the basics of the untyped and simply-typed lambda calculus.
   
-* *Textbook*: Lecture notes (in development) will be provided.
-
 * [*Syllabus*](syllabus.md): *Under construction*
 
-## Potential Topics
+* [*Website*](https://sweirich.github.io/pl-semantics-and-types/)
 
-* Operational semantics (environments, big step semantics, small step semantics)
-* Relational semantics (logical relations, step-indexed logical relations)
-* Denotational semantics (i.e. interpreting language semantics using type theory)
-* Contextual equivalence (i.e. can we explain the meanings of programs through equality?)
-* How do types interact with semantics? (e.g. type abstraction and parametricity?)
-* Values vs. computations. How does evaluation order interact with all of this? Especially in the presence of effects? Where do monads come from?
+* [*Course Materials*](https://github.com/sweirich/pl-semantics-and-types/tree/main)
+  
+
+##  Topics
+
+* Operational semantics. How do we model a program using an abstract machine?
+* Denotational semantics. How do we model a program as a mathematical object?
+* Relational semantics. How do we model a program as a logical formula?
+* Contextual equivalence. How do we know when two programs are equal?
+* Type abstraction and parametricity. How do types interact with semantics?
+* Computations are not values. How does evaluation order interact with our models? Where do monads come from?
 * Continuations. What is the relationship between type systems and control effects?
 
