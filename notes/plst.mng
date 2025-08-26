@@ -136,14 +136,14 @@ $x$ in the term $[[(\x. x y) x]]$.
 Here is another example of a recursively defined function. Sometimes we would
 like to change the names of free variables in terms.
 
-A \emph{renaming}, $[[xi]]$, is a mapping from variables to variables. This
-renaming is a total mapping---if we don't say otherwise, it maps a variable to
-itself. We use the notation $[[y/x, xi]]$ to create the renaming that maps
-$[[x]]$ to $[[y]]$, but otherwise works like $[[xi]]$.
+A \emph{renaming}, $[[xi]]$, is a mapping from variables to variables. A
+renaming has a \emph{domain}, $[[dom xi]]$ and a \emph{range} $[[rng xi]]$.
+We use the notation $[[y/x, xi]]$ to create the renaming that maps $[[x]]$ to
+$[[y]]$, but otherwise works like $[[xi]]$.
 
 \begin{definition}[Renaming application] We define the application of a
   renaming function to a term, commonly written with postfix notation
-  $[[e<xi>]]$, as follows.
+  $[[e<xi>]]$, as follows:
 \[
 \begin{array}{lcl}
 [[ k< xi >      ]] &=& [[ k ]] \\
@@ -153,23 +153,64 @@ $[[x]]$ to $[[y]]$, but otherwise works like $[[xi]]$.
 \end{array}
 \]
 \end{definition}
+We can only apply a renaming to a term when its domain is at least as big as
+all of the free variables defined in the term. In that case, our renaming
+function is total: it produces an answer for any such term.
 
-We have to be a bit careful in the last line of this definition. What if $[[xi]]$ maps 
-the variable $[[x]]$ to some other variable. Our goal with this function is to only 
-rename free variables: the function should leave the bound variables alone. By updating 
-the renaming to $[[x/x,xi]]$ we force the renaming that we use in the body of the 
-abstraction to not change $[[x]]$. 
+We have to be a bit careful in the last line of this definition. What if
+$[[xi]]$ already maps the variable $[[x]]$ to some other variable? Our goal is
+to only rename free variables: the function should leave the bound variables
+alone and inside the body of $[[\x.e]]$, the variable $[[x]]$ is occurs bound,
+not free. By updating the renaming to $[[x/x,xi]]$ in the recursive call, we
+force the renaming that we use for the body of the abstraction to not change
+$[[x]]$.
 
-\paragraph{Variable binding, alpha-equivalence and all that} At this point, we will start to be somewhat informal when it comes to bound variables in terms. We don't really want to distinguish between terms that differ only in their use of bound variables, such as $[[\x.x]]$ and $[[\y.y]]$. The relation $\alpha$-equivalence relates such terms, and from this point forward we will ``work up-to-$\alpha$-equivalence. What this means practically is that on one hand, we must be sure that our definitions don't really depend on the names of bound variables. In return, we can always assume that any bound variable is distinct from any other variable, if we need it to be. 
+There is one final definition of a function defined by structural recursion
+over terms: the application of a \emph{substitution} that applies to all free
+variables in the term. 
 
-Here we have a conundrum: it is common practice to describe lambda calculus
+A \emph{substitution}, $[[sigma]}$ is a mapping from variables to terms. As
+above, it has a \emph{domain} (a set of variables) and a \emph{range} (this
+time a set of terms). We use the notation $[[e/x,sigma]]$ to refer to the substitution that maps variable $[[x]]$ to term $[[e]]$, but otherwise acts like
+$[[sigma]]$.
+
+As before, this definition only applies when the free variables of the term
+are contained within the domain of the substitution. Furthermore, when
+substituting in the body of an abstraction, we must extend the substitution
+with a definition for the bound variable (mapping it to itself).
+
+\begin{definition}[Substitution application] We define the application of a
+  substitution function to a term, written with postfix notation
+  $[[ e[sigma] ]]$, as follows:
+\[
+\begin{array}{lcl}
+[[ k [sigma]        ]] &=& [[ k ]] \\
+[[ x [sigma]        ]] &=& [[ sigma x ]] \\
+[[ (e1 e2) [sigma]  ]] &=& [[ (e1 [sigma] ) (e2 [sigma] ) ]] \\
+[[ (\x . e) [sigma] ]] &=& [[ \x . (e [ x/x, sigma ]) ]] \\
+\end{array}
+\]
+\end{definition}
+
+
+\paragraph{Variable binding, alpha-equivalence and all that} At this point, we
+will start to be somewhat informal when it comes to bound variables in
+terms. We don't really want to distinguish between terms that differ only in
+their use of bound variables, such as $[[\x.x]]$ and $[[\y.y]]$. The relation
+$\alpha$-equivalence relates such terms, and from this point forward we will
+``work up-to-$\alpha$-equivalence. What this means practically is that on one
+hand, we must be sure that our definitions don't really depend on the names of
+bound variables. In return, we can always assume that any bound variable is
+distinct from any other variable, if we need it to be.
+
+Here we have a conundrum. It is common practice to describe lambda calculus
 terms as we have done above (sometimes called using a named or nominal
 representation of variables). But getting the details right is difficult (it
 requires maintaining careful invariants about all definitions) and subtle. If
 you are working with a proof assistant, you really do need to get the details
 right, but it also makes sense to use an approach (such as de Bruijn indices)
 where the details are easier to get right. This is what we will do in the
-accompanying mechanized proofs. 
+accompanying mechanized proofs.
 
 However, because using a named representation is standard practice we will
 continue to use that approach in these notes, glossing over some details. This
@@ -215,7 +256,7 @@ the body $[[tau2]]$.
 \Rref{t-app}, which checks the application of functions, requires that the
 argument to the function has the same type required by the function.
 
-\section{Operational Semantics and Type Safety}
+\subsection{Operational Semantics}
 
 Is this type system meaningful? Our type system makes a distinction between
 terms that type check (such as $[[(\x.x)3]]$) and terms that do not, such as 
@@ -234,36 +275,71 @@ reduces to the term $[[e']]$ in one step.
 The rules are as follows:
 
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
-{beta,app-cong,arg-cong}
+{beta,app-congOne,app-congTwo}
 
-Type safety is a crucial property of a typed programming language. It ensures that a well-typed program will never ``go wrong'' during execution. For the simply-typed lambda calculus, this means a program will not get stuck in a state where it cannot take a reduction step but is not a final value.
+In \rref{step-beta} note that the argument must be a value $[[v]]$ before we 
+substitute it for the parameter in a function application. This rule is the key of 
+a \emph{call-by-value} semantics. 
 
-The type safety proof is usually conducted in two parts: Progress and Preservation.
+We can define values as subgrammar of terms: 
+
+\[  [[v]] ::= [[k]] |\ [[\x.e]] \]
+
+\subsection{Type Safety}
+
+Type safety is a crucial property of a typed programming language. It ensures
+that a well-typed program will never ``go wrong'' during execution. For the
+simply-typed lambda calculus, this means a program will not get stuck in a
+state where it cannot take a reduction step but is not a final value.
+
+The type safety proof is usually defined through two lemmas: Progress and
+Preservation.
+
+The \emph{preservation} lemma property states that if a term $[[e]]$ has type
+$[[tau]]$, and it takes a single reduction step to $[[e']]$, then the new term
+must also have the exact same type $[[tau]]$. In other words, the type is
+``preserved'' through evaluation.
 
 \begin{lemma}[Preservation]
 If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
 \end{lemma}
+Proof Sketch: The proof is by induction on the derivation of the reduction
+or on the typing derivation. Either way works.
 
-Intuition: This property states that if a term e has type $[[tau]]$, and it takes a single reduction step to e', then the new term will have the exact same type $[[tau]]$. The type is ``preserved'' through evaluation.
+You examine each reduction rule from the small-step semantics and show that it preserves the type. The most complex case is beta reduction, which relies on a key lemma: substitution. This lemma says that if we have a well-typed argument 
+for a function, we can use substitution to replace the parameter with this value and 
+have a term that is still well typed. 
 
-Proof Sketch: The proof is by induction on the derivation of the reduction.
+\begin{corollary}[Single Substitution]
+  If $[[ x:tau1 |- e : tau2 ]]$ and $[[ |- v : tau2 ]]$ then $[[ |- e [v/x] : tau1 ]]$
+\end{corrollary}
 
-You examine each reduction rule from the small-step semantics and show that it preserves the type. The most complex case is beta reduction, which relies on a key lemma: the Substitution Lemma.
+However, to prove this lemma, we must first generalize it. We cannot prove the
+lemma directly as stated, we need a version that gives us a stronger induction
+hypothesis.  Here is a generalization of the lemma, that works for any
+substitution (not just a singleton one) and any context of terms (not just one
+with a single variable assumption). Every term in the range of the substitution must have the type described by the context.
 
 \begin{lemma}[Substitution]
-If $[[ G |- e : tau ]]$ and forall $x$, $[[D |- sigma x : G x ]]$, then 
-$[[D |- e[sigma] : tau ]]$.
+  If $[[ G |- e : tau ]]$ and for all $[[x]] \in [[dom sigma]]$, we have
+  $[[D |- sigma x : G x ]]$, then $[[D |- e[sigma] : tau ]]$.
 \end{lemma}
+Proof Sketch: The proof is by induction on the typing derivation.
+
+\medskip
+
+The section lemma, called \emph{progress} states that any well-typed term that
+has not been completely reduced can always take at least one more reduction
+step. It ensures that a well-typed term is not ``stuck.'' (i.e. is not a value
+but cannot step).
+
 
 \begin{lemma}[Progress]
 If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ such that 
 $[[ e ~> e' ]]$.
 \end{lemma}
 
-Intuition: This property states that any well-typed term that is not a final
-value can always take at least one more reduction step. It ensures that 
-a well-typed term is not ``stuck.'' (i.e. not a value but cannot step).
-
+Intuition: This property 
 
 \section{Extending with Natural Numbers}
 We now extend the system with a base type for natural numbers, $[[Nat]]$, and
@@ -277,7 +353,7 @@ We add the following to our set of types and terms:
 \begin{itemize}
 \item The constant $[[zero]]$ is a term. Informally, we may write this term as $0$.
 \item If $[[e]]$ is a term, $[[succ e]]$ is a term (successor).
-\item If $[[e]]$, $[[e1]]$ and $[[e2]]$ are terms, then $[[natrec e e1 e2]]$ is a term.
+\item If $[[e]]$, $[[e1]]$ and $[[e2]]$ are terms, then $[[natrec e of { zero => e1 ; succ x => e2 }]]$ is a term.
 \end{itemize}
 \end{itemize}
 
@@ -286,175 +362,5 @@ We introduce new typing rules for the natural number constants and the successor
 
 \drules[t]{$[[G |- e :tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
 {zero,succ,nrec}
-
-
-\end{document}
-
-make sure that this is a call-by-value semantics
-
-
-You're right to point out that. The previous response described a call-by-name semantics for the application rule. Here is the corrected description of the small-step operational semantics and the type safety proof using a call-by-value strategy.
-
-Small-Step Operational Semantics (Call-by-Value)
-In a call-by-value strategy, we evaluate function arguments to a value before a function is applied. We need to explicitly define what a "value" is. In this system, values are terms that cannot be reduced further.
-
-Values:
-
-Lambda abstractions: v::=λx:τ.e
-
-Natural number constants: n::=0,1,2,...
-
-The reduction rules for the call-by-value semantics are:
-
-1. Function Application (Beta Reduction):
-
-(β-red): (λx:τ.e)v→e[x↦v]
-
-This is the core rule for call-by-value. It states that an application reduces only when the function part is a lambda abstraction and the argument part is a value.
-
-2. Congruence Rules:
-
-These rules specify how reduction propagates through larger terms. The key change from call-by-name is that we must evaluate the function part of an application to a value first, before we start evaluating the argument part.
-
-(app 
-1
-​
- ):  
-e 
-1
-​
- e 
-2
-​
- →e 
-1
-′
-​
- e 
-2
-​
- 
-e 
-1
-​
- →e 
-1
-′
-​
- 
-​
- 
-
-This rule is the same as before. If the function part of an application can reduce, the whole application reduces.
-
-(app 
-2
-​
- ):  
-ve 
-2
-​
- →ve 
-2
-′
-​
- 
-e 
-2
-​
- →e 
-2
-′
-​
- 
-​
- 
-
-This rule is different. It states that if the function part is already a value (v), we can then start reducing the argument part.
-
-(succ):  
-succ(e)→succ(e 
-′
- )
-e→e 
-′
- 
-​
- 
-
-This rule for the successor function is the same. It reduces its argument.
-
-Type Safety Proof (Call-by-Value)
-The type safety proof for a call-by-value semantics follows the same structure as before, with a few key differences in the details of the proofs for Preservation and Progress.
-
-1. Preservation (Subject Reduction):
-
-Statement: If Γ⊢e:τ and e→e 
-′
- , then Γ⊢e 
-′
- :τ.
-
-Proof Sketch: The proof remains by induction on the derivation of the reduction e→e 
-′
- . The most significant difference is in the β-reduction case, which now applies only when the argument is a value. The Substitution Lemma is still the key tool to prove this case correct. The other congruence rules are also straightforward.
-
-2. Progress:
-
-Statement: If Γ⊢e:τ, then either e is a value, or there exists an e 
-′
-  such that e→e 
-′
- .
-
-Proof Sketch: This proof, by induction on the structure of the term e, is the more interesting one in the call-by-value setting. We examine each possible term form:
-
-Variables, Constants, Lambda Abstractions: These are values, so the property holds.
-
-Application (e 
-1
-​
- e 
-2
-​
- ):
-
-If e 
-1
-​
-  is a lambda abstraction and e 
-2
-​
-  is a value, then a β-reduction can occur.
-
-If e 
-1
-​
-  is a lambda abstraction and e 
-2
-​
-  is not a value, the induction hypothesis on e 
-2
-​
-  guarantees that it can take a step via the app 
-2
-​
-  rule.
-
-If e 
-1
-​
-  is not a lambda abstraction, the induction hypothesis on e 
-1
-​
-  guarantees that it can take a step via the app 
-1
-​
-  rule.
-
-Successor (succ(e)): If e is a natural number constant, the term is a value. Otherwise, the induction hypothesis on e guarantees that it can reduce.
-
-The two-part proof (Preservation and Progress) ensures the language is type-safe. The call-by-value evaluation strategy is very common in modern programming languages like Python and JavaScript, as it avoids re-evaluating arguments and provides a more predictable execution model.
-
 
 \end{document}

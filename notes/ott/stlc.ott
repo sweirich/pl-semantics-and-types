@@ -21,6 +21,7 @@ nat , j, k :: 'k_' ::=
   | 2               ::   :: Two
   | 3               ::   :: Three
   | 4               ::   :: Four  
+  | 5               ::   :: Five
   | k1 + k2         ::   :: Plus
   | ( k )           :: S :: Paren
 
@@ -33,6 +34,10 @@ vs :: 'vs_' ::=
   | vars            ::   :: Total_set
     {{ tex \mathcal{V} }}
   | fv e            :: M :: FV 
+  | dom xi          :: M :: Dom_ren
+  | rng xi          :: M :: Rng_ren
+  | dom sigma       :: M :: Dom_sub
+  | dom G           :: M :: Dom_ctx
   | ( vs )          :: S :: Paren
 
 xi {{ tex \xi }} :: 'ren_' ::= 
@@ -49,7 +54,7 @@ sigma {{ tex \sigma }} , rho {{ tex \rho }} :: 'sub_' ::=
   | sigma1 , sigma2 ::   :: Append
   | ( sigma )       :: S :: Paren
 
-G {{ tex \Gamma }}, D {{tex \Delta}} :: 'ctx_' ::= 
+G {{ tex \Gamma }} , D {{tex \Delta}} :: 'ctx_' ::= 
 {{ com typing contexts: map all variables in scope to types }}
   | x : tau         ::    :: Single {{ tex [[x]]\! :\![[tau]] }}
   |                 ::    :: Nil
@@ -57,7 +62,7 @@ G {{ tex \Gamma }}, D {{tex \Delta}} :: 'ctx_' ::=
   | G1 , G2         ::    :: Append 
   | ( G )           :: S  :: Paren
 
-ty, tau {{ tex \tau }} :: 'ty_' ::= 
+tau {{ tex \tau }} :: 'ty_' ::= 
 {{ com types }}
   | Nat             ::   :: Nat     {{ com base type: natural numbers }}
   | tau1 -> tau2    ::   :: Arrow   {{ com function types }}
@@ -65,11 +70,12 @@ ty, tau {{ tex \tau }} :: 'ty_' ::=
   | ( tau )         :: S :: Paren
 
 
-tm, e :: 'tm_' ::= 
+e :: 'tm_' ::= 
 {{ com terms }}
   | k                ::   :: Const     {{ com natural number constant }}
   | x                ::   :: Var       {{ com variable }}
   | xi x             :: M :: Renaming  {{ com renamed variable }}
+  | sigma x          :: M :: VarSub    {{ com lookup from substitution }}
 
   | let x = e1 in e2 ::   :: Let
 
@@ -86,11 +92,14 @@ tm, e :: 'tm_' ::=
  
   | e < xi >         :: M :: RenOp      {{ com renaming }}
 
+  | e , rho          :: M :: Closure    
+
   | zero             ::   :: Zero
    
   | succ e           ::   :: Succ
 
-  | natrec e e0 e1   ::   :: Natrec     {{ com recursor for natural numbers }}
+  | natrec e of { zero => e0 ; succ x => e1 }  ::   :: Natrec 
+      {{ com recursor for natural numbers }}
 
   | ( e : tau )      ::   :: Ann        {{ com type annotation }}
 
@@ -110,6 +119,8 @@ v :: 'v_' ::=
   | v [ sigma ]     :: M :: SubstOp
 
   | v < xi >        :: M :: RenOp
+
+  | rho x           :: M :: LookupRho
 
   | v , rho         :: M :: Closure
 
@@ -133,7 +144,8 @@ terminals :: 'terminals_' ::=
   | ok                ::   :: ok            {{ tex \mathsf{ok} }}
   | fv                ::   :: fv            {{ tex \mathsf{fv}\! }}
   | dom               ::   :: dom           {{ tex \mathsf{dom} }}
-  | ==                ::   :: definitional  {{ tex \equiv }}
+  | rng               ::   :: rng           {{ tex \mathsf{rng} }}
+  | ==                ::   :: equiv         {{ tex \equiv }}
   | all               ::   :: forall        {{ tex \forall }}
   | elem              ::   :: elem          {{ tex \in }}
   | notin             ::   :: notin         {{ tex \not\in }}
@@ -207,7 +219,7 @@ G |- e : Nat
 G |- e0 : tau
 G , x : Nat |- e1 : tau -> tau
 ------------------------------- :: nrec
-G |- natrec e e0 e1 : tau
+G |- natrec e of { zero => e0 ; succ x => e1 } : tau
 
 G, x:tau1 |- e : tau2
 ------------------------  ::  abs
@@ -225,7 +237,7 @@ defns
 JSmall :: '' ::=
 
 defn
-e ~> e' ::   :: step :: 'small_'
+e ~> e' ::   :: step :: 's_'
 {{ com small-step operational semantics }}
 by
 
@@ -245,7 +257,7 @@ e1 ~> e1'
 e1 e2 ~> e1' e2
 
 e2 ~> e2'
-------------------------  :: arg_cong2
+------------------------  :: app_cong2
 v e2 ~> v e2
 
 e ~> e'
@@ -254,17 +266,17 @@ succ e ~> succ e'
 
 
 -------------------------- :: nrec_zero
-natrec zero e1 e2 ~> e1
+natrec zero of { zero => e1 ; succ x =>  e2 } ~> e1
 
 ----------------------------------------------- :: nrec_succ
-natrec (succ v) e1 e2 ~> (e2[v/x]) (natrec v e1 e2)
+natrec (succ v) of { zero => e1 ; succ x => e2 } ~> (e2[v/x]) (natrec v of {zero => e1 ; succ x => e2})
 
 e ~> e'
 --------------------------------- :: nrec_cong
-natrec e e1 e2 ~> natrec e' e1 e2
+natrec e of { zero => e1 ; succ x => e2 }  ~> natrec e' of { zero => e1; succ x => e2 }
 
 defn
-e ~>* e' ::  :: multi :: ''
+e ~>* e' ::  :: multi :: 'ms_'
 {{ com multi-step evaluation }}
 by
 
@@ -278,28 +290,29 @@ e0 ~>* e2
 
 
 defn
-e ~> k e' ::  :: multi :: ''
+e ~ k >  e' ::  :: ms_k_ :: 'ms_k_'
 {{ com counted multi-step evaluation }}
-{{ tex [[e]] [[~>]]^{[[k]]} [[e']] }}
+{{ tex [[e]] \leadsto{[[k]]} [[e']] }}
 
 by
 
 ------------------- :: refl
-e ~>0 e
+e ~0> e
 
 e0 ~> e1
-e1 ~>k e2
+e1 ~k> e2
 ------------------- :: step
-e0 ~>1+k e2
+e0 ~1+k> e2
 
 
 
 defns
-JBig :: 'big_' ::=
+JBig :: '' ::=
 
 defn
-e => v
+e => v ::   :: big :: 'big_'
 {{ com big-step semantics }}
+by
 
 
 -------- :: val
@@ -324,54 +337,59 @@ succ e => succ k
 e => zero
 e1 => v
 ------------------------- :: nrec_zero
-nrec e e1 e2 => v
+natrec e of {zero => e1 ; succ x => e2 }  => v
 
 e => succ k
-e1 [k .: null] (nrec k e1 e2) => v2
+e1 [k / x] (nrec k e1 e2) => v2
 ------------------------------------- :: nrec_succ
-nrec e e1 e2 => v2
+natrec e of {zero=> e1 ; succ x => e2 } => v2
 
 
 
 
 defns
-JBigEnv :: 'big_env_' ::=
+JBigEnv :: '' ::=
 
 defn
-rho |- e => v
+rho |- e => v ::   :: big_eng :: 'big_env_' 
 {{ com big-step semantics }}
+by
 
 
 ---------------------- :: var
-rho |- x => x [rho]
+rho |- x => rho x
 
 
--------- :: val
-v => v
+------------------ :: const
+rho |- k => k
+
+------------------------- :: cons
+rho |- \x.e => \x.e , rho
+
 
 rho |- e1 => v1
-[v1 / x] rho |- e2 => v2
+v1/x,rho |- e2 => v2
 -----------------------   :: let
-let x = e1 in e2 => v2
+rho |- let x = e1 in e2 => v2
 
 
-e1 => \x.e1'
-e2 => v1
-e1' [ v1 / x] => v2
+rho |- e1 => \x.e1', rho'
+rho |- e2 => v1
+v1/x,rho' |- e1' => v2
 --------------------  :: app
-e1 e2 => v2
+rho |- e1 e2 => v2
 
-e => v
---------------------- :: succ
-succ e => succ v
+rho |- e => k
+-------------------------- :: succ
+rho |- succ e => succ k
 
 
-e => zero
-e1 => v
-------------------------- :: nrec_zero
-nrec e e1 e2 => v
+rho |- e => zero
+rho |- e1 => v
+---------------------------------------------------- :: nrec_zero
+rho |- natrec e of { zero=> e1 ; succ x => e2 } => v
 
-e => succ v1
-e1 [v .: null] (nrec v1 e1 e2) => v2
-------------------------------------- :: nrec_succ
-nrec e e1 e2 => v2
+rho |- e => succ v1
+rho |- e1 [v/x] (natrec v1 of { zero => e1 ; succ x => e2}) => v2
+------------------------------------------------------------------ :: nrec_succ
+rho |- natrec e of { zero=> e1 ; succ x => e2 } => v2
