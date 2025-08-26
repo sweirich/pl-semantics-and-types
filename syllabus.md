@@ -9,7 +9,7 @@
 | ------  | ----- | 
 | W 8/27  | **No Class**: Instructor travel              |
 | M 9/1   | **No Class**: Labor day                      |
-| W 9/3   | [Introduction: Why study Semantics and Types?](notes/intro.md)|
+| W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md)|
 | M 9/8   | |
 | W 9/10  | |
 | M 9/22  | |
