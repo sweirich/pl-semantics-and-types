@@ -331,3 +331,7 @@ TSWLatexianTemp*
 *.glob
 *.vok
 *.vos
+.CoqSrc.mk.d
+CoqSrc.mk
+CoqSrc.mk.conf
+_CoqProject
