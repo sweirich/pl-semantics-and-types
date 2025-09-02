@@ -54,4 +54,10 @@
 
 \input{stlc}
 
+\bibliographystyle{alpha}
+\bibliography{references}
+
+
+
+
 \end{document}

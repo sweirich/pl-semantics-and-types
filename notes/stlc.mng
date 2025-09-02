@@ -1,11 +1,10 @@
-\section{STLC}
+\section{The Simply-Typed Lambda Calculus}
 
 This section gives a precise definition of the syntax of the simply-typed
 lambda calculus, its type system and operational semantics. If you are new to
-programming language theory, this development provides the opportunity to
-introduce some of the mathematical concepts that we will be using throughout
-the semester, such as inductively defined grammars, recursive definitions, and
-proofs by structural induction.
+programming language theory, this writeup introduces some of the mathematical
+concepts that we will be using throughout the semester, such as inductively
+defined grammars, recursive definitions, and proofs by structural induction.
 
 \subsection{Syntax}
 The syntax of the simply-typed lambda calculus is defined by a set of terms
@@ -273,9 +272,10 @@ most one new term.
 If $[[e ~> e1]]$ and $[[e ~> e2]]$ then $[[e1]]=[[e2]]$.
 \end{lemma}
 
-The small step relation is \emph{not} a function. For some terms $[[e]]$, there is no term $[[e']]$ such that $[[e ~> e']]$. For example, if we have a number 
-in the function position, e.g. $[[(3 e)]]$, then the 
-term does not step and these terms do not evaluate to any value.
+The small step relation is \emph{not} a function. For some terms $[[e]]$,
+there is no term $[[e']]$ such that $[[e ~> e']]$. For example, if we have a
+number in the function position, e.g. $[[(3 e)]]$, then the term does not step
+and these terms do not evaluate to any value.
 
 This is important. These terms are called \emph{stuck} and correspond to
 crashing programs. For example, if we tried to use a number as function
@@ -355,12 +355,13 @@ $[[ e ~> e' ]]$.
 \end{lemma}
 
 \subsection{Is this all?}
-We claimed that type safety means that well-typed programs either run forever, or terminate with a value. But is that what we have really proven? 
-Not really. 
+We claimed that type safety means that well-typed programs either run forever,
+or terminate with a value. But is that what we have really proven?  Not
+really.
 
 To tell the full story, we need to talk about programs that run forever. But
 how do we do that?  So far, we only have the inductive definition of $[[e ~>*
-    v]]$, which captures finite evaluate sequences.
+    v]]$, which only captures finite evaluate sequences.
 
 Now consider the following \emph{coinductive} definition.
 \begin{definition}[Runs safely]
@@ -422,11 +423,12 @@ using the following inductive definition.
 An expression evaluates safely for $k$ steps if it either there is some
 $[[e']]$, such that $[[e ~k> e']]$, or there is some number of steps $j$
 strictly less than $k$ where the term terminates with a value 
-(i.e. there is some $v$ and $j < k$ such that $[[e ~j> v]]$).
+(i.e. there is some $v$ and $j <= k$ such that $[[e ~j> v]]$).
 \end{definition}
 
-We can now state type safety this way. We can't really talk about an infinite computation, 
-but we can know that for an arbitrarily long time, $e$ will run safely during that time.
+We can now state type safety using this step-counting definition. We can't
+really talk about an infinite computation, but we can know that for an
+arbitrarily long time, $e$ will run safely during that time.
 
 \begin{theorem}
 If $[[|- e : tau]]$ then for all natural numbers $k$, $e$ is safe for $k$.
@@ -440,3 +442,26 @@ By induction, we know that $[[e']]$ is safe for $k-1$. So either $[[e' ~j> v]]$,
 In the first case, we have $[[e ~j+1> v]]$ which is a safe evaluation for $[[e]]$. In the 
 second case, we have $[[e ~k> e'']]$, which is also a safe evaluation for $[[e]]$.
 
+\subsection{Further reading}
+The type safety proof for the simply-typed lambda calculus is explained in a
+number of textbooks including TAPL~\cite{pierce:tapl}, PFPL~\cite{harper:pfpl}
+and Software Foundations~\cite{Pierce:SF2}.  Each of these sources defines
+type safety as the conjunction of preservation and progress.
+
+Milner~\cite{milner:polymorphism} proved a \emph{type soundness} theorem,
+which states that well-typed ML programs cannot ``go wrong''. To do so, he
+constructed a denotational semantics of the ML language that maps every ML
+program to either some mathematical value (like a number or continuous
+function), to a special element indicating divergence ($\bot$), or to a
+special element called ``wrong'' that indicates a run-time error. He then
+proved that if a program type checks, then its denotation does not include the
+``wrong'' element.
+
+Wright and Felleisen~\cite{wright:syntactic} observed that run-time errors
+could be ruled out by using a small-step operational semantics. They defined
+syntactic type soundness as showing preservation (inspired by subject
+reduction from combinatory logic), characterizing ``stuck'' or ``faulty''
+expressions, and then showing that faulty expressions are not typeable
+(i.e. progress). They put these together with a strong soundness theorem that
+says that well-typed programs either diverge or reduce to values of the
+appropriate type.

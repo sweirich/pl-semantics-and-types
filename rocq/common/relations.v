@@ -20,3 +20,12 @@ Proof.
   eapply ms_trans. eauto. 
   eapply IHmulti. auto.
 Qed.
+
+
+Inductive step_n {A} (step : A -> A -> Prop) : nat -> A -> A -> Prop := 
+  | s_done e : 
+    step_n step 0 e e
+  | s_next k e1 e2 e3 : 
+    step e1 e2 -> 
+    step_n step k e2 e3 -> 
+    step_n step (S k) e1 e3.

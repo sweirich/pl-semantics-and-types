@@ -6,65 +6,46 @@ Require Export stlc.red.
 Import TypingNotations.
 Import RedNotations.
 
-(* ----------------------------------------------------- *)
+(*** Renaming *)
 
-(** A renaming transforms terms from context Γ to context Δ
-    when the types declared in Γ are consistent with the types
-    in Δ. 
+(** A renaming transforms terms from context Γ to context Δ when the types
+    declared in Γ are consistent with the types in Δ.
+
     The renaming operation generalizes "weakening" and "permutation"
-    lemmas. The new context Δ can include new assumptions, and the 
-    order doesn't have to match up. 
-*)
-Definition typing_renaming {n} (Δ : Ctx n) {m} (δ : fin m -> fin n)
-  (Γ : Ctx m) : Prop := 
+    lemmas. The new context Δ can include new assumptions and the order of the
+    variables in the context doesn't have to be the same.  *)
+Definition typing_renaming {A}{n} (Δ : fin n -> A) {m} (δ : fin m -> fin n)
+  (Γ : fin m -> A) : Prop := 
   forall x, Γ x = Δ (δ x).
 
-(** The empty renaming is well-formed *)
-Lemma typing_renaming_null {n} (Δ : Ctx n) :
-  typing_renaming Δ null null.
-Proof. unfold typing_renaming. intros x. destruct x. Qed.
+(** The identity renaming preserves the context *)
+Lemma typing_renaming_id {A}{n} (Δ : fin n -> A) :
+  typing_renaming Δ id Δ.
+Proof. unfold typing_renaming. intros x. done. Qed.
 
-Lemma typing_renaming_lift {n} (Δ : Ctx n) 
-  {m} (Γ : Ctx m) (δ : fin m -> fin n) τ :
+(** Extend a renaming with a new definition *)
+Lemma typing_renaming_cons {A}{n} (Δ : fin n -> A) 
+  {m} (Γ : fin m -> A) (δ : fin m -> fin n) (τ : A) (x : fin n) :
   typing_renaming Δ δ Γ ->
-  typing_renaming (τ .: Δ) (var_zero .: δ >> ↑) (τ .: Γ).
-Proof. 
-  intro h.
-  unfold typing_renaming in *.
-  intros x.
-  destruct x as [y|].
-  cbn. rewrite h. done.
-  cbn. done.
-Qed.
+  typing_renaming Δ (x .: δ) (Δ x .: Γ).
+Proof. intro h. unfold typing_renaming in *. auto_case. Qed.
 
-Definition typing_subst {n} (Δ : Ctx n) {m} (σ : fin m -> Tm n)
-  (Γ : Ctx m) : Prop := 
-  forall x, typing Δ (σ x) (Γ x).
-
-Lemma typing_subst_null {n} (Δ : Ctx n) :
-  typing_subst Δ null null.
-Proof. unfold typing_subst. intros x. destruct x. Qed.
-
-Lemma typing_subst_cons {n} (Δ : Ctx n) {m} (σ : fin m -> Tm n)
-  (Γ : Ctx m) e τ : 
- typing Δ e τ ->
- typing_subst Δ σ Γ ->
- typing_subst Δ (e .: σ) (τ .: Γ).
-Proof.
-  intros tE tS.
-  unfold typing_subst in *.
-  intro x. destruct x as [y|].
-  asimpl. eauto.
-  asimpl. eauto.
-Qed.
+(** Lift a renaming to a new scope *)
+Lemma typing_renaming_lift {A}{n} (Δ : fin n -> A) 
+  {m} (Γ : fin m -> A) (δ : fin m -> fin n) (τ : A) :
+  typing_renaming Δ δ Γ ->
+  typing_renaming (τ .: Δ) (up_ren δ) (τ .: Γ).
+Proof. intro h. unfold typing_renaming in *. auto_case. Qed.
 
 (* Here's the first lemma about the typing judgement itself. 
-   A well typed term can be renamed to a new context.
-*)
+   A well typed term can be renamed to a new context. *)
+
+(** The typing judgement is stable under renaming *)
 Lemma renaming {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ : 
-  typing Γ e τ -> typing_renaming Δ δ Γ -> typing Δ e⟨δ⟩ τ.
+  Γ |- e ∈ τ -> typing_renaming Δ δ Γ -> Δ |- e⟨δ⟩ ∈ τ.
 Proof.
-  move=> h.
+  intros h.
+  (* ssreflect tactic for generalization. We need a strong IH. *)
   move: m Δ δ.
   induction h.
   all: intros m Δ δ tS.
@@ -80,17 +61,59 @@ Proof.
 
 Qed.
 
+(* Here's a more automated proof of the renaming lemma. *)
+Example renaming' {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ : 
+  Γ |- e ∈ τ -> typing_renaming Δ δ Γ -> Δ |- e⟨δ⟩ ∈ τ.
+Proof.
+  move=> h. move: m Δ δ. 
+  (* every case except var *)
+  induction h; intros; asimpl; 
+    try econstructor; eauto using typing_renaming_lift.
+  (* var case *)
+  unfold typing_renaming in *; rewrite H; econstructor; eauto.
+Qed.
+
+(*** Substitution *)
+
+(** A substitution transforms terms from context Γ to context Δ when the types
+    declared in Γ are consistent with the types in Δ. *)
+Definition typing_subst {n} (Δ : Ctx n) {m} (σ : fin m -> Tm n)
+  (Γ : Ctx m) : Prop := 
+  forall x, typing Δ (σ x) (Γ x).
+
+(** The empty substitution closes the term *)
+Lemma typing_subst_null {n} (Δ : Ctx n) :
+  typing_subst Δ null null.
+Proof. unfold typing_subst. auto_case. Qed.
+
+(** The identity substitution preserves the context *)
+Lemma typing_subst_id {n} (Δ : Ctx n) :
+  typing_subst Δ var Δ.
+Proof. unfold typing_subst. intro x. econstructor. Qed.
+
+Lemma typing_subst_cons {n} (Δ : Ctx n) {m} (σ : fin m -> Tm n)
+  (Γ : Ctx m) e τ : 
+ typing Δ e τ ->
+ typing_subst Δ σ Γ ->
+ typing_subst Δ (e .: σ) (τ .: Γ).
+Proof.
+  intros tE tS.
+  unfold typing_subst in *.
+  intro x. destruct x as [y|].
+  asimpl. eauto.
+  asimpl. eauto.
+Qed.
+
 Lemma typing_subst_lift {n} (Δ : Ctx n) {m} (σ : fin m -> Tm n)
   (Γ : Ctx m) τ : 
   typing_subst Δ σ Γ ->
-  typing_subst (τ .: Δ) (var_Tm var_zero .: σ >> ren_Tm ↑) (τ .: Γ).
+  typing_subst (τ .: Δ) (⇑ σ) (τ .: Γ).
 Proof.
   unfold typing_subst in *.
-  intros h x.
-  destruct x.
-  + asimpl. replace ((σ >> ren_Tm ↑) f) with 
-      ((ren_Tm ↑) (σ f)). 2: { asimpl. done. }
-    eapply renaming. eapply h.
+  intros h.
+  auto_case.
+  + unfold_funcomp.
+    eapply renaming; eauto. 
     unfold typing_renaming. asimpl. done.
   + asimpl. eapply t_var.
 Qed.
@@ -112,8 +135,10 @@ Proof.
 
 Qed.
 
+(*** Preservation *)
+
 Lemma preservation : forall e e', 
-    Small.step e e' -> forall τ, typing null e τ -> typing null e' τ.
+    e ⤳ e' -> forall τ, null |- e ∈ τ -> null |- e' ∈ τ.
 Proof.
   intros e e' hS.
   induction hS.
@@ -123,40 +148,45 @@ Proof.
     inversion H2.
     eapply substitution. eauto.
     eapply typing_subst_cons; auto.
-    eapply typing_subst_null; auto.
+    eapply typing_subst_id; auto.
   - (* s_app_cong1 *)
     eapply t_app; eauto.
   - (* s_app_cong2 *)    
     eapply t_app; eauto.
-
 Qed.
 
+(*** Progress *)
+
+(** Part of showing the progress lemma below is to define a lemma 
+    about the closed values of for each type. These lemmas tell us 
+    the form of that closed value. *)
 Lemma canonical_forms_Nat e : 
-  typing null e Nat ->
+  null |- e ∈ Nat ->
   is_value e = true ->
   exists k, e = lit k.
 Proof.
-  intro h.
-  dependent induction h.
-  all: cbn.
-  all: intro hV.
-  all: try done.
-  eauto.
+  intros h V.
+  (* focus on the cases where e is a value *)
+  destruct e; cbn in h; try done.
+  (* eliminate any values that don't have the right type *)
+  all: inversion h.
+  (* produce the sole witness *)
+  eexists. eauto.
 Qed.
 
 Lemma canonical_forms_Arr e τ1 τ2 : 
-  typing null e (Arr τ1 τ2) ->
+  null |- e ∈ Arr τ1 τ2 ->
   is_value e = true ->
   exists e', e = abs e'.
 Proof.
-  intros h1 h2.
-  destruct e; cbn in h2; try done.
-  all: inversion h1.
-  exists e. eauto.
+  intros h V.
+  destruct e; cbn in h; try done.
+  all: inversion h.
+  eexists. eauto.
 Qed.
 
 Lemma progress : forall e τ, 
-    typing null e τ -> is_value e = true \/ exists e', Small.step e e'.
+    null |- e ∈ τ -> is_value e = true \/ exists e', e ⤳ e'.
 Proof.
   intros e τ hT.
   dependent induction hT.
@@ -166,26 +196,27 @@ Proof.
     ++ right. destruct (IHhT2 e2); auto.
        eapply canonical_forms_Arr in H; eauto.
        destruct H as [e1' ->].
-       exists (e1' [e2 .: null]). eapply Small.s_beta; auto.
+       exists (e1' [e2..]). eapply Small.s_beta; auto.
        destruct H0 as [e2' h2].
        exists (app e1 e2'). eapply Small.s_app_cong2; auto.
     ++ right.
        destruct H as [e1' h1].
        exists (app e1' e2).
        eapply Small.s_app_cong1; auto.
-
 Qed.
+
+(*** Type safety *)
 
 (* Type safety states that a well-typed program does not get stuck. 
    in other words, it either runs forever or produces a value. 
 *)
 
-CoInductive safe_run (step : Tm 0 -> Tm 0 -> Prop) : Tm 0 -> Prop := 
-  | safe_val v : is_value v = true -> safe_run step v
-  | safe_step e e' : step e e' -> safe_run step e' -> safe_run step e.
+CoInductive safe_run (step : Tm 0 -> Tm 0 -> Prop) (e : Tm 0) : Prop := 
+  | safe_val : is_value e = true -> safe_run step e
+  | safe_step e' : step e e' -> safe_run step e' -> safe_run step e.
 
 Lemma type_safety : 
-  forall e τ, typing null e τ -> safe_run Small.step e.
+  forall e τ, null |- e ∈ τ -> safe_run Small.step e.
 Proof.
   cofix h.
   intros e τ hT.
@@ -197,42 +228,62 @@ Proof.
     eapply preservation; eauto.
 Qed.
 
+
 (* Here is another way of stating type safety. *)
-From Stdlib Require Import Psatz.
 
 (* This relation captures the idea that an expression 
-   takes exactly n steps.
+   takes exactly k steps.
    If n=0 then it takes no steps.
-   If n=Sk, then it takes 1 step and then k steps.
+   If k=Sj, then it takes 1 step and then j steps.
  *)
-Inductive step_n {A} (step : A -> A -> Prop) : nat -> A -> A -> Prop := 
-  | s_done e : step_n step 0 e e
-  | s_next k e1 e2 e3 : 
+Inductive step_k {A} (step : A -> A -> Prop) : nat -> A -> A -> Prop := 
+  | s_done e : 
+    step_k step 0 e e
+  | s_next j e1 e2 e3 : 
     step e1 e2 -> 
-    step_n step k e2 e3 -> 
-    step_n step (S k) e1 e3.
+    step_k step j e2 e3 -> 
+    step_k step (S j) e1 e3.
 
 (* A program evaluates safely for k steps, if it either 
-   halts with a value for some number of steps <= k, or 
-   if it steps for k steps.
-   A program is safe if k can be anything.
-*)
+   halts with a *value* for some number of steps <= k, or 
+   if it steps for exactly k steps (i.e. doesn't get stuck). *)
+Inductive safe_run_k (step : Tm 0 -> Tm 0 -> Prop) (k : nat) (e : Tm 0) :  Prop := 
+  | safe_val_k j v : 
+    step_k Small.step j e v -> is_value v = true -> j <= k -> safe_run_k step k e 
+  | safe_step_k e' : 
+    step_k Small.step k e e' -> safe_run_k step k e 
+.
+
+(* A program is *safe* if it runs safely for any number of steps. *)
+
 Lemma type_safety_v2 k : forall (e : Tm 0) τ ,
-    typing null e τ -> exists e', 
-      (step_n Small.step k e e' /\ typing null e' τ) \/ 
-      (exists j, j <= k /\ step_n Small.step j e e' /\ is_value e' = true).
+    null |- e ∈ τ -> safe_run_k Small.step k e.
 Proof.
   induction k.
-  + intros e τ h.
-    exists e. left. split. eapply s_done; eauto. auto.
+  + intros e τ h. eapply safe_step_k; eauto.
+    eapply s_done; eauto.
   + intros e τ h.
     destruct (progress _ _ h) as [v2|[e'' h2]].
-    ++ exists e. right. exists 0. split; eauto. lia. split. 
-       eapply s_done. auto.
-    ++ (* e -> e'' *)
-      move: (preservation _ _  h2 _ h) => h3.
-      destruct (IHk _ _ h3) as [e' [[hS hT] | [j [LT [hS V]]]]].
-      exists e'. left. split. eapply s_next; eauto. eauto.
-      exists e'. right. exists (S j). repeat split; eauto. lia. eapply s_next; eauto.
+    ++ eapply safe_val_k with (j := 0); eauto.
+       eapply s_done.
+       eapply le_0_n.
+    ++ destruct (IHk e'' τ).
+       eapply preservation; eauto.
+       - eapply safe_val_k with (j := S j); eauto.
+         eapply s_next; eauto.
+         eapply le_n_S; auto.
+       - eapply safe_step_k; eauto.
+         eapply s_next; eauto.
 Qed.
 
+
+(* Exercise: What about Wright and Felleisen's version? *)
+
+CoInductive diverges (e : Tm 0) : Prop := 
+  | go e' : Small.step e e' -> diverges e' -> diverges e.
+
+
+Lemma type_safety' :  
+  forall e τ, null |- e ∈ τ -> diverges e \/ exists v, e ⤳* v /\ is_value v = true /\ null |- v ∈ τ.
+Proof.
+Admitted.      

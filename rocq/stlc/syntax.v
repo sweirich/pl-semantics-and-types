@@ -6,27 +6,13 @@ Require Import Setoid Morphisms Relation_Definitions.
 Module Core.
 
 Inductive Tm (n_Tm : nat) : Type :=
-  | var_Tm : fin n_Tm -> Tm n_Tm
-  | lit : nat -> Tm n_Tm
-  | let_ : Tm n_Tm -> Tm (S n_Tm) -> Tm n_Tm
+  | var : fin n_Tm -> Tm n_Tm
   | abs : Tm (S n_Tm) -> Tm n_Tm
   | app : Tm n_Tm -> Tm n_Tm -> Tm n_Tm
+  | lit : nat -> Tm n_Tm
   | succ : Tm n_Tm -> Tm n_Tm
-  | nrec : Tm n_Tm -> Tm n_Tm -> Tm (S n_Tm) -> Tm n_Tm.
-
-Lemma congr_lit {m_Tm : nat} {s0 : nat} {t0 : nat} (H0 : s0 = t0) :
-  lit m_Tm s0 = lit m_Tm t0.
-Proof.
-exact (eq_trans eq_refl (ap (fun x => lit m_Tm x) H0)).
-Qed.
-
-Lemma congr_let_ {m_Tm : nat} {s0 : Tm m_Tm} {s1 : Tm (S m_Tm)}
-  {t0 : Tm m_Tm} {t1 : Tm (S m_Tm)} (H0 : s0 = t0) (H1 : s1 = t1) :
-  let_ m_Tm s0 s1 = let_ m_Tm t0 t1.
-Proof.
-exact (eq_trans (eq_trans eq_refl (ap (fun x => let_ m_Tm x s1) H0))
-         (ap (fun x => let_ m_Tm t0 x) H1)).
-Qed.
+  | nrec : Tm n_Tm -> Tm n_Tm -> Tm (S n_Tm) -> Tm n_Tm
+  | let_ : Tm n_Tm -> Tm (S n_Tm) -> Tm n_Tm.
 
 Lemma congr_abs {m_Tm : nat} {s0 : Tm (S m_Tm)} {t0 : Tm (S m_Tm)}
   (H0 : s0 = t0) : abs m_Tm s0 = abs m_Tm t0.
@@ -40,6 +26,12 @@ Lemma congr_app {m_Tm : nat} {s0 : Tm m_Tm} {s1 : Tm m_Tm} {t0 : Tm m_Tm}
 Proof.
 exact (eq_trans (eq_trans eq_refl (ap (fun x => app m_Tm x s1) H0))
          (ap (fun x => app m_Tm t0 x) H1)).
+Qed.
+
+Lemma congr_lit {m_Tm : nat} {s0 : nat} {t0 : nat} (H0 : s0 = t0) :
+  lit m_Tm s0 = lit m_Tm t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => lit m_Tm x) H0)).
 Qed.
 
 Lemma congr_succ {m_Tm : nat} {s0 : Tm m_Tm} {t0 : Tm m_Tm} (H0 : s0 = t0) :
@@ -59,6 +51,14 @@ exact (eq_trans
          (ap (fun x => nrec m_Tm t0 t1 x) H2)).
 Qed.
 
+Lemma congr_let_ {m_Tm : nat} {s0 : Tm m_Tm} {s1 : Tm (S m_Tm)}
+  {t0 : Tm m_Tm} {t1 : Tm (S m_Tm)} (H0 : s0 = t0) (H1 : s1 = t1) :
+  let_ m_Tm s0 s1 = let_ m_Tm t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => let_ m_Tm x s1) H0))
+         (ap (fun x => let_ m_Tm t0 x) H1)).
+Qed.
+
 Lemma upRen_Tm_Tm {m : nat} {n : nat} (xi : fin m -> fin n) :
   fin (S m) -> fin (S n).
 Proof.
@@ -74,49 +74,49 @@ Defined.
 Fixpoint ren_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
 (s : Tm m_Tm) {struct s} : Tm n_Tm :=
   match s with
-  | var_Tm _ s0 => var_Tm n_Tm (xi_Tm s0)
-  | lit _ s0 => lit n_Tm s0
-  | let_ _ s0 s1 =>
-      let_ n_Tm (ren_Tm xi_Tm s0) (ren_Tm (upRen_Tm_Tm xi_Tm) s1)
+  | var _ s0 => var n_Tm (xi_Tm s0)
   | abs _ s0 => abs n_Tm (ren_Tm (upRen_Tm_Tm xi_Tm) s0)
   | app _ s0 s1 => app n_Tm (ren_Tm xi_Tm s0) (ren_Tm xi_Tm s1)
+  | lit _ s0 => lit n_Tm s0
   | succ _ s0 => succ n_Tm (ren_Tm xi_Tm s0)
   | nrec _ s0 s1 s2 =>
       nrec n_Tm (ren_Tm xi_Tm s0) (ren_Tm xi_Tm s1)
         (ren_Tm (upRen_Tm_Tm xi_Tm) s2)
+  | let_ _ s0 s1 =>
+      let_ n_Tm (ren_Tm xi_Tm s0) (ren_Tm (upRen_Tm_Tm xi_Tm) s1)
   end.
 
 Lemma up_Tm_Tm {m : nat} {n_Tm : nat} (sigma : fin m -> Tm n_Tm) :
   fin (S m) -> Tm (S n_Tm).
 Proof.
-exact (scons (var_Tm (S n_Tm) var_zero) (funcomp (ren_Tm shift) sigma)).
+exact (scons (var (S n_Tm) var_zero) (funcomp (ren_Tm shift) sigma)).
 Defined.
 
 Lemma up_list_Tm_Tm (p : nat) {m : nat} {n_Tm : nat}
   (sigma : fin m -> Tm n_Tm) : fin (plus p m) -> Tm (plus p n_Tm).
 Proof.
-exact (scons_p p (funcomp (var_Tm (plus p n_Tm)) (zero_p p))
+exact (scons_p p (funcomp (var (plus p n_Tm)) (zero_p p))
          (funcomp (ren_Tm (shift_p p)) sigma)).
 Defined.
 
 Fixpoint subst_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
 (s : Tm m_Tm) {struct s} : Tm n_Tm :=
   match s with
-  | var_Tm _ s0 => sigma_Tm s0
-  | lit _ s0 => lit n_Tm s0
-  | let_ _ s0 s1 =>
-      let_ n_Tm (subst_Tm sigma_Tm s0) (subst_Tm (up_Tm_Tm sigma_Tm) s1)
+  | var _ s0 => sigma_Tm s0
   | abs _ s0 => abs n_Tm (subst_Tm (up_Tm_Tm sigma_Tm) s0)
   | app _ s0 s1 => app n_Tm (subst_Tm sigma_Tm s0) (subst_Tm sigma_Tm s1)
+  | lit _ s0 => lit n_Tm s0
   | succ _ s0 => succ n_Tm (subst_Tm sigma_Tm s0)
   | nrec _ s0 s1 s2 =>
       nrec n_Tm (subst_Tm sigma_Tm s0) (subst_Tm sigma_Tm s1)
         (subst_Tm (up_Tm_Tm sigma_Tm) s2)
+  | let_ _ s0 s1 =>
+      let_ n_Tm (subst_Tm sigma_Tm s0) (subst_Tm (up_Tm_Tm sigma_Tm) s1)
   end.
 
 Lemma upId_Tm_Tm {m_Tm : nat} (sigma : fin m_Tm -> Tm m_Tm)
-  (Eq : forall x, sigma x = var_Tm m_Tm x) :
-  forall x, up_Tm_Tm sigma x = var_Tm (S m_Tm) x.
+  (Eq : forall x, sigma x = var m_Tm x) :
+  forall x, up_Tm_Tm sigma x = var (S m_Tm) x.
 Proof.
 exact (fun n =>
        match n with
@@ -126,32 +126,32 @@ exact (fun n =>
 Qed.
 
 Lemma upId_list_Tm_Tm {p : nat} {m_Tm : nat} (sigma : fin m_Tm -> Tm m_Tm)
-  (Eq : forall x, sigma x = var_Tm m_Tm x) :
-  forall x, up_list_Tm_Tm p sigma x = var_Tm (plus p m_Tm) x.
+  (Eq : forall x, sigma x = var m_Tm x) :
+  forall x, up_list_Tm_Tm p sigma x = var (plus p m_Tm) x.
 Proof.
 exact (fun n =>
-       scons_p_eta (var_Tm (plus p m_Tm))
+       scons_p_eta (var (plus p m_Tm))
          (fun n => ap (ren_Tm (shift_p p)) (Eq n)) (fun n => eq_refl)).
 Qed.
 
 Fixpoint idSubst_Tm {m_Tm : nat} (sigma_Tm : fin m_Tm -> Tm m_Tm)
-(Eq_Tm : forall x, sigma_Tm x = var_Tm m_Tm x) (s : Tm m_Tm) {struct s} :
+(Eq_Tm : forall x, sigma_Tm x = var m_Tm x) (s : Tm m_Tm) {struct s} :
 subst_Tm sigma_Tm s = s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (idSubst_Tm sigma_Tm Eq_Tm s0)
-        (idSubst_Tm (up_Tm_Tm sigma_Tm) (upId_Tm_Tm _ Eq_Tm) s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs (idSubst_Tm (up_Tm_Tm sigma_Tm) (upId_Tm_Tm _ Eq_Tm) s0)
   | app _ s0 s1 =>
       congr_app (idSubst_Tm sigma_Tm Eq_Tm s0) (idSubst_Tm sigma_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (idSubst_Tm sigma_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (idSubst_Tm sigma_Tm Eq_Tm s0)
         (idSubst_Tm sigma_Tm Eq_Tm s1)
         (idSubst_Tm (up_Tm_Tm sigma_Tm) (upId_Tm_Tm _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (idSubst_Tm sigma_Tm Eq_Tm s0)
+        (idSubst_Tm (up_Tm_Tm sigma_Tm) (upId_Tm_Tm _ Eq_Tm) s1)
   end.
 
 Lemma upExtRen_Tm_Tm {m : nat} {n : nat} (xi : fin m -> fin n)
@@ -177,12 +177,7 @@ Fixpoint extRen_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
 (zeta_Tm : fin m_Tm -> fin n_Tm) (Eq_Tm : forall x, xi_Tm x = zeta_Tm x)
 (s : Tm m_Tm) {struct s} : ren_Tm xi_Tm s = ren_Tm zeta_Tm s :=
   match s with
-  | var_Tm _ s0 => ap (var_Tm n_Tm) (Eq_Tm s0)
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
-        (extRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
-           (upExtRen_Tm_Tm _ _ Eq_Tm) s1)
+  | var _ s0 => ap (var n_Tm) (Eq_Tm s0)
   | abs _ s0 =>
       congr_abs
         (extRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
@@ -190,12 +185,17 @@ Fixpoint extRen_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
   | app _ s0 s1 =>
       congr_app (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
         (extRen_Tm xi_Tm zeta_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
         (extRen_Tm xi_Tm zeta_Tm Eq_Tm s1)
         (extRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
            (upExtRen_Tm_Tm _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
+        (extRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
+           (upExtRen_Tm_Tm _ _ Eq_Tm) s1)
   end.
 
 Lemma upExt_Tm_Tm {m : nat} {n_Tm : nat} (sigma : fin m -> Tm n_Tm)
@@ -223,12 +223,7 @@ Fixpoint ext_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
 (tau_Tm : fin m_Tm -> Tm n_Tm) (Eq_Tm : forall x, sigma_Tm x = tau_Tm x)
 (s : Tm m_Tm) {struct s} : subst_Tm sigma_Tm s = subst_Tm tau_Tm s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
-        (ext_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm) (upExt_Tm_Tm _ _ Eq_Tm)
-           s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs
         (ext_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm) (upExt_Tm_Tm _ _ Eq_Tm)
@@ -236,12 +231,17 @@ Fixpoint ext_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
   | app _ s0 s1 =>
       congr_app (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
         (ext_Tm sigma_Tm tau_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
         (ext_Tm sigma_Tm tau_Tm Eq_Tm s1)
         (ext_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm) (upExt_Tm_Tm _ _ Eq_Tm)
            s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
+        (ext_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm) (upExt_Tm_Tm _ _ Eq_Tm)
+           s1)
   end.
 
 Lemma up_ren_ren_Tm_Tm {k : nat} {l : nat} {m : nat} (xi : fin k -> fin l)
@@ -269,12 +269,7 @@ Fixpoint compRenRen_Tm {k_Tm : nat} {l_Tm : nat} {m_Tm : nat}
  s} :
 ren_Tm zeta_Tm (ren_Tm xi_Tm s) = ren_Tm rho_Tm s :=
   match s with
-  | var_Tm _ s0 => ap (var_Tm l_Tm) (Eq_Tm s0)
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
-        (compRenRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
-           (upRen_Tm_Tm rho_Tm) (up_ren_ren _ _ _ Eq_Tm) s1)
+  | var _ s0 => ap (var l_Tm) (Eq_Tm s0)
   | abs _ s0 =>
       congr_abs
         (compRenRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
@@ -282,12 +277,17 @@ ren_Tm zeta_Tm (ren_Tm xi_Tm s) = ren_Tm rho_Tm s :=
   | app _ s0 s1 =>
       congr_app (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
         (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
         (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s1)
         (compRenRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
            (upRen_Tm_Tm rho_Tm) (up_ren_ren _ _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
+        (compRenRen_Tm (upRen_Tm_Tm xi_Tm) (upRen_Tm_Tm zeta_Tm)
+           (upRen_Tm_Tm rho_Tm) (up_ren_ren _ _ _ Eq_Tm) s1)
   end.
 
 Lemma up_ren_subst_Tm_Tm {k : nat} {l : nat} {m_Tm : nat}
@@ -324,12 +324,7 @@ Fixpoint compRenSubst_Tm {k_Tm : nat} {l_Tm : nat} {m_Tm : nat}
  s} :
 subst_Tm tau_Tm (ren_Tm xi_Tm s) = subst_Tm theta_Tm s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
-        (compRenSubst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm tau_Tm)
-           (up_Tm_Tm theta_Tm) (up_ren_subst_Tm_Tm _ _ _ Eq_Tm) s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs
         (compRenSubst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm tau_Tm)
@@ -337,12 +332,17 @@ subst_Tm tau_Tm (ren_Tm xi_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
         (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
         (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s1)
         (compRenSubst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm tau_Tm)
            (up_Tm_Tm theta_Tm) (up_ren_subst_Tm_Tm _ _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
+        (compRenSubst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm tau_Tm)
+           (up_Tm_Tm theta_Tm) (up_ren_subst_Tm_Tm _ _ _ Eq_Tm) s1)
   end.
 
 Lemma up_subst_ren_Tm_Tm {k : nat} {l_Tm : nat} {m_Tm : nat}
@@ -379,7 +379,7 @@ Proof.
 exact (fun n =>
        eq_trans (scons_p_comp' _ _ _ n)
          (scons_p_congr
-            (fun x => ap (var_Tm (plus p m_Tm)) (scons_p_head' _ _ x))
+            (fun x => ap (var (plus p m_Tm)) (scons_p_head' _ _ x))
             (fun n =>
              eq_trans
                (compRenRen_Tm (shift_p p) (upRen_list_Tm_Tm p zeta_Tm)
@@ -400,12 +400,7 @@ Fixpoint compSubstRen_Tm {k_Tm : nat} {l_Tm : nat} {m_Tm : nat}
 (s : Tm m_Tm) {struct s} :
 ren_Tm zeta_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
-        (compSubstRen_Tm (up_Tm_Tm sigma_Tm) (upRen_Tm_Tm zeta_Tm)
-           (up_Tm_Tm theta_Tm) (up_subst_ren_Tm_Tm _ _ _ Eq_Tm) s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs
         (compSubstRen_Tm (up_Tm_Tm sigma_Tm) (upRen_Tm_Tm zeta_Tm)
@@ -413,6 +408,7 @@ ren_Tm zeta_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
         (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 =>
       congr_succ (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -420,6 +416,10 @@ ren_Tm zeta_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
         (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s1)
         (compSubstRen_Tm (up_Tm_Tm sigma_Tm) (upRen_Tm_Tm zeta_Tm)
            (up_Tm_Tm theta_Tm) (up_subst_ren_Tm_Tm _ _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
+        (compSubstRen_Tm (up_Tm_Tm sigma_Tm) (upRen_Tm_Tm zeta_Tm)
+           (up_Tm_Tm theta_Tm) (up_subst_ren_Tm_Tm _ _ _ Eq_Tm) s1)
   end.
 
 Lemma up_subst_subst_Tm_Tm {k : nat} {l_Tm : nat} {m_Tm : nat}
@@ -456,7 +456,7 @@ Lemma up_subst_subst_list_Tm_Tm {p : nat} {k : nat} {l_Tm : nat} {m_Tm : nat}
 Proof.
 exact (fun n =>
        eq_trans
-         (scons_p_comp' (funcomp (var_Tm (plus p l_Tm)) (zero_p p)) _ _ n)
+         (scons_p_comp' (funcomp (var (plus p l_Tm)) (zero_p p)) _ _ n)
          (scons_p_congr
             (fun x => scons_p_head' _ (fun z => ren_Tm (shift_p p) _) x)
             (fun n =>
@@ -478,12 +478,7 @@ Fixpoint compSubstSubst_Tm {k_Tm : nat} {l_Tm : nat} {m_Tm : nat}
 (s : Tm m_Tm) {struct s} :
 subst_Tm tau_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
-        (compSubstSubst_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm)
-           (up_Tm_Tm theta_Tm) (up_subst_subst_Tm_Tm _ _ _ Eq_Tm) s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs
         (compSubstSubst_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm)
@@ -491,6 +486,7 @@ subst_Tm tau_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
         (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 =>
       congr_succ (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -498,6 +494,10 @@ subst_Tm tau_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
         (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s1)
         (compSubstSubst_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm)
            (up_Tm_Tm theta_Tm) (up_subst_subst_Tm_Tm _ _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
+        (compSubstSubst_Tm (up_Tm_Tm sigma_Tm) (up_Tm_Tm tau_Tm)
+           (up_Tm_Tm theta_Tm) (up_subst_subst_Tm_Tm _ _ _ Eq_Tm) s1)
   end.
 
 Lemma renRen_Tm {k_Tm : nat} {l_Tm : nat} {m_Tm : nat}
@@ -567,8 +567,8 @@ Qed.
 
 Lemma rinstInst_up_Tm_Tm {m : nat} {n_Tm : nat} (xi : fin m -> fin n_Tm)
   (sigma : fin m -> Tm n_Tm)
-  (Eq : forall x, funcomp (var_Tm n_Tm) xi x = sigma x) :
-  forall x, funcomp (var_Tm (S n_Tm)) (upRen_Tm_Tm xi) x = up_Tm_Tm sigma x.
+  (Eq : forall x, funcomp (var n_Tm) xi x = sigma x) :
+  forall x, funcomp (var (S n_Tm)) (upRen_Tm_Tm xi) x = up_Tm_Tm sigma x.
 Proof.
 exact (fun n =>
        match n with
@@ -579,28 +579,23 @@ Qed.
 
 Lemma rinstInst_up_list_Tm_Tm {p : nat} {m : nat} {n_Tm : nat}
   (xi : fin m -> fin n_Tm) (sigma : fin m -> Tm n_Tm)
-  (Eq : forall x, funcomp (var_Tm n_Tm) xi x = sigma x) :
+  (Eq : forall x, funcomp (var n_Tm) xi x = sigma x) :
   forall x,
-  funcomp (var_Tm (plus p n_Tm)) (upRen_list_Tm_Tm p xi) x =
+  funcomp (var (plus p n_Tm)) (upRen_list_Tm_Tm p xi) x =
   up_list_Tm_Tm p sigma x.
 Proof.
 exact (fun n =>
-       eq_trans (scons_p_comp' _ _ (var_Tm (plus p n_Tm)) n)
+       eq_trans (scons_p_comp' _ _ (var (plus p n_Tm)) n)
          (scons_p_congr (fun z => eq_refl)
             (fun n => ap (ren_Tm (shift_p p)) (Eq n)))).
 Qed.
 
 Fixpoint rinst_inst_Tm {m_Tm : nat} {n_Tm : nat}
 (xi_Tm : fin m_Tm -> fin n_Tm) (sigma_Tm : fin m_Tm -> Tm n_Tm)
-(Eq_Tm : forall x, funcomp (var_Tm n_Tm) xi_Tm x = sigma_Tm x) (s : Tm m_Tm)
+(Eq_Tm : forall x, funcomp (var n_Tm) xi_Tm x = sigma_Tm x) (s : Tm m_Tm)
 {struct s} : ren_Tm xi_Tm s = subst_Tm sigma_Tm s :=
   match s with
-  | var_Tm _ s0 => Eq_Tm s0
-  | lit _ s0 => congr_lit (eq_refl s0)
-  | let_ _ s0 s1 =>
-      congr_let_ (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
-        (rinst_inst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm sigma_Tm)
-           (rinstInst_up_Tm_Tm _ _ Eq_Tm) s1)
+  | var _ s0 => Eq_Tm s0
   | abs _ s0 =>
       congr_abs
         (rinst_inst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm sigma_Tm)
@@ -608,16 +603,21 @@ Fixpoint rinst_inst_Tm {m_Tm : nat} {n_Tm : nat}
   | app _ s0 s1 =>
       congr_app (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
         (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s1)
+  | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
       congr_nrec (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
         (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s1)
         (rinst_inst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm sigma_Tm)
            (rinstInst_up_Tm_Tm _ _ Eq_Tm) s2)
+  | let_ _ s0 s1 =>
+      congr_let_ (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
+        (rinst_inst_Tm (upRen_Tm_Tm xi_Tm) (up_Tm_Tm sigma_Tm)
+           (rinstInst_up_Tm_Tm _ _ Eq_Tm) s1)
   end.
 
 Lemma rinstInst'_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
-  (s : Tm m_Tm) : ren_Tm xi_Tm s = subst_Tm (funcomp (var_Tm n_Tm) xi_Tm) s.
+  (s : Tm m_Tm) : ren_Tm xi_Tm s = subst_Tm (funcomp (var n_Tm) xi_Tm) s.
 Proof.
 exact (rinst_inst_Tm xi_Tm _ (fun n => eq_refl) s).
 Qed.
@@ -625,20 +625,20 @@ Qed.
 Lemma rinstInst'_Tm_pointwise {m_Tm : nat} {n_Tm : nat}
   (xi_Tm : fin m_Tm -> fin n_Tm) :
   pointwise_relation _ eq (ren_Tm xi_Tm)
-    (subst_Tm (funcomp (var_Tm n_Tm) xi_Tm)).
+    (subst_Tm (funcomp (var n_Tm) xi_Tm)).
 Proof.
 exact (fun s => rinst_inst_Tm xi_Tm _ (fun n => eq_refl) s).
 Qed.
 
-Lemma instId'_Tm {m_Tm : nat} (s : Tm m_Tm) : subst_Tm (var_Tm m_Tm) s = s.
+Lemma instId'_Tm {m_Tm : nat} (s : Tm m_Tm) : subst_Tm (var m_Tm) s = s.
 Proof.
-exact (idSubst_Tm (var_Tm m_Tm) (fun n => eq_refl) s).
+exact (idSubst_Tm (var m_Tm) (fun n => eq_refl) s).
 Qed.
 
 Lemma instId'_Tm_pointwise {m_Tm : nat} :
-  pointwise_relation _ eq (subst_Tm (var_Tm m_Tm)) id.
+  pointwise_relation _ eq (subst_Tm (var m_Tm)) id.
 Proof.
-exact (fun s => idSubst_Tm (var_Tm m_Tm) (fun n => eq_refl) s).
+exact (fun s => idSubst_Tm (var m_Tm) (fun n => eq_refl) s).
 Qed.
 
 Lemma rinstId'_Tm {m_Tm : nat} (s : Tm m_Tm) : ren_Tm id s = s.
@@ -653,29 +653,28 @@ exact (fun s => eq_ind_r (fun t => t = s) (instId'_Tm s) (rinstInst'_Tm id s)).
 Qed.
 
 Lemma varL'_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
-  (x : fin m_Tm) : subst_Tm sigma_Tm (var_Tm m_Tm x) = sigma_Tm x.
+  (x : fin m_Tm) : subst_Tm sigma_Tm (var m_Tm x) = sigma_Tm x.
 Proof.
 exact (eq_refl).
 Qed.
 
 Lemma varL'_Tm_pointwise {m_Tm : nat} {n_Tm : nat}
   (sigma_Tm : fin m_Tm -> Tm n_Tm) :
-  pointwise_relation _ eq (funcomp (subst_Tm sigma_Tm) (var_Tm m_Tm))
-    sigma_Tm.
+  pointwise_relation _ eq (funcomp (subst_Tm sigma_Tm) (var m_Tm)) sigma_Tm.
 Proof.
 exact (fun x => eq_refl).
 Qed.
 
 Lemma varLRen'_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
-  (x : fin m_Tm) : ren_Tm xi_Tm (var_Tm m_Tm x) = var_Tm n_Tm (xi_Tm x).
+  (x : fin m_Tm) : ren_Tm xi_Tm (var m_Tm x) = var n_Tm (xi_Tm x).
 Proof.
 exact (eq_refl).
 Qed.
 
 Lemma varLRen'_Tm_pointwise {m_Tm : nat} {n_Tm : nat}
   (xi_Tm : fin m_Tm -> fin n_Tm) :
-  pointwise_relation _ eq (funcomp (ren_Tm xi_Tm) (var_Tm m_Tm))
-    (funcomp (var_Tm n_Tm) xi_Tm).
+  pointwise_relation _ eq (funcomp (ren_Tm xi_Tm) (var m_Tm))
+    (funcomp (var n_Tm) xi_Tm).
 Proof.
 exact (fun x => eq_refl).
 Qed.
@@ -709,7 +708,7 @@ Instance Up_Tm_Tm  {m n_Tm : nat}: (Up_Tm _ _) := (@up_Tm_Tm m n_Tm).
 Instance Ren_Tm  {m_Tm n_Tm : nat}: (Ren1 _ _ _) := (@ren_Tm m_Tm n_Tm).
 
 #[global]
-Instance VarInstance_Tm  {n_Tm : nat}: (Var _ _) := (@var_Tm n_Tm).
+Instance VarInstance_Tm  {n_Tm : nat}: (Var _ _) := (@var n_Tm).
 
 Notation "s [ sigma_Tm ]" := (subst_Tm sigma_Tm s)
 ( at level 7, left associativity, only printing)  : subst_scope.
@@ -721,13 +720,12 @@ Notation "↑__Tm" := up_Tm_Tm (only printing)  : subst_scope.
 Notation "s ⟨ xi_Tm ⟩" := (ren_Tm xi_Tm s)
 ( at level 7, left associativity, only printing)  : subst_scope.
 
-Notation "'var'" := var_Tm ( at level 1, only printing)  : subst_scope.
+Notation "'var'" := var ( at level 1, only printing)  : subst_scope.
 
 Notation "x '__Tm'" := (@ids _ _ VarInstance_Tm x)
 ( at level 5, format "x __Tm", only printing)  : subst_scope.
 
-Notation "x '__Tm'" := (var_Tm x) ( at level 5, format "x __Tm")  :
-subst_scope.
+Notation "x '__Tm'" := (var x) ( at level 5, format "x __Tm")  : subst_scope.
 
 #[global]
 Instance subst_Tm_morphism  {m_Tm : nat} {n_Tm : nat}:
@@ -821,19 +819,19 @@ Module Extra.
 Import
 Core.
 
-Arguments var_Tm {n_Tm}.
+Arguments var {n_Tm}.
+
+Arguments let_ {n_Tm}.
 
 Arguments nrec {n_Tm}.
 
 Arguments succ {n_Tm}.
 
+Arguments lit {n_Tm}.
+
 Arguments app {n_Tm}.
 
 Arguments abs {n_Tm}.
-
-Arguments let_ {n_Tm}.
-
-Arguments lit {n_Tm}.
 
 #[global] Hint Opaque subst_Tm: rewrite.
 

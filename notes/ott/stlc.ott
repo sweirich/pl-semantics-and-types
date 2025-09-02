@@ -93,19 +93,19 @@ e :: 'tm_' ::=
  
   | e < xi >         :: M :: RenOp      {{ com renaming }}
 
-  | e , rho          :: M :: Closure    
+  | < rho , e >      :: M :: Closure    
 
 
   | succ e           ::   :: Succ
 
-  | natrec e of { zero => e0 ; succ x => e1 }  ::   :: Natrec 
+  | nrec e of { zero => e0 ; succ x => e1 }  ::   :: Nrec 
       {{ com recursor for natural numbers }}
 
   | ( e : tau )      ::   :: Ann        {{ com type annotation }}
 
   | ( e )            :: S :: Paren      {{ com parenthesis }}
 
-v :: 'v_' ::= 
+v , w :: 'v_' ::= 
 {{ com values }}
 
   | \ x . e         ::   :: Lam
@@ -120,10 +120,9 @@ v :: 'v_' ::=
 
   | rho x           :: M :: LookupRho
 
-  | v , rho         :: M :: Closure
+  | < rho , e >     :: M :: Clos
 
   | ( v )           :: S :: Paren
-
 
 
 subrules
@@ -190,6 +189,7 @@ defn
 
 G |- e : tau   ::   :: typing :: 't_'
 {{ com Typing }}
+{{ tex [[G]] |- [[e]] \in [[tau]] }}
 by
 
 ------------ :: lit
@@ -212,7 +212,7 @@ G |- e : Nat
 G |- e0 : tau
 G , x : Nat |- e1 : tau -> tau
 ------------------------------- :: nrec
-G |- natrec e of { zero => e0 ; succ x => e1 } : tau
+G |- nrec e of { zero => e0 ; succ x => e1 } : tau
 
 G, x:tau1 |- e : tau2
 ------------------------  ::  abs
@@ -259,14 +259,14 @@ succ e ~> succ e'
 
 
 -------------------------- :: nrec_zero
-natrec 0 of { zero => e1 ; succ x =>  e2 } ~> e1
+nrec 0 of { zero => e1 ; succ x =>  e2 } ~> e1
 
 ----------------------------------------------- :: nrec_succ
-natrec (1+k) of { zero => e1 ; succ x => e2 } ~> (e2[k/x]) (natrec v of {zero => e1 ; succ x => e2})
+nrec (1+k) of { zero => e1 ; succ x => e2 } ~> (e2[k/x]) (nrec v of {zero => e1 ; succ x => e2})
 
 e ~> e'
 --------------------------------- :: nrec_cong
-natrec e of { zero => e1 ; succ x => e2 }  ~> natrec e' of { zero => e1; succ x => e2 }
+nrec e of { zero => e1 ; succ x => e2 }  ~> nrec e' of { zero => e1; succ x => e2 }
 
 defn
 e ~>* e' ::  :: multi :: 'ms_'
@@ -327,62 +327,80 @@ e => k
 --------------------- :: succ
 succ e => succ k
 
-e => 0
-e1 => v
-------------------------- :: nrec_zero
-natrec e of {zero => e1 ; succ x => e2 }  => v
+e => k
+nrec_k of { zero => e0 ; succ x => e1 } => v
+--------------------------------------------- :: nrec
+nrec e of { zero => e0 ; succ x => e1 } => v
 
-e => 1+k
-%% (e1 [k / x]) (natrec k e1 e2) => v
+
+defn 
+nrec_ k of { zero => e0 ; succ x => e1 } => v ::   :: big_nrec :: 'big_nrec_'
+by 
+
+e0 => v
+------------------------------------------------ :: nrec_zero
+nrec_ 0 of {zero => e0 ; succ x => e1 }  => v
+
+e1 [k / x] => \y. e' 
+nrec_ k of { zero => e0 ; succ x => e1 } => v1
+e' [ v1 / y] => v
 --------------------------------------------- :: nrec_succ
-natrec e of {zero=> e1 ; succ x => e2 } => v
-
-
-
+nrec_ (1+k) of {zero=> e0 ; succ x => e1 } => v
 
 defns
 JBigEnv :: '' ::=
 
 defn
-rho |- e => v ::   :: big_eng :: 'big_env_' 
+< rho | e > => w ::   :: big_env :: 'big_env_' 
 {{ com big-step semantics }}
 by
 
 
 ---------------------- :: var
-rho |- x => rho x
+< rho | x > => rho x
 
 
 ------------------ :: lit
-rho |- k => k
+< rho | k > => k
 
-------------------------- :: cons
-rho |- \x.e => \x.e , rho
+------------------------------- :: abs
+< rho | \x.e > => < rho , \x.e >
 
 
-rho |- e1 => v1
-v1/x,rho |- e2 => v2
+< rho | e1 > => v1
+< v1/x,rho | e2> => v2
 -----------------------   :: let
-rho |- let x = e1 in e2 => v2
+<rho | let x = e1 in e2 > => v2
 
 
-rho |- e1 => \x.e1', rho'
-rho |- e2 => v1
-v1/x,rho' |- e1' => v2
+<rho | e1 > => < rho' , \x.e1' >
+<rho | e2 > => v1
+<v1/x,rho' | e1'> => v2
 --------------------  :: app
-rho |- e1 e2 => v2
+<rho | e1 e2 > => v2
 
-rho |- e => k
+<rho | e> => k
 -------------------------- :: succ
-rho |- succ e => succ k
+<rho | succ e> => succ k
 
 
-rho |- e => 0
-rho |- e1 => v
+<rho | e> => k
+<rho | nrec_ k of {zero => e0 ; succ x => e1 }> => v
+------------------------------------------------------ :: nrec
+<rho | nrec e of { zero => e0 ; succ x => e1 }> => v
+
+
+defn 
+< rho | nrec_ k of { zero => e0 ; succ x => e1 } > => v ::   :: big_env_nrec :: 'big_env_nrec_'
+by 
+
+
+<rho | e1 > => v
 ---------------------------------------------------- :: nrec_zero
-rho |- natrec e of { zero=> e1 ; succ x => e2 } => v
+<rho | nrec_ 0 of { zero=> e0 ; succ x => e1 }> => v
 
-rho |- e => 1+k
-rho |- e1 [k/x] (natrec v1 of { zero => e1 ; succ x => e2}) => v2
+<rho | nrec_ k of { zero => e0 ; succ x => e1}> => v1
+< k/x, rho | e1 > =>  < rho' , \y.e' >
+< v1/y, rho' | e > => v2
 ------------------------------------------------------------------ :: nrec_succ
-rho |- natrec e of { zero=> e1 ; succ x => e2 } => v2
+<rho | nrec_ 1+k of { zero=> e0 ; succ x => e1 }> => v2

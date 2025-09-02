@@ -1,0 +1,73 @@
+@book            {Pierce:SF2,
+    author       =   {Benjamin C. Pierce and
+                     Arthur Azevedo de Amorim and
+                     Chris Casinghino and
+                     Marco Gaboardi and
+                     Michael Greenberg and
+                     Cătălin Hriţcu and
+                     Vilhelm Sjöberg and
+                     Andrew Tolmach and
+                     Brent Yorgey},
+    editor       =   {Benjamin C. Pierce},
+    title        =   "Programming Language Foundations",
+    series       =   "Software Foundations",
+    volume       =   "2",
+    year         =   "2025",
+    publisher    =   "Electronic textbook",
+    note         =   {Version 6.7,
+                      \url{http://softwarefoundations.cis.upenn.edu} },
+    }
+
+
+@book{harper:pfpl,
+author = {Harper, Robert},
+title = {Practical Foundations for Programming Languages},
+year = {2016},
+isbn = {1107150302},
+publisher = {Cambridge University Press},
+address = {USA},
+edition = {2nd},
+abstract = {This text develops a comprehensive theory of programming languages based on type systems and structural operational semantics. Language concepts are precisely defined by their static and dynamic semantics, presenting the essential tools both intuitively and rigorously while relying on only elementary mathematics. These tools are used to analyze and prove properties of languages and provide the framework for combining and comparing language features. The broad range of concepts includes fundamental data types such as sums and products, polymorphic and abstract types, dynamic typing, dynamic dispatch, subtyping and refinement types, symbols and dynamic classification, parallelism and cost semantics, and concurrency and distribution. The methods are directly applicable to language implementation, to the development of logics for reasoning about programs, and to the formal verification language properties such as type safety. This thoroughly revised second edition includes exercises at the end of nearly every chapter and a new chapter on type refinements.}
+}
+
+@book{pierce:tapl,
+  author = {Benjamin C. Pierce},
+  title = {Types and Programming Languages},
+  publisher = {MIT Press},
+  year = 2002,
+  plclub = {Yes},
+  bcp = {Yes},
+  keys = {books},
+  homepage = {http://www.cis.upenn.edu/~bcpierce/tapl},
+  errata = {http://www.cis.upenn.edu/~bcpierce/tapl/errata.txt}
+}
+
+
+
+@article{wright:syntactic,
+title = {A Syntactic Approach to Type Soundness},
+journal = {Information and Computation},
+volume = {115},
+number = {1},
+pages = {38-94},
+year = {1994},
+issn = {0890-5401},
+doi = {https://doi.org/10.1006/inco.1994.1093},
+url = {https://www.sciencedirect.com/science/article/pii/S0890540184710935},
+author = {A.K. Wright and M. Felleisen},
+abstract = {We present a new approach to proving type soundness for Hindley/Milner-style polymorphic type systems. The keys to our approach are (1) an adaptation of subject reduction theorems from combinatory logic to programming languages, and (2) the use of rewriting techniques for the specification of the language semantics. The approach easily extends from polymorphic functional languages to imperative languages that provide references, exceptions, continuations, and similar features. We illustrate the technique with a type soundness theorem for the core of Standard ML, which includes the first type soundness proof for polymorphic exceptions and continuations.}
+}
+
+@article{milner:polymorphism,
+title = {A theory of type polymorphism in programming},
+journal = {Journal of Computer and System Sciences},
+volume = {17},
+number = {3},
+pages = {348-375},
+year = {1978},
+issn = {0022-0000},
+doi = {https://doi.org/10.1016/0022-0000(78)90014-4},
+url = {https://www.sciencedirect.com/science/article/pii/0022000078900144},
+author = {Robin Milner},
+abstract = {The aim of this work is largely a practical one. A widely employed style of programming, particularly in structure-processing languages which impose no discipline of types, entails defining procedures which work well on objects of a wide variety. We present a formal type discipline for such polymorphic procedures in the context of a simple programming language, and a compile time type-checking algorithm W which enforces the discipline. A Semantic Soundness Theorem (based on a formal semantics for the language) states that well-type programs cannot “go wrong” and a Syntactic Soundness Theorem states that if W accepts a program then it is well typed. We also discuss extending these results to richer languages; a type-checking algorithm based on W is in fact already implemented and working, for the metalanguage ML in the Edinburgh LCF system.}
+}
