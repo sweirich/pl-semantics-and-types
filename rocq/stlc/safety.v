@@ -276,14 +276,3 @@ Proof.
          eapply s_next; eauto.
 Qed.
 
-
-(* Exercise: What about Wright and Felleisen's version? *)
-
-CoInductive diverges (e : Tm 0) : Prop := 
-  | go e' : Small.step e e' -> diverges e' -> diverges e.
-
-
-Lemma type_safety' :  
-  forall e τ, null |- e ∈ τ -> diverges e \/ exists v, e ⤳* v /\ is_value v = true /\ null |- v ∈ τ.
-Proof.
-Admitted.      
