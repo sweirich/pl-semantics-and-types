@@ -385,11 +385,29 @@ but cannot step).
 If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ such that 
 $[[ e ~> e' ]]$.
 \end{lemma}
+We prove this lemma by induction in the typing derivation. In the rules where 
+$[[e]]$ is already a value, then the proof is trivial.
+Therefore we only need to consider when $[[e]]$ is an application of the 
+form $[[e1 e2]]$, where $[[ |- e1 : tau1 -> tau]]$ and $[[ |- e2 : tau1 ]]$.
+By induction on the first premise, we know that either $[[e1]]$ is a value or 
+that it takes a step to some $[[e1']]$. If it takes a step, the entire 
+application takes a step by \rref{s-app-cong1} and we are done.
+Otherwise, if it is a value, then we know that 
+it must be of the form $[[\x.e']]$, because it must have a function type.
+By induction on the second premise, we know that either $[[e2]]$ is a value or 
+that it takes a step to some $[[e2']]$. In the former case, the application 
+steps to $[[e'[e2/x] ]]$ by \rref{s-beta}, in the latter case, the application 
+steps to $[[(\x.e') e2']]$ by \rref{s-app-cong2}.
+
 
 \section{What is type safety?}
-We claimed that type safety means that well-typed programs do not get
-stuck. But what does this mean? Is that what we have really proven?  Not
-really.
+We above claimed that type safety means that well-typed programs do not get
+stuck. But what does this mean? Is that what we have really proven?  
+
+There are languages and type systems that do not satisfy both of these lemmas,
+yet we still might like to say that they are type safe. Can we come up with a
+more general definition? Something that is implied by preservation/progress
+but doesn't itself require them to be true.
 
 Perhaps we would like to prove something like below, where the multistep
 relation $[[~>*]]$ is iteration of the single-step relation any number of
