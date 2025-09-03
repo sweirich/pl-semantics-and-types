@@ -1,9 +1,29 @@
 \newif\ifcomments     %% include author discussion
 \commentsfalse        %% toggle comments here
 
-\documentclass{article}
+\documentclass{book}
 
-\usepackage{fullpage}
+\setlength{\marginparwidth}{2in}
+\setlength{\marginparsep}{0.15in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{1.5in}
+\setlength{\textwidth}{5in}
+\setlength{\topmargin}{0in}
+\setlength{\headheight}{0.2in}
+\setlength{\headsep}{0.35in}
+\setlength{\textheight}{8.4in}
+\setlength{\footskip}{0.35in}
+\raggedbottom
+\renewcommand{\baselinestretch}{1}
+\usepackage{palatino}
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+   {\fontfamily{ppl}\selectfont\Huge\bfseries}
+   {\filleft\fontsize{48}{48}\fontfamily{ppl}\selectfont\thechapter}
+   {1ex}
+   {\titlerule\vspace{1ex}\filleft}
+   [\vspace{1ex}\titlerule]
+
 
 \usepackage{bigfoot}
 \usepackage{amsmath,amssymb,amsthm}
@@ -37,6 +57,7 @@
 \newtheorem{definition}{Definition}[section]
 \newtheorem{lemma}{Lemma}[section]
 \newtheorem{corollary}{Corollary}[section]
+\newtheorem{conjecture}{Conjecture}[section]
 
 % force footnotes to be on a single page
 \interfootnotelinepenalty=10000
@@ -46,13 +67,18 @@
 
 \begin{document}
 
+\frontmatter
 \maketitle
+\tableofcontents
 
 \inputott{all-rules}
 
 % \section{Introduction}
 
+\mainmatter
 \input{stlc}
+
+\backmatter
 
 \bibliographystyle{alpha}
 \bibliography{references}

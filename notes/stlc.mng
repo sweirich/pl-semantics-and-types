@@ -1,15 +1,29 @@
-\section{The Simply-Typed Lambda Calculus}
+\chapter[Type Safety for STLC]{Type Safety for a Simply-Typed Lambda Calculus}
 
-This section gives a precise definition of the syntax of the simply-typed
-lambda calculus, its type system and operational semantics. If you are new to
-programming language theory, this writeup introduces some of the mathematical
-concepts that we will be using throughout the semester, such as inductively
-defined grammars, recursive definitions, and proofs by structural induction.
+This section gives a precise definition of the syntax of a simply-typed
+lambda calculus, its type system and small-step operational semantics. For 
+conciseness, we often refer to this language as STLC.
 
-\subsection{Syntax}
+If you are new to programming language theory, this section also introduces
+some of the mathematical concepts that we will be using throughout the
+semester, such as inductively defined grammars, recursive definitions, and
+proofs by structural induction.
+
+STLC is actually a family of simple languages, with some freedom in the sorts
+of features that are included. There must always be some sort of ``primitive''
+type such as booleans, numbers, or even a unit type. And STLC always includes
+first-class functions, i.e. $\lambda$-terms, making it a simplified version of
+typed functional languages such as ML or Haskell. However, in other contexts
+you may see it extended with various other features, such as records,
+products, disjoint unions, variant types, etc.
+
+\section{Syntax}
+
 The syntax of the simply-typed lambda calculus is defined by a set of terms
-and their associated set of types. By convention, we will use $[[e]]$ to refer
-to some arbitrary term and $[[e]]$ to refer to some arbitrary type.
+and their associated set of types. By convention, we will use the metavariable
+$[[e]]$ to refer to some arbitrary term and $[[tau]]$ to refer to some
+arbitrary type. If you are familiar with algebraic datatypes, or inductive
+datatypes, you can think of the following definitions along those lines.
 
 \begin{definition}[Types]
 The set of types is inductively defined by the following rules:
@@ -33,16 +47,20 @@ The variable $x$ is the parameter and $e$ is the body is the body of the abstrac
 
 The definition of terms refers to two other sets: natural numbers and
 variables. The set of natural numbers, $\mathbb{N}$, are an infinite set of
-numbers 0, 1, \ldots; we will use $i$, $j$ and $k$ to refer to arbitrary natural numbers. We will treat variables more abstractly. We assume that
-there is some infinite set of variable names, called $[[vars]]$, and that
-given any finite set of variables, we can always find some variable that is
-not in contained in that set. (We call this variable \emph{fresh} because we
-haven't used it yet.)
+numbers 0, 1, \ldots; we will use $i$, $j$ and $k$ to refer to arbitrary
+natural numbers. We treat variables more abstractly. We assume that there is
+some infinite set of variable \emph{names}, called $[[vars]]$, and that given
+any finite set of variables, we can always find some variable that is not in
+contained in that set. (We call such a variable \emph{fresh} because we
+haven't used it yet.) If you like, you can think of names more concretely as
+strings or numbers, but we won't allow all of the usual operations on strings
+and numbers to be applied to names.
 
-Now, the above is a wordy way of describing an inductively-defined grammar of
-abstract syntax trees.  In the future, we will use a more concise notation,
-called Bakus-Naur form. For example, in BNF form, we can provide a concise
-definition of the grammars for types and terms as follows. 
+Now, the above definitions are a wordy way of describing an
+inductively-defined grammar of abstract syntax trees.  In the future, we will
+use a more concise notation, called Bakus-Naur form. For example, in BNF form,
+we can provide a concise definition of the grammars for types and terms as
+follows.
 
 \begin{definition}[STLC Syntax (concise form)]
 \[
@@ -72,8 +90,8 @@ that occur \emph{free} in some term $[[e]]$, by structural recursion.
 \begin{array}{lcll}
 [[ fv(k)       ]] &=& [[ emptyset ]]  & \textit{ emptyset }  \\
 [[ fv(x)       ]] &=& [[ { x } ]]  & \textit{ a singleton set } \\
-[[ fv(e1 e2)   ]] &=& [[ (fv e1) U (fv e2) ]] & \textit{ union of sets } \\
-[[ fv(\x . e)  ]] &=& [[ (fv e) - { x } ]] & \textit{ remove bound variable } \\
+[[ fv(e1 e2)   ]] &=& [[ fv(e1) U fv(e2) ]] & \textit{ union of sets } \\
+[[ fv(\x . e)  ]] &=& [[ fv(e) - { x } ]] & \textit{ remove variable $x$ } \\
 \end{array}
 \]
 \end{definition}
@@ -100,7 +118,8 @@ like to change the names of free variables in terms.
 A \emph{renaming}, $[[xi]]$, is a mapping from variables to variables. A
 renaming has a \emph{domain}, $[[dom xi]]$ and a \emph{range} $[[rng xi]]$.
 We use the notation $[[y/x]]$ for a single renaming that maps $[[x]]$ to
-$[[y]]$, and the notation $[[y/x,xi]]$ to extend an existing renaming with a new replacement for $[[x]]$. 
+$[[y]]$, and the notation $[[y/x,xi]]$ to extend an existing renaming with a
+new replacement for $[[x]]$.
 
 \begin{definition}[Renaming application] We define the application of a
   renaming to a term, written with postfix notation $[[e<xi>]]$, as follows:
@@ -109,7 +128,7 @@ $[[y]]$, and the notation $[[y/x,xi]]$ to extend an existing renaming with a new
 [[ k< xi >      ]] &=& [[ k ]] \\
 [[ x< xi >      ]] &=& [[ xi x ]] \\
 [[ (e1 e2) < xi >  ]] &=& [[ (e1 <xi>) (e2 <xi>) ]] \\
-[[ (\x . e) < xi > ]] &=& [[ \x . (e < x/x, xi >) ]] \\
+[[ (\x . e) < xi > ]] &=& [[ \y . (e < y/x, xi >) ]] \mbox{ for $y$ not in $[[rng xi]]$} \\
 \end{array}
 \]
 \end{definition}
@@ -118,12 +137,19 @@ the free variables defined in the term. In that case, our renaming
 function is total: it produces an answer for any such term.
 
 We have to be a bit careful in the last line of this definition. What if
-$[[xi]]$ already maps the variable $[[x]]$ to some other variable? Our goal is
-to only rename free variables: the function should leave the bound variables
-alone and inside the body of $[[\x.e]]$, the variable $[[x]]$ is occurs bound,
-not free. By updating the renaming to $[[x/x,xi]]$ in the recursive call, we
-force the renaming that we use for the body of the abstraction to not change
-$[[x]]$.
+$[[xi]]$ already maps the variable $[[x]]$ to some other variable? What if
+$[[xi]]$ already maps some other variable to $[[x]]$? Our goal is to only
+rename free variables: the function should leave the bound variables
+alone. Inside the body of $[[\x.e]]$, the variable $[[x]]$ occurs bound, not
+free. On the other hand, if we introduce a new $[[x]]$ through renaming an
+existing free variable, we do not want it to be \emph{captured} by the
+function. For example, if we rename $x$ to $y$, in the function $[[\x. y< x/y>
+]]$, we do not want to produce $[[\x.x]]$.
+
+Therefore, we pick some fresh variable $[[y]]$, and updating the renaming to
+$[[(y/x,xi)]]$ in the recursive call. (If $[[x]]$ is already fresh, we can
+keep using it.)  That way, we force the renaming that we use for the body of
+the abstraction to not change the bounding structure of the term.
 
 \paragraph{Substitution}
 There is one final definition of a function defined by structural recursion
@@ -132,14 +158,14 @@ variables in the term.
 
 A \emph{substitution}, $[[sigma]]$ is a mapping from variables to terms. As
 above, it has a \emph{domain} (a set of variables) and a \emph{range} (this
-time a set of terms). We use the notation $[[e/x,sigma]]$ to refer to the
+time a set of terms). We use the notation $[[(e/x,sigma)]]$ to refer to the
 substitution that maps variable $[[x]]$ to term $[[e]]$, but otherwise acts
 like $[[sigma]]$.
 
 As before, this definition only applies when the free variables of the term
 are contained within the domain of the substitution. Furthermore, when
-substituting in the body of an abstraction, we must extend the substitution
-with a definition for the bound variable (mapping it to itself).
+substituting in the body of an abstraction, we must be careful to avoid 
+variable capture. 
 
 \begin{definition}[Substitution application] We define the application of a
   substitution function to a term, written with postfix notation
@@ -149,7 +175,7 @@ with a definition for the bound variable (mapping it to itself).
 [[ k [sigma]        ]] &=& [[ k ]] \\
 [[ x [sigma]        ]] &=& [[ sigma x ]] \\
 [[ (e1 e2) [sigma]  ]] &=& [[ (e1 [sigma] ) (e2 [sigma] ) ]] \\
-[[ (\x . e) [sigma] ]] &=& [[ \x . (e [ x/x, sigma ]) ]] \\
+[[ (\x . e) [sigma] ]] &=& [[ \y . (e [ y/x, sigma ]) ]] \ \mbox{when $y \not\in [[fv (rng sigma)]]$}\\
 \end{array}
 \]
 \end{definition}
@@ -157,31 +183,37 @@ with a definition for the bound variable (mapping it to itself).
 
 \paragraph{Variable binding, alpha-equivalence and all that} At this point, we
 will start to be somewhat informal when it comes to bound variables in
-terms. We don't really want to distinguish between terms that differ only in
-their use of bound variables, such as $[[\x.x]]$ and $[[\y.y]]$. The relation
-$\alpha$-equivalence relates such terms, and from this point forward we will
-``work up-to-$\alpha$-equivalence. What this means practically is that on one
+terms. As you see above, we need to be careful about variable capture when
+doing renaming and substitution. But we don't want to pollute our reasoning later
+with these details.
+
+Fortunately, we also don't want to distinguish between terms that differ only
+in their use of bound variables, such as $[[\x.x]]$ and $[[\y.y]]$. There is a
+relation called $\alpha$-equivalence that relates such terms, and from this
+point forward we will say that our definitions are
+``up-to-$\alpha$-equivalence''. What this means practically is that on one
 hand, we must be sure that our definitions don't really depend on the names of
 bound variables. In return, we can always assume that any bound variable is
-distinct from any other variable, if we need it to be.
+distinct from any other variable, if we need it to be. This practice is called 
+the ``Barendregt Variable Convention''\cite{barendregt:lambda-calculus}.
 
-Here we have a conundrum. It is common practice to describe lambda calculus
-terms as we have done above (sometimes called using a named or nominal
-representation of variables). But getting the details right is difficult (it
-requires maintaining careful invariants about all definitions) and subtle. If
-you are working with a proof assistant, you really do need to get the details
-right, but it also makes sense to use an approach (such as de Bruijn indices)
-where the details are easier to get right. This is what we will do in the
-accompanying mechanized proofs.
+But, note that this is an informal convention, allowing us to follow the
+common practice of describing lambda calculus terms as we have done above
+(sometimes called using a named or nominal representation of variables). But
+getting the details right is difficult (it requires maintaining careful
+invariants about all definitions) and subtle. If you are working with a proof
+assistant, you really do need to get the details right. In that context, it
+also makes sense to use an approach (such as de Bruijn
+indices~\cite{debruijn:nameless}) where the details are easier to get
+right. This is what we will do in the accompanying mechanized proofs.
 
-However, because using a named representation is standard practice we will
-continue to use that approach in these notes, glossing over some details. This
-will allow us to stay roughly equivalent to the proof scripts (which have
-other details). Because of the informal nature of our discussion, there will
-probably be minor errors related to variable naming; but we won't stress about
-them.
+However, because using a named representation is standard practice, we will
+continue to use that approach in these notes, glossing over details. This will
+allow us to stay roughly equivalent to the proof scripts (which have other
+details). Because of the informal nature of our discussion, there will be
+minor omissions related to variable naming; but we won't stress about them.
 
-\subsection{Type system}
+\section{Type system}
 Next we will define a typing relation for STLC. This relation has the form
 $[[G |- e : tau]]$, which is read as ``in the typing context $[[G]]$, the term
 $[[e]]$ has type $[[tau]]$.''  The typing context $[[G]]$, tells us what the
@@ -216,7 +248,7 @@ the body $[[tau2]]$.
 \Rref{t-app}, which checks the application of functions, requires that the
 argument to the function has the same type required by the function.
 
-\subsection{Operational Semantics}
+\section{Operational Semantics}
 
 Is this type system meaningful? Our type system makes a distinction between
 terms that type check (such as $[[(\x.x)3]]$) and terms that do not, such as
@@ -281,7 +313,7 @@ This is important. These terms are called \emph{stuck} and correspond to
 crashing programs. For example, if we tried to use a number as function
 pointer in the C language, then we might get a segmentation fault.
 
-\subsection{Type Safety}
+\section{Preservation and Progress}
 
 Type safety is a crucial property of a typed programming language. It ensures
 that a well-typed program will never ``go wrong'' during execution. For the
@@ -336,7 +368,7 @@ hypothesis; one that works for any
 substitution (not just a singleton one) and any context of terms (not just one
 with a single variable assumption).
 
-\begin{lemma}[(Full) Substitution]
+\begin{lemma}[Substitution]
   If $[[ G |- e : tau ]]$ and for all $[[x]] \in [[dom sigma]]$, we have
   $[[D |- sigma x : G x ]]$, then $[[D |- e[sigma] : tau ]]$.
 \end{lemma}
@@ -354,14 +386,37 @@ If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ suc
 $[[ e ~> e' ]]$.
 \end{lemma}
 
-\subsection{Is this all?}
-We claimed that type safety means that well-typed programs either run forever,
-or terminate with a value. But is that what we have really proven?  Not
+\section{What is type safety?}
+We claimed that type safety means that well-typed programs do not get
+stuck. But what does this mean? Is that what we have really proven?  Not
 really.
 
-To tell the full story, we need to talk about programs that run forever. But
-how do we do that?  So far, we only have the inductive definition of $[[e ~>*
-    v]]$, which only captures finite evaluate sequences.
+Perhaps we would like to prove something like below, where the multistep
+relation $[[~>*]]$ is iteration of the single-step relation any number of
+times.  If a closed term type checks then it must evaluate to a value with the
+same type.
+\begin{conjecture}[Terminating Type Safety]
+If $[[|- e : tau]]$ then there exists some value $v$ such that $[[e ~>* v]]$
+and $[[|- v : tau]]$.
+\end{conjecture}
+
+This conjecture seems straightforward to prove from progress and
+preservation. By progress we know that either a term is a value or that it
+steps. By preservation, we know that it if it steps, it has the same type. But
+what we are missing from a straightforward proof is the fact that this
+conjecture says that evaluation \emph{terminates}. How do we know that we will
+eventually reach a value in some finite number of steps?
+
+It turns out that this conjecture is true, but we are not yet ready to prove
+it directly. But even though the conjecture is true, it is not a good
+definition of type safety: even though all well-typed STLC programs halt, that
+is not true of most programming languages. And we would like to have a
+definition of type safety that also applies to those languages. One that shows that 
+well-typed programs do not get stuck, while not requiring them to produce values.
+
+There are two solutions to this issue.
+
+\paragraph{A coinductive definition}
 
 Now consider the following \emph{coinductive} definition.
 \begin{definition}[Runs safely]
@@ -442,7 +497,7 @@ By induction, we know that $[[e']]$ is safe for $k-1$. So either $[[e' ~j> v]]$,
 In the first case, we have $[[e ~j+1> v]]$ which is a safe evaluation for $[[e]]$. In the 
 second case, we have $[[e ~k> e'']]$, which is also a safe evaluation for $[[e]]$.
 
-\subsection{Further reading}
+\section{Further reading}
 The type safety proof for the simply-typed lambda calculus is explained in a
 number of textbooks including TAPL~\cite{pierce:tapl}, PFPL~\cite{harper:pfpl}
 and Software Foundations~\cite{Pierce:SF2}.  Each of these sources defines

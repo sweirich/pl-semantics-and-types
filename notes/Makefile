@@ -16,12 +16,6 @@ PDFS=plst.pdf
 
 all: $(TOP).pdf
 
-$(TOP).tex: $(RULESFILE) $(TOP).mng Makefile
-	ott $(OTTIFLAGS) \
-            -tex_wrap false \
-            -tex_show_meta false \
-            -tex_filter $*.mng $*.tex
-
 %.tex : $(RULESFILE) %.mng Makefile
 	rm -f $(PAPER_SOURCE)
 	ott -tex_wrap false \
@@ -36,7 +30,6 @@ $(RULESFILE): $(OTTFILES)
           -tex_show_meta false
 
 $(TOP).pdf : $(TOP).tex  $(BIBFILES) $(PAPER_SOURCE) Makefile lstparams.sty
-	echo $(PAPER_SOURCE)
 	latexmk -pdflatex="texfot pdflatex" -bibtex -pdf $(TOP).tex -synctex=1 && latexmk -c
 
 deps:

@@ -34,10 +34,11 @@ vs :: 'vs_' ::=
   | vs1 - vs2       ::   :: Minus
   | vars            ::   :: Total_set
     {{ tex \mathcal{V} }}
-  | fv e            :: M :: FV 
+  | fv ( e )        :: M :: FV 
   | dom xi          :: M :: Dom_ren
   | rng xi          :: M :: Rng_ren
   | dom sigma       :: M :: Dom_sub
+  | fv ( rng sigma ) :: M :: Fv_Rng_sigma
   | dom G           :: M :: Dom_ctx
   | ( vs )          :: S :: Paren
 
@@ -189,7 +190,7 @@ defn
 
 G |- e : tau   ::   :: typing :: 't_'
 {{ com Typing }}
-{{ tex [[G]] |- [[e]] \in [[tau]] }}
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
 by
 
 ------------ :: lit
@@ -278,7 +279,7 @@ e ~>* e
 
 e0 ~> e1
 e1 ~>* e2
-------------------- :: step
+------------------- :: trans
 e0 ~>* e2
 
 
