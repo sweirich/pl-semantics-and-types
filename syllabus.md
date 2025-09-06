@@ -3,14 +3,18 @@
 > [!IMPORTANT]
 > The first class will be Wednesday, September 3rd. There is no class on 8/27.
 
+## Homework
+
+1. [HW1](homework/hw1.pdf), due Monday, September 29th at midnight
+
 ## Schedule
 
-| Date    | Topic |
-| ------  | ----- | 
+| Date    | Topic | Homework |
+| ------  | ----- | -------- | 
 | W 8/27  | **No Class**: Instructor travel              |
 | M 9/1   | **No Class**: Labor day                      |
 | W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> [Type Safety for STLC](notes/plst.pdf) |
-| M 9/8   | |
+| M 9/8   | Preservation and Progress proofs </br> Natural number recursion |
 | W 9/10  | |
 | M 9/22  | |
 | W 9/24  | |

@@ -67,16 +67,14 @@
 
 \title{Programming Languages: Semantics and Types}
 \author{Stephanie Weirich}
+\date{\today}
 
 \begin{document}
 
 \frontmatter
 \maketitle
 \tableofcontents
-
 \inputott{all-rules}
-
-% \section{Introduction}
 
 \mainmatter
 \input{stlc}
@@ -86,8 +84,5 @@
 
 \bibliographystyle{alpha}
 \bibliography{references}
-
-
-
 
 \end{document}

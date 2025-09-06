@@ -432,18 +432,45 @@ is not true of most programming languages. And we would like to have a
 definition of type safety that also applies to those languages. One that shows that 
 well-typed programs do not get stuck, while not requiring them to produce values.
 
-There are two solutions to this issue.
+There are several solutions to this issue.
+
+\paragraph{Well-typed programs don't get stuck}
+
+The most straightforward approach is to define what it means for a program to get 
+stuck, and then show that this cannot happen.
+
+\begin{definition}[Stuck]
+A term $[[e]]$ is \emph{stuck} if it is not a value and there does not exists 
+any $[[e']]$ such that $[[e ~> e']]$.
+\end{definition}
+
+\begin{theorem}[Type safety (no stuck terms)]
+If $[[ |- e : tau ]]$ then for all $[[e']]$, such that $[[e ~>* e']]$, 
+$[[e']]$ is not stuck.  
+\end{theorem}
+\begin{proof}
+We prove this by induction on the derivation of $[[e ~>* e']]$.
+If there are no steps in this reduction sequence, then $[[e]]$ is equal to $[[e']]$. 
+By the progress lemma, we know that $[[e]]$ is not stuck. 
+Otherwise, say that there is at least one step, i.e. there is some 
+$[[e1]]$ such that $[[e ~> e1]]$ and $[[e1 ~>* e']]$. By preservation, we know that 
+$[[|-e1 : tau]]$. Then we can use induction to say that $[[e']]$ is not stuck.
+\end{proof}
 
 \paragraph{A coinductive definition}
 
-Now consider the following \emph{coinductive} definition.
+What if we want to state type safety a little more positively. In other words, 
+we want to say that a well typed term either produces a value or runs forever, without 
+having to talk about stuckness. 
+
+We can do that using the following \emph{coinductive} definition.
 \begin{definition}[Runs safely]
 A program $[[e]]$ \emph{runs safely}, if it is a value or 
 if $[[e ~> e']]$, and $[[e']]$ \emph{runs safely}. 
 \end{definition}
 
 This is exactly the definition we want to use in a type safety theorem.
-\begin{theorem}[Type Safety]
+\begin{theorem}[Type Safety (runs safely)]
 If $[[|- e : tau]]$ then $[[e]]$ \emph{runs safely}.
 \end{theorem}
 
@@ -503,7 +530,7 @@ We can now state type safety using this step-counting definition. We can't
 really talk about an infinite computation, but we can know that for an
 arbitrarily long time, $e$ will run safely during that time.
 
-\begin{theorem}
+\begin{theorem}[Type Safety (step-counting)]
 If $[[|- e : tau]]$ then for all natural numbers $k$, $e$ is safe for $k$.
 \end{theorem}
 We show this result by induction on $k$.
