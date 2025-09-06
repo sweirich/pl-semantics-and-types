@@ -17,6 +17,7 @@ grammar
 nat , j, k :: 'k_' ::= 
 {{ com natural number constants }}
   | 0               ::   :: Zero
+  | S k             ::   :: Succ
   | 1               ::   :: One
   | 2               ::   :: Two
   | 3               ::   :: Three
@@ -99,7 +100,7 @@ e :: 'tm_' ::=
 
   | succ e           ::   :: Succ
 
-  | nrec e of { zero => e0 ; succ x => e1 }  ::   :: Nrec 
+  | nrec e of { 0 => e0 ; S x => e1 }  ::   :: Nrec 
       {{ com recursor for natural numbers }}
 
   | ( e : tau )      ::   :: Ann        {{ com type annotation }}
@@ -125,12 +126,22 @@ v , w :: 'v_' ::=
 
   | ( v )           :: S :: Paren
 
+ES :: 'tms_' ::= 
+{{ com sets of terms }} 
+  | nats            ::   :: Nat
+  | V tau           :: M :: LRV
+  | C tau           :: M :: LRC
+  | { e | formula } :: M :: Comprehension
+   {{ tex \{ [[e]]\ |\ [[formula]] \} }}
+
 
 subrules
   v <:: e
 
 parsing
 ty_Arrow right ty_Arrow
+tm_Abs right tm_App
+tm_App left tm_App
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -175,11 +186,22 @@ terminals :: 'terminals_' ::=
   | >                 ::   :: rangle        {{ tex \rangle }}
   | <->               ::   :: iso           {{ tex \leftrightarrow }}
   | <=>               ::   :: lrarrow       {{ tex \Leftrightarrow }}
+  | implies           ::   :: implies       {{ tex \mathit{implies} }}
+  | and               ::   :: and           {{ tex \mathit{and} }}
+  | or                ::   :: or            {{ tex \mathit{or} }}
+  | nats              ::   :: nats          {{ tex \mathbb{N} }}
 
 formula :: 'formula_' ::=
-  | judgement                ::   :: judgement
-  | formula1 .. formulan     ::   :: dots
-  | x : tau elem G           ::   :: inG
+  | judgement                  ::   :: judgement
+  | formula1 .. formulan       ::   :: dots
+  | x : tau elem G             ::   :: inG
+  | formula1 and formula2      ::   :: and
+  | formula1 implies formula2  ::   :: implies
+  | e elem ES                  ::   :: tmelem
+  | forall e , formula         ::   :: forall_quant
+  | exists e , formula         ::   :: exists_quant
+  | G |= sigma                 ::   :: sem_sub
+  | G |= e : tau               ::   :: sem_typing
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -213,7 +235,7 @@ G |- e : Nat
 G |- e0 : tau
 G , x : Nat |- e1 : tau -> tau
 ------------------------------- :: nrec
-G |- nrec e of { zero => e0 ; succ x => e1 } : tau
+G |- nrec e of { 0 => e0 ; S x => e1 } : tau
 
 G, x:tau1 |- e : tau2
 ------------------------  ::  abs
@@ -254,20 +276,24 @@ e2 ~> e2'
 ------------------------  :: app_cong2
 v e2 ~> v e2
 
+
+------------------------- :: succ_lit
+succ k ~> S k
+
 e ~> e'
 ------------------------  :: succ_cong
 succ e ~> succ e'
 
 
 -------------------------- :: nrec_zero
-nrec 0 of { zero => e1 ; succ x =>  e2 } ~> e1
+nrec 0 of { 0 => e1 ; S x =>  e2 } ~> e1
 
 ----------------------------------------------- :: nrec_succ
-nrec (1+k) of { zero => e1 ; succ x => e2 } ~> (e2[k/x]) (nrec v of {zero => e1 ; succ x => e2})
+nrec (S k) of { 0 => e1 ; S x => e2 } ~> (e2[k/x]) (nrec k of {0 => e1 ; S x => e2})
 
 e ~> e'
 --------------------------------- :: nrec_cong
-nrec e of { zero => e1 ; succ x => e2 }  ~> nrec e' of { zero => e1; succ x => e2 }
+nrec e of { 0 => e1 ; S x => e2 }  ~> nrec e' of { 0 => e1; S x => e2 }
 
 defn
 e ~>* e' ::  :: multi :: 'ms_'
@@ -296,7 +322,7 @@ e ~0> e
 e0 ~> e1
 e1 ~k> e2
 ------------------- :: step
-e0 ~1+k> e2
+e0 ~S k> e2
 
 
 
@@ -304,7 +330,7 @@ defns
 JBig :: '' ::=
 
 defn
-e => v ::   :: big :: 'big_'
+e => v ::   :: big :: 'bs_'
 {{ com big-step semantics }}
 by
 
@@ -329,31 +355,31 @@ e => k
 succ e => succ k
 
 e => k
-nrec_k of { zero => e0 ; succ x => e1 } => v
+nrec_k of { 0 => e0 ; S x => e1 } => v
 --------------------------------------------- :: nrec
-nrec e of { zero => e0 ; succ x => e1 } => v
+nrec e of { 0 => e0 ; S x => e1 } => v
 
 
 defn 
-nrec_ k of { zero => e0 ; succ x => e1 } => v ::   :: big_nrec :: 'big_nrec_'
+nrec_ k of { 0 => e0 ; S x => e1 } => v ::   :: big_nrec :: 'bsn_'
 by 
 
 e0 => v
 ------------------------------------------------ :: nrec_zero
-nrec_ 0 of {zero => e0 ; succ x => e1 }  => v
+nrec_ 0 of {0 => e0 ; S x => e1 }  => v
 
 e1 [k / x] => \y. e' 
-nrec_ k of { zero => e0 ; succ x => e1 } => v1
+nrec_ k of { 0 => e0 ; S x => e1 } => v1
 e' [ v1 / y] => v
 --------------------------------------------- :: nrec_succ
-nrec_ (1+k) of {zero=> e0 ; succ x => e1 } => v
+nrec_ (S k) of {0=> e0 ; S x => e1 } => v
 
 defns
 JBigEnv :: '' ::=
 
 defn
-< rho | e > => w ::   :: big_env :: 'big_env_' 
-{{ com big-step semantics }}
+< rho | e > => w ::   :: big_env :: 'es_' 
+{{ com environmental big-step semantics }}
 by
 
 
@@ -386,22 +412,22 @@ by
 
 
 <rho | e> => k
-<rho | nrec_ k of {zero => e0 ; succ x => e1 }> => v
+<rho | nrec_ k of {0 => e0 ; S x => e1 }> => v
 ------------------------------------------------------ :: nrec
-<rho | nrec e of { zero => e0 ; succ x => e1 }> => v
+<rho | nrec e of { 0 => e0 ; S x => e1 }> => v
 
 
 defn 
-< rho | nrec_ k of { zero => e0 ; succ x => e1 } > => v ::   :: big_env_nrec :: 'big_env_nrec_'
+< rho | nrec_ k of { 0 => e0 ; S x => e1 } > => v ::   :: big_env_nrec :: 'big_env_nrec_'
 by 
 
 
 <rho | e1 > => v
 ---------------------------------------------------- :: nrec_zero
-<rho | nrec_ 0 of { zero=> e0 ; succ x => e1 }> => v
+<rho | nrec_ 0 of { 0=> e0 ; S x => e1 }> => v
 
-<rho | nrec_ k of { zero => e0 ; succ x => e1}> => v1
+<rho | nrec_ k of { 0 => e0 ; S x => e1}> => v1
 < k/x, rho | e1 > =>  < rho' , \y.e' >
 < v1/y, rho' | e > => v2
 ------------------------------------------------------------------ :: nrec_succ
-<rho | nrec_ 1+k of { zero=> e0 ; succ x => e1 }> => v2
+<rho | nrec_ (S k) of { 0=> e0 ; S x => e1 }> => v2

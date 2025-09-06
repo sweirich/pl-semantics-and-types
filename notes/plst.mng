@@ -49,6 +49,7 @@
 % requires dvipsnames
 %\usepackage{lstpi}
 %\usepackage{lsthaskell}
+\usepackage{lstparams}
 \newcommand\cd[1]{\lstinline[language=Haskell]{#1}}
 
 \theoremstyle{definition}
@@ -58,6 +59,8 @@
 \newtheorem{lemma}{Lemma}[section]
 \newtheorem{corollary}{Corollary}[section]
 \newtheorem{conjecture}{Conjecture}[section]
+
+
 
 % force footnotes to be on a single page
 \interfootnotelinepenalty=10000
@@ -77,6 +80,7 @@
 
 \mainmatter
 \input{stlc}
+\input{nrec}
 
 \backmatter
 

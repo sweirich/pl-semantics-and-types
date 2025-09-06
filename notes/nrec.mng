@@ -1,0 +1,127 @@
+
+\chapter{Natural number recursion}
+
+STLC is rather \emph{simple}. It lacks the computational power of most typed
+programming languages. All STLC expressions terminate! In due time, we will
+extend this language with arbitrary recursive definitions, which make the
+language Turing complete.
+
+However, before we do that let's extend this system with a limited 
+form of recursion. Our definition of STLC includes the \emph{natural numbers}
+as constants, i.e. numbers starting from zero. Natural numbers can be 
+defined using an \emph{inductive datatype}. Any natural number is either zero or 
+the successor of some natural number.
+
+Let's redefine the syntax of natural numbers to make this structure explicit. 
+
+\[ [[k]] \in [[nats]] ::= [[0]]\ |\ [[S k]] \]
+
+Now, instead of saying 1, or 2, or 3, we could say $[[S 0]]$, or $[[S (S 0)]]$, 
+or $[[S (S (S 0))]]$. Isn't that better? Ok, perhaps maybe not. We will keep the 
+syntax 1, 2, 3 around for clarity, but remember that these arabic numerals stand 
+for the unary structure. 
+
+The advantage of working with the inductive structure of natural numbers is that 
+they now come with an induction principle (for reasoning mathematically) and 
+a recursion principle (for creating new definitions). This is the justification that we used in the previous section for the step-counting definition of type safety. 
+
+Now that we have observed the inductive structure of natural numbers, let's
+add a \emph{primitive recursion} operator to STLC that can be used to define
+programs, in that language, by recursion. This form of recursion will always
+be bounded; we will be able to write more interesting computations but will
+still be able to know that all experssions terminate.
+
+In fact, we will add \emph{two} new expression forms in this section, as 
+shown in the grammar below. 
+
+\[ [[e]] ::= \ldots |\ [[succ e]]\ |\ [[ nrec e of { 0 => e0 ; S x => e1 } ]] \]
+
+Along with these new expression forms, we also add the typing and small-step 
+semantics rules shown in Figure~\ref{fig:nrec}. 
+
+\begin{figure}[t]
+
+\drules[t]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{succ,nrec}
+
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}{succ-lit,succ-cong,nrec-zero,nrec-succ,nrec-cong}
+\caption{Natural number operations: successor and recursion}
+\label{fig:nrec}
+\end{figure}
+
+The successor operation $[[succ e]]$, adds one to its argument. This operation
+is specified by the two rules of the operational syntax that trigger when the
+argument is a literal value (\rref{s-succ-lit}) and when the argument itself
+steps (\rref{s-succ-cong}). The typing rule (\rref{t-succ}) requires the
+argument to have type $[[Nat]]$ and asserts that its successor is also a
+natural number. (Note: don't confuse the successor operation $[[succ e]]$ of 
+the expression language, with the syntax $[[S k]]$ of natural numbers. The former 
+is never a value (it steps by one of the two rules) while the latter is a way 
+of writing a natural number).
+
+The (primitive) recursion operation $[[nrec e of { 0 => e0 ; S x => e1 }]]$
+recurses over $[[e]]$. This operation compares $[[e]]$ to see of it is $[[0]]$
+or some larger number. In the first case, the expression steps to $[[e0]]$.
+If the argument is equal to $[[S k]]$ for some $k$, then the expression steps
+to $[[e1]]$ where $[[k]]$ replaces $[[x]]$. But that is not all! The rule also
+applies the result of this substitution to the recursive execution of the loop
+on $[[k]]$.
+
+For example, we can define a doubling function on natural numbers with the 
+following definition.
+
+\[ [[double x]] = [[ nrec x of { 0 => 0 ; S y => \z. succ (succ z) } ]] \]
+
+Here's how this doubling function might evaluate when given the number 2:
+\[
+\begin{array}{ll}
+[[ double 2 ]]& = [[ nrec 2 of { 0 => 0 ; S y => \z. succ (succ z) } ]]\\
+  &[[~>]] [[ (\z. succ (succ z)) ]] \\
+  & \qquad [[ (nrec 1 of { 0 => 0 ; S y => \z. (succ (succ z))}) ]] \\
+  &[[~>]] [[ (\z. succ (succ z))]] \\
+  & \qquad [[ ((\z. (succ (succ z))) (nrec 0 of { 0 => 0 ; S y => \z. (succ (succ z))})) ]] \\
+  &[[~>]] [[ (\z. succ (succ z)) ((\z. (succ (succ z))) 0) ]] \\
+  &[[~>]] [[ (\z. succ (succ z)) (succ (succ 0)) ]] \\
+  &[[~>]] [[ (\z. succ (succ z)) (succ 1) ]] \\
+  &[[~>]] [[ (\z. succ (succ z)) 2 ]] \\
+  &[[~>]] [[ succ (succ 2) ]] \\
+  &[[~>]] [[ succ 3 ]] \\
+  &[[~>]] [[ 4 ]] \\
+\end{array}
+\]
+
+Because the successor case is applied to the recursive execution of the loop, 
+the typing rule requires that it have a function type.
+
+Why do we specify the operation in this way? Sometimes you may see a semantics 
+for primitive recursion that directly substitutes the result of the 
+recursive execution in the successor case instead of indirectly doing so via
+application. The reason is that we want a \emph{call-by-value}
+semantics for iteration. The rules should fully evaluate the recursive call on
+the predecessor before evaluating $[[e1]]$. Because our operational semantics
+for application is already call-by-value, we get this behavior automatically.
+
+Note that the way that we have defined this natural number recursor through 
+pattern matching makes it particularly simple to define a \emph{predecessor}
+function:
+
+\[ [[ pred x]] = [[nrec x of { 0 => 0 ; S y => y } ]] \]
+
+This is not the case for all recursion principles. A more restricted form, sometimes called \emph{iteration} does not bind $[[y]]$ in the successor case.
+
+These new extensions satisfy the properties of \emph{substitution},
+\emph{progress}, and \emph{preservation} that we saw in the previous
+chapter. As an exercise, you might try to extend those proofs with appropriate
+new cases.
+
+\section{Further Reading}
+This chapter is adapted from Chapter 9 of Harper~\cite{harper:pfpl}, with the 
+recursor modified to for our call-by-value semantics.
+Harper calls this language to G\"odel's System T~\cite{goedel:systemt}, designed 
+to study the consistency of arithmetic. The terminology that we use for ``primitive recursion'' is not quite the same as the related concept of the same name from computability theory. In that context, the natural number recursor is restricted 
+to produce functions with types of the form $[[Nat]] [[->]] [[Nat]] [[->]] \ldots [[->]] [[Nat]]$, i.e. functions that take any number of naturals as arguments and 
+return a natural number. This operator does not have that restriction, and can define functions that are not usually considered ``primitive recursive''.
+
+In general, primitive recursion is not just for natural numbers. Any inductive
+type, such as lists or trees, can be equipped with its own primitive recursion
+operation (see Mendler's dissertation~\cite{mender:phd}).

@@ -46,7 +46,7 @@ The variable $x$ is the parameter and $e$ is the body is the body of the abstrac
 \end{definition}
 
 The definition of terms refers to two other sets: natural numbers and
-variables. The set of natural numbers, $\mathbb{N}$, are an infinite set of
+variables. The set of natural numbers, $[[nats]]$, are an infinite set of
 numbers 0, 1, \ldots; we will use $i$, $j$ and $k$ to refer to arbitrary
 natural numbers. We treat variables more abstractly. We assume that there is
 some infinite set of variable \emph{names}, called $[[vars]]$, and that given
@@ -538,3 +538,4 @@ expressions, and then showing that faulty expressions are not typeable
 (i.e. progress). They put these together with a strong soundness theorem that
 says that well-typed programs either diverge or reduce to values of the
 appropriate type.
+
