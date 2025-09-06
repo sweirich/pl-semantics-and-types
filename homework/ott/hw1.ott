@@ -1,0 +1,100 @@
+grammar 
+
+b :: '' ::= 
+  | true  ::    :: true
+  | false ::    :: false
+
+
+tau :: 'ty_' ::= 
+  | Bool     ::    :: Bool
+  | Void     ::    :: Void
+  | List tau ::    :: List
+
+e :: 'tm_'  ::= 
+  | b    ::  :: bool
+  | null ::  :: null
+  | cons e1 e2  ::  :: cons
+  | nil         ::  :: nil
+
+v , w :: 'v_' ::= 
+{{ com values }}
+  | b    ::  :: bool
+  | null ::  :: null
+  | cons e1 e2 ::    :: cons
+  | nil  ::  :: nil
+
+formula :: '' ::=
+  | mu k = e ::  :: lookup_tm
+    {{ tex \mu([[k]]) = [[e]] }}
+  | Sigma k = tau ::  :: lookup_ty
+    {{ tex \Sigma([[k]])= [[tau]] }}
+
+defns
+JTyping :: '' ::=
+
+defn
+
+G |- e : tau   ::   :: typing :: 't_'
+{{ com Typing }}
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+
+-------------- :: bool
+G |- b : Bool
+
+-------------- :: var_bool
+G |- x : Bool
+
+-------------- :: var_nat
+G |- x : Nat
+
+
+Sigma k = tau1 -> tau2
+----------------------- :: arr_ptr
+G |- k : tau1 -> tau2 
+
+
+------------------ :: null
+G |- null : tau
+
+
+---------------------- :: nil
+G |- nil : List tau
+
+
+G |- e1 : tau
+G |- e2 : List tau
+---------------------------- :: cons
+G |- cons e1 e2 : List tau
+
+
+G |- e1 : List tau
+G |- e2 : Nat
+----------------------------- :: nth
+G |- e1 e2 : tau
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+mu k = \x. e
+----------------- :: app_ptr
+k v ~> e [v / x]
+
+
+-------------------- :: app_nat
+k v ~> (\x. k x) v
+
+
+---------------------------  :: app_zero
+(cons v1 v2) 0 ~> v1
+
+---------------------------- :: app_succ
+(cons v1 v2) (1+k) ~> v2 k
+
+

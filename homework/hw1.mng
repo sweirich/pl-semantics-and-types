@@ -1,0 +1,271 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\newcommand\scw[1]{\ifcomments\emph{\textcolor{violet}{#1}}\fi}
+
+% requires dvipsnames
+%\usepackage{lstpi}
+%\usepackage{lsthaskell}
+\newcommand\cd[1]{\lstinline[language=Haskell]{#1}}
+
+\theoremstyle{definition}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{conjecture}{Conjecture}[section]
+\newtheorem{assumption}{Assumption}[section]
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 1}
+
+\input{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Analyzing type systems}
+
+Each of the following subsections of this problem describes a variant of STLC,
+including a (potentially) modified grammar, small-step operational semantics,
+and type system. Each of these variants is independent and you should consider
+them separately from all others.
+
+For each variant, determine whether type safety holds, where type safety is
+defined to be the following property. 
+
+\begin{definition}[Stuck]
+A term $[[e]]$ is \emph{stuck} if it is not a value and there does not exists 
+any $[[e']]$ such that $[[e ~> e']]$.
+\end{definition}
+
+\begin{theorem}[Type safety]
+If $[[ |- e : tau ]]$ then for all $[[e']]$, such that $[[e ~>* e']]$, 
+$[[e']]$ is not stuck.  
+\end{theorem}
+
+If the type safety property fails, in a sentence or two, explain in English
+the source of the error and intuitively how a well-typed program can get stuck.
+
+Regardless of whether type safety holds, state whether the properties of
+\emph{substitution}, \emph{preservation} and \emph{progress} are true for that
+system, as stated in the lecture notes. For each false property, give a
+concrete counter-example and clearly explain why it is a counter-example.
+
+For example, consider the preservation property:
+If $[[ |- e : tau]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
+
+To give a counter-example, supply a specific $e$, a specific $e'$ and a
+specific $[[tau]]$.  Then explain why the preservation statement is false for
+the specific terms you have supplied.  To do that, you will show a derivation
+of $[[ |- e : tau]]$ to demonstrate $[[e]]$ is well-typed and a derivation to
+show that $[[e ~> e']]$.  Then explain why no derivation of $[[ |- e' : tau]]$
+exists (eg: show a partial derivation and explain why you get stuck finishing
+it off with the rules supplied.)
+
+\subsection{Null}
+
+Suppose we add a new value called $[[null]]$. As in most programming
+languages, we also add the following typing rule so that $[[null]]$ has any
+type:
+
+\drule{t-null}
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+
+\subsection{Void}
+
+Suppose we add a new type to STLC called $[[Void]]$. But that is it. We don't
+add any new terms, typing rules or small-step reduction rules. This type is
+called $[[Void]]$ because it is empty; there are no closed values with
+this type.
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+\subsection{A mystery language}
+
+Suppose we add the following new rules to STLC. 
+
+\drule{t-arr-ptr} \qquad \drule{s-app-nat}
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+\subsection{STLC--}
+
+Suppose we remove the typing rule for natural numbers, \rref{t-lit}, from STLC.
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+\subsection{STLC with lists}
+
+Suppose we add lists to STLC by adding two new expression forms, 
+$[[cons e1 e2]]$ and $[[nil]]$. These new forms are both values.
+
+\[
+\begin{array}{l}
+[[tau]] ::= \ldots  |\ [[List tau]] \\
+[[v]] ::= \ldots\ |\ [[cons e1 e2]]\ |\ [[nil]] \\
+[[e]] ::= \ldots\ |\ [[cons e1 e2]]\ |\ [[nil]] \\
+\end{array}
+\]
+
+The typing rules for lists allows us to construct any sort of 
+list out of $[[nil]]$ and $\ottkw{cons}$.
+
+\drule{t-cons} \qquad \drule{t-nil} 
+
+We also will allow programmers to access the elements of a 
+list through projection. We will reuse the syntax of function application for 
+list projection: if the first argument is some list $l$ and the 
+second argument is some number $k$, then the application looks up 
+the $k$th element of the list:
+
+\drule{t-nth} \\ \drule{s-app-zero} \\ \drule{s-app-succ} 
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+\subsection{Simply-typed function pointers}
+
+Suppose we modify STLC to use \emph{function pointers} instead of anonymous
+functions. To do so, we assume the existance of a fixed map $\mu$ from natural
+numbers to abstractions.
+
+We also remove the rules that type check and step anonymous functions (as they
+can no longer appear directly in programs), \rref{t-abs} and \rref{s-beta},
+and replace them with the following two rules that allow natural numbers to
+used as function pointers.
+
+\drule{t-arr-ptr}
+
+\drule{s-app-ptr}
+
+We also assume that all functions stored in the table typecheck according 
+to this type system:
+\begin{assumption}[Table typing]
+For all $k$, if $[[mu k = \x.e]]$ and $[[Sigma k = tau1 -> tau2]]$ 
+then $[[ x : tau1 |- e : tau2 ]]$.
+\end{assumption}
+
+
+\begin{enumerate}
+\item Is STLC with this modification type safe?
+\item Does \emph{substitution} hold?
+\item Does \emph{preservation} hold?
+\item Does \emph{progress} hold?
+\end{enumerate}
+
+
+
+\section{Preservation and Progress proofs}
+
+The next part of the homework assignment involves completing the proofs of
+preservation and progress for two extensions of STLC. If you would like to use
+Rocq to mechanize these proofs, you can find initial code in the `homework`
+directory of the course repository.
+
+\subsection{Let binding}
+
+Consider adding let expressions to STLC. To do so we extend the grammar, type
+system, and operational semantics as follows. We add a new expression form
+that binds the variable $x$ in the body of the let expression $[[e2]]$.
+
+\[ [[e]] ::= \ldots |\ [[let x = e1 in e2 ]] \]
+
+We add a single new typing rule:
+
+\drule{t-let}  
+
+and two new evaluation rules:
+
+\drule{s-letv} \qquad \drule{s-let-cong}
+
+\begin{enumerate}
+\item Extend the preservation proof. This proof is by
+  induction on evaluation steps. That means there will need to be two new
+  cases for \rref{s-letv,s-let-cong}.
+\item Extend the progress proof. This proof is by 
+  induction on the typing judgement. That means there will be one new 
+  case for \rref{t-let}.
+\end{enumerate}
+
+\begin{lemma}[Preservation]
+If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
+\end{lemma}
+\begin{proof}
+The proof is by induction on the derivation of the reduction.  There
+are cases for each of the rules that could have been used to conclude
+$[[e ~> e']]$.
+\begin{itemize}
+\item In the case of \rref{s-letv}, $\ldots$
+\item In the case of \rref{s-let-cong}, $\ldots$
+\end{itemize}
+\end{proof}
+
+\begin{lemma}[Progress]
+If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ such that 
+$[[ e ~> e' ]]$.
+\end{lemma}
+\begin{proof}
+We prove this lemma by induction in the typing derivation. In the rules where 
+$[[e]]$ is already a value, then the proof is trivial.
+Otherwise, \ldots
+\end{proof}
+
+\subsection{Natural number recursion}
+
+Proof preservation and progress for the extension of STLC with a successor 
+and primitive recursion operation as described in the lecture notes.
+
+\[ [[e]] ::= \ldots |\ [[succ e]]\ |\ [[ nrec e of { 0 => e1 ; S x => e2 } ]] \]
+
+\end{document}
