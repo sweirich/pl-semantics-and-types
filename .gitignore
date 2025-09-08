@@ -1,3 +1,11 @@
+## generated files from Ott
+homework/all-rules.tex
+homework/hw1.tex
+notes/all-rules.tex
+notes/nrec.tex
+notes/plst.tex
+notes/stlc.tex
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
