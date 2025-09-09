@@ -5,6 +5,7 @@ notes/all-rules.tex
 notes/nrec.tex
 notes/plst.tex
 notes/stlc.tex
+notes/bigstep.tex
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

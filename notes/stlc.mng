@@ -284,7 +284,7 @@ that state when one term steps to another.
 
 \begin{definition}[Small-step relation]\ \\
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
-{beta,app-congOne,app-congTwo}
+{beta,app-congTwo,app-congTwo}
 \end{definition}
 
 In each of these three rules, the part below the line says when the left term steps to the right term.
@@ -333,18 +333,52 @@ must also have the exact same type $[[tau]]$. In other words, the type is
 \begin{lemma}[Preservation]
 If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
 \end{lemma}
-Proof: The proof is by induction on the derivation of the reduction.
+We can prove this lemma in three separate ways: by structural induction 
+on the syntax of $[[e]]$, or by induction on the derivations of $[[|- e: tau]]$ or 
+$[[e ~> e']]$. This flexibility is enabled by the simplicity of this type system. For example, we have exacltly one typing rule for each syntactic form, and each typing rule has a corresponding premise for each subterm. 
+
+Because this is our first inductive proof, we will first prove it by induction on the syntax and then by 
+induction on the step relation.
+\begin{proof}
+Proof is by induction on the syntax of $[[e]]$. We want to prove that the statement of the lemma holds for 
+any arbitrary $[[e]]$. Our induction principle requires that we prove that it holds for the four different 
+syntactic forms, natural numbers, variables, applications and abstractions. In the latter two cases, we will 
+be able to assume that the lemma holds for each of the subterms of the form.
+\begin{itemize}
+\item If $[[e]]$ is a natural number $[[k]]$, then we want to show that if $[[ |- k : tau ]]$ and $[[ k ~> e' ]]$
+then $[[ |- e' : tau]]$. However, by looking at our operational semantics, we see that constants don't step, so there cannot be any such $[[e']]$. So this case is immediate.
+\item If $[[e]]$ is a variable $[[x]]$, then we want to show that if $[[ |- x : tau ]]$ and $[[ x ~> e' ]]$
+then $[[ |- e' : tau]]$. Again, this case is impossible, and for two reasons. We cannot type check variables in an 
+empty context and there is no rule of the operational semantics that applies.
+\item If $[[e]]$ is $[[\x.e]]$, then this case also impossible as abstractions don't step.
+\item If $[[e]]$ is of the form $[[e1 e2]]$, then we want to show that if $[[ |- e1 e2 : tau ]]$ and $[[ e1 e2 ~> e' ]]$ then $[[ |- e' : tau]]$. In this case, we can look at the typing rules to observe that there is only 
+one way to type check an application. For this application to type check, the derivation must also show that $[[ |- e1 : tau2 -> tau]]$ and $[[|- e2 : tau2]]$. (This reasoning principle is called \emph{inversion}.)
+We can also use inversion on the step relation. But this time there are three ways that an application could step. 
+\begin{itemize}
+\item The application could step using \rref{s-beta}. In this case, we know that $[[e1]]$ is $[[\x.e1']]$ and $[[e2]]$ is some value $[[v]]$. Furthermore, we have that the result of the application step
+$[[e']]$ is $[[e1'[v/x] ]]$. Therefore, we need to show that the result of this substitution has type $[[tau]]$.
+By inverting the typing judgement for $[[|- \x.e1' : tau2 -> tau]]$, we know that $[[ x:tau2 |- e' : tau]]$. At this point we, we will 
+appeal to a \emph{substitution lemma} (see \ref{lem:single-subst} below) to 
+finish this case of the proof. 
+\item The application could step using \rref{s-app-congOne}. In this case, we know that $[[e1 ~> e1']]$ and that $[[e']]$ is $[[e1' e2]]$. Because $[[e1]]$ is a subterm of $[[e1 e2]]$, we can assume that the preservation holds for that term. Therefore, we know that $[[|- e1' : tau2 -> tau]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1' e2 : tau]]$.
+\item The application could step using \rref{s-app-congTwo}. In this case, we know that $[[e1]]$ is a value and that $[[e2 ~> e2']]$.  As above, we can assume that the preservation holds for $[[e2]]$. Therefore, we know that $[[|- e2' : tau2]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1 e2' : tau]]$.
+\end{itemize}
+\end{itemize}
+\end{proof}
+
+For comparison, we also prove this theorem by induction on one of the derivations. The proof is not significantly different: the same pieces of the argument are necessary. However, we put them together in a different way, replacing some uses of inversion with the induction principle.
+
+\begin{proof}
+The proof is by induction on the derivation of $[[e ~> e']]$.
 There are three cases, one for each of the rules 
 that could have been used to conclude $[[e ~> e']]$. 
 \begin{itemize}
 \item In the case of \rref{s-beta}, we have that $[[e]]$ is of the form $[[(\x.e)v]]$ and $[[e']]$ is 
-$[[ e[v/x] ]]$. We also know that the first term type checks, i.e.  $[[ |- (\x.e) v : tau ]]$. For this term to type check, we must have used \rref{t-app}, so we also know that $[[ |- (\x.e) : tau1 -> tau]]$ and 
-$[[ |- v : tau1]]$. (This logical step is referred to 
-as \emph{inversion} as we are reading a typing rule 
-from bottom to top.). We can do this again, because the only way to make an abstraction to type check is 
+$[[ e[v/x] ]]$. We also know that the first term type checks, i.e. that $[[ |- (\x.e) v : tau ]]$. For this term to type check, we must have used \rref{t-app}, so by inversion, we also know that $[[ |- (\x.e) : tau1 -> tau]]$ and 
+$[[ |- v : tau1]]$. We can do this again, because the only way to make an abstraction to type check is 
 rule \rref{t-abs}, so we must have also shown 
-$[[ x : tau1 |- e : tau ]]$. At this point we, we will 
-appeal to a \emph{substitution lemma} (see \ref{lem:single-subst} below) to 
+$[[ x : tau1 |- e : tau ]]$. At this point we, we will again
+appeal to the substitution lemma (see \ref{lem:single-subst} below) to 
 finish this case of the proof. 
 \item In the case of \rref{s-app-congOne}, we have the 
 conclusion $[[e1 e2 ~> e1' e2]]$, and premise $[[e1 ~> e1']]$. For the first term to type check, we again must have also used \rref{t-app}, so we know that $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1]]$. In this case we can use induction, because we know that $[[e1]]$, a term in the subderivation both steps and
@@ -352,6 +386,9 @@ type checks. So we know that $[[|- e1':tau1]]$. Now
 we can use \rref{t-app} to conclude that $[[|- e1' e2:tau]]$.
 \item This case is similar to the one above.
 \end{itemize}
+\end{proof}
+
+\paragraph{Substitution}
 
 In the \rref{s-beta} case, 
 our proof above relies on this lemma, that we can 
@@ -363,16 +400,72 @@ write more formally:
 \end{corollary}
 
 However, to prove this lemma, we must first generalize it. We cannot prove the
-lemma directly as stated, because we need a version that gives us a stronger induction
-hypothesis; one that works for any
-substitution (not just a singleton one) and any context of terms (not just one
-with a single variable assumption).
+lemma directly as stated, because we need a version that gives us a stronger
+induction hypothesis. To see where we run into trouble, let's walk through a potential proof and see where we get stuck.
 
-\begin{lemma}[Substitution]
-  If $[[ G |- e : tau ]]$ and for all $[[x]] \in [[dom sigma]]$, we have
+We can try to prove this lemma by structural induction on $[[e]]$. That means that we have four cases. The cases for variables, constants and applications go through without difficulty. Now consider the case for abstractions. 
+Say we have $[[ x:tau1 |- \y.e1 : tau2 ]]$. We want to show that 
+$[[ |- (\y.e1)[v/x] : tau2]]$. From the definition of substitution, we know that this is equivalent to showing that $[[ |- \y. e1[v/x] : tau2]]$, implicitly
+using the variable convention to assume that $[[y]]$ is not the same as $x$. 
+By inversion on the typing judgement, we also know that $[[tau2]]$ is some
+function type $[[tau3 -> tau4]]$ and that $[[ x:tau1, y:tau3 |- e1 : tau4]]$.
+From \rref{t-abs}, it suffices to show $[[ y : tau1 |- e1 [v/x] : tau4 ]]$.
+However, this result is not available to us through induction: the lemma only 
+applies to terms that type check in a context with exactly one variable.
+However, although $[[e1]]$ is a subterm, it type checks in a context with 
+two variables. So we cannot make any more progress on this proof.
+
+Therefore, we generalize the substitution lemma in two ways. First, we
+allow the term to type check in any context $[[G]]$. Then, the lemma 
+works for any substitution $[[sigma]]$ that replaces every variable in
+$[[dom G]]$, i.e. in scope, to a term of the appropriate type.
+However, the range of $[[sigma]]$ need not be closed: we use $[[D]]$ to 
+describe the types of variables that can appear in the range of $[[sigma]]$.
+
+\begin{lemma}[Simultaneous substitution]
+\label{lem:simultaneous}
+  If $[[ G |- e : tau ]]$ and for all $[[x]] \in [[dom G]]$, we have
   $[[D |- sigma x : G x ]]$, then $[[D |- e[sigma] : tau ]]$.
 \end{lemma}
-Proof Sketch: The proof is by induction on the typing derivation.
+\begin{proof}
+Proof is by structural induction on $[[e]]$. That means that we have four cases. Again, the cases for variables, constants and applications go through without difficulty. Now consider the case for abstractions. 
+Say we have $[[ G |- \y.e1 : tau2 ]]$. We want to show that 
+$[[ |- (\y.e1)[sigma] : tau2]]$. 
+
+From the definition of substitution, we know that this is equivalent to showing that $[[ |- \y. (e1[y/y,sigma]) : tau2]]$, implicitly
+using the variable convention to assume that $[[y]]$ is not 
+in the domain of $[[sigma]]$ or free in the range of $[[sigma]]$. 
+(The substitution $[[(y/y,sigma)]]$ is a map that is just like $[[sigma]]$, but maps the variable $y$ to itself.)
+By inversion on the typing judgement, we also know that $[[tau2]]$ is some
+function type $[[tau3 -> tau4]]$ and that $[[ G, y:tau3 |- e1 : tau4]]$.
+From \rref{t-abs}, it suffices to show 
+$[[ D, y : tau3 |- e1[y/y,sigma] : tau4 ]]$. This time we can use our inductive hypothesis on the typing derivation for $[[e1]]$. However, 
+to do so, we need to show that for all $[[x]]$ in $[[dom G, y:tau3]]$, 
+we have $[[ D, y:tau3 |- (y/y,sigma) x : (G,y:tau3) x ]]$. But we know that 
+$[[ D, y:tau3 |- y : tau3 ]]$ and we already know that the rest of the 
+substitution is well-typed.
+\end{proof}
+
+This is not the only way to strengthen our substitution lemma. If our 
+typing contexts are not ordered we can stick with single substitutions. Not ordered means that we consider $[[G, x:tau1]]$ to be the same context 
+as $[[x:tau1, G]]$. 
+
+\begin{lemma}[Substitution (Unordered context)]
+  If $[[ G, x:tau1 |- e : tau ]]$ and $[[G |- v : tau1 ]]$, then $[[ G |- e[v/x] : tau ]]$.
+\end{lemma}
+
+If contexts are ordered, then another way to strengthen this lemma is to 
+let the variable being substituted for appear anywhere in the middle of the 
+context. However, the proof of this version of the lemma requires an additional property called weakening (shown below). 
+\begin{lemma}[Substitution (Ordered context)]
+  If $[[ G, x:tau1, G' |- e : tau ]]$ and $[[G |- v : tau1 ]]$, then $[[ G, G' |- e[v/x] : tau ]]$.
+\end{lemma}
+
+\begin{lemma}[Weakening]
+  If $[[ G |- e : tau ]]$ then $[[G,G' |- e : tau1 ]]$.
+\end{lemma}
+Weakening is a corollary of our strongest substitution lemma where
+we set $[[D]]$ = $[[G,G']]$ and $[[sigma]]$ to be the identity function. 
 
 \paragraph{Progress}
 

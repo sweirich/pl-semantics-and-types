@@ -1,0 +1,130 @@
+\chapter[Big-step semantics]{Big-Step Operational Semantics}
+
+So far, we have only considered small-step operational semantics for STLC.
+This semantics is useful because it provides a substitution-based,
+step-by-step explanation of how each expression evaluates.
+
+But, as we have seen, our operational semantics is deterministic! Why didn't
+we express the semantics using an interpreter instead. 
+
+Consider the following definition in the Roq programming language. We represent 
+the syntax of the language using the \texttt{Tm} datatype and the interpreter
+using the \texttt{eval} function.
+
+\begin{lstlisting}
+Inductive Tm : Type :=
+    var : Var -> Tm           (* variable, with names of type Var *)
+  | abs : Var -> Tm -> Tm     (* abstraction *)
+  | app : Tm -> Tm -> Tm      (* application *)
+  | lit : nat -> Tm.          (* literal natural number constant *)
+
+Fixpoint eval (e : Tm) : option Tm := 
+  match e with 
+  | var x     => None   
+  | lit k     => Some (lit k)
+  | abs x e1  => Some (abs x e1)
+  | app e1 e2 => 
+      match eval e1 , eval e2 with 
+      | Some (abs x e1') , Some v2 => eval (e1' [v2 / x])
+      | _ , _ => None
+      end
+end.
+\end{lstlisting}
+
+The interpreter is partial because we may try to evaluate an expression with a
+free variable, or because we may have a type error. In either case, the
+interpreter returns \texttt{None}. Otherwise, when evaluating an application,
+the interpreter evaluates the function to some abstraction value, the argument
+to some other value and then calls itself recursively after substituting the
+argument for the parameter.
+
+But this definition is \textbf{not} accepted by Rocq. It rejects the definition 
+of \texttt{eval} with the following error message:
+\begin{verbatim}
+Recursive call to eval has principal argument equal to 
+   "e1'[v2/x]" instead of one of the following variables: 
+   "e1" "e2".
+\end{verbatim}
+The reason for this error is that Rocq assumes that we are defining this
+evaluation function via \emph{structural recursion} on expressions. That means
+that we are allowed to call \texttt{eval} on any subterm of the argument (such
+as \texttt{e1} and \texttt{e2}, the subterms in the application case).
+However, the third recursive call is not to a subterm---instead it is to the
+body of the closure. Rocq cannot determine that this function terminates, so
+it must reject this definition.
+
+\section{Big-step semantics}
+
+To work around this issue in our metalogic, we can work with a \emph{relational} version of 
+\texttt{eval} instead. We define the inductive relation $[[e => v]]$ that holds when $[[e]]$ evaluates $[[v]]$.
+
+\begin{definition}[Big-step semantics]\ \\
+\drules[bs]{$[[e => v]]$}{term $e$ big-steps to $[[v]]$}
+{val,app}
+\end{definition}
+
+Notably, this definition requires only two rules! The first rule states that
+values evaluate to themselves. The second evaluates an application and holds
+when the function evaluates to an abstraction, the argument evaluates to a
+value and the substitution of the argument the parameter also evaluates to a
+value.
+
+\begin{theorem}Equivalence of semantics] 
+For closed expressions $e$, we have $[[e ~>* v]]$ if and only if $[[e => v]]$.
+\end{theorem}
+
+We prove each direction of this lemma separately. For the forward direction (small-step implies big-step), we need to show the following
+lemma:
+
+\begin{lemma}
+If $[[e ~> e']]$ then for forall $v$, if $[[e' => v]]$ then $[[e => v]]$.
+\end{lemma}
+
+For the backwards direction (big-step implies small-step), we need to define multi-step analogues
+of the two evaluation rules of the big-step semantics.
+
+\begin{lemma}[s\_val] $[[v ~>* v]]$
+\end{lemma}
+
+\begin{lemma}[s\_app] If $[[e1 ~>* \x.e1']]$ and $[[e2 ~>* v1]]$ and $[[e1'[v1/x] ~>* v2]]$ then $[[e1 e2 ~>* v2]]$.
+\end{lemma}
+
+This lemma itself relies on showing multi-step analogues of the single-step congruence rules for the 
+small step semantics.
+\begin{lemma}[ms\_app\_cong1] 
+If $[[e1 ~>* e1']]$ then $[[e1 e2 ~>* e1' e2]]$.
+\end{lemma}
+
+\begin{lemma}[ms\_app\_cong2] 
+If $[[e2 ~>* e2']]$ then $[[v1 e2 ~>* v1 e2']]$.
+\end{lemma}
+
+\section{Big-step semantics and type safety?}
+
+The big-step semantics has fewer rules, and in some situations, may be easier
+to understand as it is more directly connected to an interpreter.
+
+However, there is a significant drawback of a big-step semantics: 
+it handles both the partiality of a runtime type error and the potential partiality of divergence in 
+exactly the same way.
+
+But, we run into difficulty when stating and proving type safety for this semantics. While
+preservation holds for this semantics:
+
+\begin{lemma}[Preservation]
+If $[[e => v]]$ and $[[|- e : tau]]$ then $[[|- v : tau]]$.
+\end{lemma}
+
+There is no way to define an analogue for the progress lemma for the big step semantics.
+
+It is tempting to define type safety as follows:
+\begin{conjecture}[Big Step Safety]
+If $[[|- e : tau]]$ then $[[e => v]]$ and $[[|- v : tau]]$.
+\end{conjecture}
+
+But this is a strong lemma --- it rules out both forms of partiality. We know
+that the program doesn't crash, but we also know that the program doesn't
+diverge either.  While this lemma is true for STLC, proving this lemma is not
+a straightforward induction. And, if we were to extend the language to include
+nontermination, it would no longer be true.
+
