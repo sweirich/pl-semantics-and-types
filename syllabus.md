@@ -14,8 +14,8 @@
 | W 8/27  | **No Class**: Instructor travel              |
 | M 9/1   | **No Class**: Labor day                      |
 | W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> [Type Safety for STLC](notes/plst.pdf) |
-| M 9/8   | Preservation and Progress proofs </br> Natural number recursion |
-| W 9/10  | |
+| M 9/8   | Preservation and substitution proofs |
+| W 9/10  | Progress <br/> Natural number recursion |
 | M 9/22  | |
 | W 9/24  | |
 | M 9/29  | |
