@@ -95,6 +95,6 @@ k v ~> (\x. k x) v
 (cons v1 v2) 0 ~> v1
 
 ---------------------------- :: app_succ
-(cons v1 v2) (1+k) ~> v2 k
+(cons v1 v2) (S k) ~> v2 k
 
 

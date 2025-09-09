@@ -119,7 +119,8 @@ this type.
 
 \subsection{A mystery language}
 
-Suppose we add the following new rules to STLC. 
+Suppose we add the following new rules to STLC, where $\Sigma$ is some fixed
+map from natural numbers to types. This map is defined for all numbers, but can return any type.
 
 \drule{t-arr-ptr} \qquad \drule{s-app-nat}
 
@@ -163,7 +164,7 @@ We also will allow programmers to access the elements of a
 list through projection. We will reuse the syntax of function application for 
 list projection: if the first argument is some list $l$ and the 
 second argument is some number $k$, then the application looks up 
-the $k$th element of the list:
+the $k$th element of the list $l$:
 
 \drule{t-nth} \\ \drule{s-app-zero} \\ \drule{s-app-succ} 
 
@@ -177,8 +178,8 @@ the $k$th element of the list:
 \subsection{Simply-typed function pointers}
 
 Suppose we modify STLC to use \emph{function pointers} instead of anonymous
-functions. To do so, we assume the existance of a fixed map $\mu$ from natural
-numbers to abstractions.
+functions. To do so, we assume the existence of $\mu$, a fixed map from natural
+numbers to abstractions and $\Sigma$, a map from natural numbers to types.
 
 We also remove the rules that type check and step anonymous functions (as they
 can no longer appear directly in programs), \rref{t-abs} and \rref{s-beta},
