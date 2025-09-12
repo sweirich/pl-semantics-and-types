@@ -113,73 +113,12 @@ End Big.
 
 
 
-(** Big step, environment-based reduction relation *)
-
-Module BigEnv.
-
-Inductive Val : Type :=
-  | v_clo {n} : (fin n -> Val) -> Tm (S n) -> Val
-  | v_lit : nat -> Val.
-
-Definition Env n := fin n -> Val.
-
-Inductive step {n} (ρ : Env n) : Tm n -> Val -> Prop := 
-
-  | s_var x : 
-    step ρ (var x) (ρ x)
-
-  | s_abs e : 
-    step ρ (abs e) (v_clo ρ e)
-
-  | s_app e1 {m} (ρ' : Env m) e1' e2 v1 v2 :
-    step ρ e1 (v_clo ρ' e1') ->
-    step ρ e2 v1 ->
-    step (v1 .: ρ') e1' v2 ->
-    step ρ (app e1 e2) v2
-
-  | s_lit k : 
-    step ρ (lit k) (v_lit k)
-
-  | s_succ e n : 
-    step ρ e (v_lit n) ->
-    step ρ (succ e) (v_lit (S n))
-
-  | s_nrec e e1 e2 n v : 
-    step ρ e (v_lit n) -> 
-    step_nrec ρ n e1 e2 v -> 
-    step ρ (nrec e e1 e2) v
-
-  | s_let e1 e2 v1 v2 : 
-    step ρ e1 v1 ->
-    step (v1 .: ρ) e2 v2 -> 
-    step ρ (let_ e1 e2) v2
-
-with 
-  step_nrec {n} (ρ : Env n) : nat -> Tm n -> Tm (S n) -> Val -> Prop :=
-  | s_nrec_zero v e0 e1 : 
-    step ρ e0 v ->
-    step_nrec ρ 0 e0 e1 v
-  | s_nrec_succ n e0 e1 v1 {m} (ρ': Env m) e' v :
-    step_nrec ρ n e0 e1 v1 ->
-    step (v_lit n .: ρ) e1 (v_clo ρ' e') ->
-    step (v1 .: ρ') e' v ->
-    step_nrec ρ (S n) e0 e1 v
-.
-
-Scheme step_ind' := Induction for step Sort Prop
-with step_nrec_ind' := Induction for step_nrec Sort Prop.
-
-Combined Scheme step_step_nrec_mutind from step_ind',step_nrec_ind'.
-
-End BigEnv.   
-
 Module RedNotations.  
 Infix "⤳"  := Small.step (at level 70).
 Infix "⤳*" := (multi Small.step) (at level 70).
 Notation "e ⟱ v" := 
   (e ⤳* v /\ is_value (v : Tm 0) = true) (at level 70).
 Infix "⇓"   := Big.step   (at level 70).
-Notation "< ρ | e > ⇓ v" := (BigEnv.step ρ e v) (at level 70).
 End RedNotations.
 
 
