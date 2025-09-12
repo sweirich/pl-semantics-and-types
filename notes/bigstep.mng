@@ -69,7 +69,7 @@ when the function evaluates to an abstraction, the argument evaluates to a
 value and the substitution of the argument the parameter also evaluates to a
 value.
 
-\begin{theorem}Equivalence of semantics] 
+\begin{theorem}[Equivalence of semantics] 
 For closed expressions $e$, we have $[[e ~>* v]]$ if and only if $[[e => v]]$.
 \end{theorem}
 
@@ -102,13 +102,19 @@ If $[[e2 ~>* e2']]$ then $[[v1 e2 ~>* v1 e2']]$.
 \section{Big-step semantics and type safety?}
 
 The big-step semantics has fewer rules, and in some situations, may be easier
-to understand as it is more directly connected to an interpreter.
+to understand as it is more directly connected to an interpreter. But, note that while the 
+relation $[[e => v]]$ is deterministic, it represents a \emph{partial function}. There are many
+expressions $[[e]]$ that are not related to values.
 
-However, there is a significant drawback of a big-step semantics: 
-it handles both the partiality of a runtime type error and the potential partiality of divergence in 
-exactly the same way.
+This partiality leads to a significant drawback of a big-step semantics: it
+handles both the partiality of a runtime type error and the partiality of
+divergence in exactly the same way. This is in contrast to the small-step
+semantics: runtime errors made the single-step relation partial, while
+divergence can be modeled using a coinductive definition of multi-step
+reduction.
 
-But, we run into difficulty when stating and proving type safety for this semantics. While
+Because the big step semantics does not distinguish runtime errors from diverging 
+programs, we run into difficulty when stating and proving type safety. While
 preservation holds for this semantics:
 
 \begin{lemma}[Preservation]
@@ -117,14 +123,26 @@ If $[[e => v]]$ and $[[|- e : tau]]$ then $[[|- v : tau]]$.
 
 There is no way to define an analogue for the progress lemma for the big step semantics.
 
-It is tempting to define type safety as follows:
+Furthermore, it is tempting to define type safety as follows:
 \begin{conjecture}[Big Step Safety]
 If $[[|- e : tau]]$ then $[[e => v]]$ and $[[|- v : tau]]$.
 \end{conjecture}
 
-But this is a strong lemma --- it rules out both forms of partiality. We know
+But this is a strong lemma---it rules out both forms of partiality. We know
 that the program doesn't crash, but we also know that the program doesn't
-diverge either.  While this lemma is true for STLC, proving this lemma is not
-a straightforward induction. And, if we were to extend the language to include
-nontermination, it would no longer be true.
+diverge either.  While this lemma \emph{is} true for STLC, proving this lemma
+is not a straightforward induction. And, if we were to extend the language to
+include nontermination, it would no longer be true.
 
+\section{Further Reading}
+
+Kahn~\cite{kahn:natural-semantics} initially proposed the use of \emph{natural
+  semantics}, which has since been referred to as \emph{big-step} semantics to
+contrast with \emph{small-step} semantics.
+
+Leroy~\cite{leroy:coinductive-big-step} explores the rammifications of using
+coinductive definitions for big-step semantics.
+
+Chargu{\'e}raud develops a compromise between big-step semantics and
+small-step semantics that he calls \emph{pretty-big-step
+  semantics}~\cite{chargueraud:pretty-big}.

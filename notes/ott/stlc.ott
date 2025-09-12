@@ -14,7 +14,7 @@ metavar x, y, z, f, g ::=
 
 grammar
 
-nat , j, k :: 'k_' ::= 
+nat , i, j, k :: 'k_' ::= 
 {{ com natural number constants }}
   | 0               ::   :: Zero
   | S k             ::   :: Succ
@@ -61,7 +61,6 @@ G {{ tex \Gamma }} , D {{tex \Delta}} :: 'ctx_' ::=
 {{ com typing contexts: map all variables in scope to types }}
   | x : tau         ::    :: Single {{ tex [[x]]\! :\![[tau]] }}
   |                 ::    :: Nil
-    {{ tex \emptyset }}
   | G1 , G2         ::    :: Append 
   | ( G )           :: S  :: Paren
 
@@ -126,13 +125,25 @@ v , w :: 'v_' ::=
 
   | ( v )           :: S :: Paren
 
-ES :: 'tms_' ::= 
+S  :: 'tms_' ::= 
 {{ com sets of terms }} 
   | nats            ::   :: Nat
   | V tau           :: M :: LRV
+   {{ tex \mathcal{V}[\![ [[tau]] ]\!] }}
   | C tau           :: M :: LRC
+   {{ tex \mathcal{C}[\![ [[tau]] ]\!] }}
   | { e | formula } :: M :: Comprehension
-   {{ tex \{ [[e]]\ |\ [[formula]] \} }}
+   {{ tex \{ [[e]]\ |\ [[formula]]\, \} }}
+  | S1 => S2        :: M :: Function
+  | S1 * S2         :: M :: Product
+  
+
+U  :: 'tms_' ::= 
+{{ com sets of substitutions }} 
+  | [ G ]         :: M :: LRG
+   {{ tex \mathcal{G}[\![ [[G]] ]\!] }}
+  | { sigma | formula } :: M :: SComprehension
+   {{ tex \{ [[sigma]]\ |\ [[formula]]\, \} }}
 
 
 subrules
@@ -155,7 +166,6 @@ terminals :: 'terminals_' ::=
   | dom               ::   :: dom           {{ tex \mathsf{dom} }}
   | rng               ::   :: rng           {{ tex \mathsf{rng} }}
   | ==                ::   :: equiv         {{ tex \equiv }}
-  | all               ::   :: forall        {{ tex \forall }}
   | elem              ::   :: elem          {{ tex \in }}
   | notin             ::   :: notin         {{ tex \not\in }}
   | <=                ::   :: check         {{ tex \Leftarrow }}
@@ -190,6 +200,8 @@ terminals :: 'terminals_' ::=
   | and               ::   :: and           {{ tex \mathit{and} }}
   | or                ::   :: or            {{ tex \mathit{or} }}
   | nats              ::   :: nats          {{ tex \mathbb{N} }}
+  | forall            ::   :: forall        {{ tex \forall }}
+  | exists            ::   :: exists        {{ tex \exists }}
 
 formula :: 'formula_' ::=
   | judgement                  ::   :: judgement
@@ -197,10 +209,15 @@ formula :: 'formula_' ::=
   | x : tau elem G             ::   :: inG
   | formula1 and formula2      ::   :: and
   | formula1 implies formula2  ::   :: implies
-  | e elem ES                  ::   :: tmelem
+  | e elem S                   ::   :: tmelem
+   {{ tex [[e]] \in [[S]] }}
   | forall e , formula         ::   :: forall_quant
+   {{ tex \mathit{for all} [[e]],[[formula]] }}
+  | forall x elem S , formula         ::   :: forall_elem_quant
+   {{ tex \forall [[x]][[elem]][[S]],[[formula]] }}
+
   | exists e , formula         ::   :: exists_quant
-  | G |= sigma                 ::   :: sem_sub
+  | sigma elem  U              ::   :: sem_sub
   | G |= e : tau               ::   :: sem_typing
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
