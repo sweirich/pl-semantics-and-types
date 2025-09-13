@@ -26,7 +26,7 @@ arbitrary type. If you are familiar with algebraic datatypes, or inductive
 datatypes, you can think of the following definitions along those lines.
 
 \begin{definition}[Types]
-The set of types is inductively defined by the following rules:
+The set of \link{stlc/syntax.v}{Ty}{types} is inductively defined by the following rules:
 \begin{enumerate}
 \item A base type, $[[Nat]]$, is a type.
 \item If $[[tau1]]$ and $[[tau2]]$ are types, then $[[tau1 -> tau2]]$ is a type.
@@ -35,7 +35,7 @@ The type $[[tau1 -> tau2]]$ represents the type of functions that take an argume
 \end{definition}
 
 \begin{definition}[Terms]
-The set of terms is inductively defined by the following rules:
+The set of \link{stlc/syntax.v}{Tm}{terms} is inductively defined by the following rules:
 \begin{enumerate}
 \item A natural number $k$ is a term.
 \item A variable $x$ is a term. 
@@ -216,10 +216,15 @@ minor omissions related to variable naming; but we won't stress about them.
 \section{Type system}
 Next we will define a typing relation for STLC. This relation has the form
 $[[G |- e : tau]]$, which is read as ``in the typing context $[[G]]$, the term
-$[[e]]$ has type $[[tau]]$.''  The typing context $[[G]]$, tells us what the
-types of free variables should be. Therefore, we can view it as a finite map
-from variables to types, and write it by listing all of the associations
-$[[x:tau]]$.  If a term is in this relation we say that it ``type checks''.
+$[[e]]$ has type $[[tau]]$.''  
+If a term is in this relation we say that it ``type checks''.
+The \link{stlc/typing.v}{Ctx}{typing context} $[[G]]$, tells us what the
+types of free variables should be. Therefore, we model it as a finite map
+from variables to types, and write it by listing all of the associations, for 
+example $[[x:tau1,y:tau2,z:tau3]]$. If the context has no associations, we call it 
+the \emph{empty context} and leave 
+it blank, writing for example $[[ |- 2 : Nat ]]$. Terms that type check with an 
+empty context are call \emph{closed} and have no free variables.
 
 We define the typing relation inductively, using the following rules. A term
 type checks if we can find some tree that puts these rules together in a
@@ -229,7 +234,7 @@ premise must be satisfied by subderivations, bottoming out with rules such as
 \rref{t-var} or \rref{t-lit} that do not have any premises for the same
 relation.
 
-\begin{definition}[STLC type system]\ \\
+\begin{definition}[\link{stlc/typing.v}{typing}{STLC type system}]\ \\
 \drules[t]{$[[G |- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
 {lit,var,abs,app}
 \end{definition}
@@ -274,7 +279,7 @@ form, a \emph{value}. If we have $[[e ~>* v]]$ then we say that \emph{$[[e]]$
 evaluates to $[[v]]$}.
 
 \begin{definition}[Value]
-A \emph{value} is an expression that is either a natural number constant or an
+A \link{stlc/red.v}{is_value}{value} is an expression that is either a natural number constant or an
 abstraction.
 \[  [[v]] ::= [[k]]\ |\ [[\x.e]] \]
 \end{definition}
@@ -282,7 +287,7 @@ abstraction.
 We define the single step relation inductively, using the inference rules below
 that state when one term steps to another.
 
-\begin{definition}[Small-step relation]\ \\
+\begin{definition}[\link{stlc/red.v}{Small.step}{Small-step relation}]\ \\
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
 {beta,app-congTwo,app-congTwo}
 \end{definition}
@@ -300,7 +305,7 @@ The second two rules each have premises that must be satisfied before they can b
 
 This small step relation is intended to be deterministic. Any term steps to at
 most one new term.
-\begin{lemma}[Determinism]
+\begin{lemma}[\link{stlc/red.v}{small_step_determinism}{Determinism}]
 If $[[e ~> e1]]$ and $[[e ~> e2]]$ then $[[e1]]=[[e2]]$.
 \end{lemma}
 
@@ -330,7 +335,7 @@ $[[tau]]$, and it takes a single reduction step to $[[e']]$, then the new term
 must also have the exact same type $[[tau]]$. In other words, the type is
 ``preserved'' through evaluation.
 
-\begin{lemma}[Preservation]
+\begin{lemma}[\link{stlc/safety.v}{preservation}{Preservation}]
 If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
 \end{lemma}
 We can prove this lemma in three separate ways: by structural induction 
@@ -394,7 +399,7 @@ In the \rref{s-beta} case,
 our proof above relies on this lemma, that we can 
 write more formally:
 
-\begin{corollary}[Single Substitution]
+\begin{corollary}[\link{stlc/safety.v}{single_substitution}{Single Substitution}]
 \label{lem:single-subst}
   If $[[ x:tau1 |- e : tau2 ]]$ and $[[ |- v : tau2 ]]$ then $[[ |- e [v/x] : tau1 ]]$
 \end{corollary}
@@ -422,7 +427,7 @@ $[[dom G]]$, i.e. in scope, to a term of the appropriate type.
 However, the range of $[[sigma]]$ need not be closed: we use $[[D]]$ to 
 describe the types of variables that can appear in the range of $[[sigma]]$.
 
-\begin{lemma}[Simultaneous substitution]
+\begin{lemma}[\link{stlc/safety.v}{substitution}{Simultaneous substitution}]
 \label{lem:simultaneous}
   If $[[ G |- e : tau ]]$ and for all $[[x]] \in [[dom G]]$, we have
   $[[D |- sigma x : G x ]]$, then $[[D |- e[sigma] : tau ]]$.
@@ -461,11 +466,11 @@ context. However, the proof of this version of the lemma requires an additional 
   If $[[ G, x:tau1, G' |- e : tau ]]$ and $[[G |- v : tau1 ]]$, then $[[ G, G' |- e[v/x] : tau ]]$.
 \end{lemma}
 
-\begin{lemma}[Weakening]
-  If $[[ G |- e : tau ]]$ then $[[G,G' |- e : tau1 ]]$.
-\end{lemma}
 Weakening is a corollary of our strongest substitution lemma where
-we set $[[D]]$ = $[[G,G']]$ and $[[sigma]]$ to be the identity function. 
+we set $[[D]]$ = $[[G,x:tau]]$ and $[[sigma]]$ to be the identity function. 
+\begin{lemma}[\link{stlc/safety.v}{single_weakening}{Single Weakening}]
+  If $[[ G |- e : tau ]]$ then $[[G,x : tau1 |- e : tau ]]$.
+\end{lemma}
 
 \paragraph{Progress}
 
@@ -474,10 +479,11 @@ has not been completely reduced can always take at least one more reduction
 step. It ensures that a well-typed term is not ``stuck.'' (i.e. is not a value
 but cannot step).
 
-\begin{lemma}[Progress]
+\begin{lemma}[\link{stlc/safety.v}{progress}{Progress}]
 If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ such that 
 $[[ e ~> e' ]]$.
 \end{lemma}
+\begin{proof}
 We prove this lemma by induction in the typing derivation. In the rules where 
 $[[e]]$ is already a value, then the proof is trivial.
 Therefore we only need to consider when $[[e]]$ is an application of the 
@@ -491,6 +497,21 @@ By induction on the second premise, we know that either $[[e2]]$ is a value or
 that it takes a step to some $[[e2']]$. In the former case, the application 
 steps to $[[e'[e2/x] ]]$ by \rref{s-beta}, in the latter case, the application 
 steps to $[[(\x.e') e2']]$ by \rref{s-app-cong2}.
+\end{proof}
+
+Part of this proof involves inferring the structure of a closed value from its
+type. Although this is a straightforward bit of reasoning by inversion, this is a 
+key step of any progress proof. Therefore, we explicitly state the lemma (and its analogue for natural numbers below).
+
+\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr} Canonical forms (arrow types)]
+If $[[|- v : tau1 -> tau2]]$ then $[[v]]$ is some $[[abs e]]$.
+\end{lemma}
+
+\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr} Canonical forms (nat)]
+If $[[|- v : Nat]]$ then $[[v]]$ is some natural number $[[k]]$.
+\end{lemma}
+
+
 
 
 \section{What is type safety?}
@@ -532,12 +553,12 @@ There are several solutions to this issue.
 The most straightforward approach is to define what it means for a program to get 
 stuck, and then show that this cannot happen.
 
-\begin{definition}[Stuck]
+\begin{definition}[\link{stlc/safety.v}{not_stuck}{Stuck}]
 A term $[[e]]$ is \emph{stuck} if it is not a value and there does not exists 
 any $[[e']]$ such that $[[e ~> e']]$.
 \end{definition}
 
-\begin{theorem}[Type safety (no stuck terms)]
+\begin{theorem}[\link{stlc/safety.v}{type_safety_not_stuck}{Type safety (no stuck terms)}]
 If $[[ |- e : tau ]]$ then for all $[[e']]$, such that $[[e ~>* e']]$, 
 $[[e']]$ is not stuck.  
 \end{theorem}
@@ -557,13 +578,13 @@ we want to say that a well typed term either produces a value or runs forever, w
 having to talk about stuckness. 
 
 We can do that using the following \emph{coinductive} definition.
-\begin{definition}[Runs safely]
+\begin{definition}[\link{stlc/safety.v}{safe_run}{Runs safely}]
 A program $[[e]]$ \emph{runs safely}, if it is a value or 
 if $[[e ~> e']]$, and $[[e']]$ \emph{runs safely}. 
 \end{definition}
 
 This is exactly the definition we want to use in a type safety theorem.
-\begin{theorem}[Type Safety (runs safely)]
+\begin{theorem}[\link{stlc/safety.v}{type_safety_coinductive}{Type Safety (runs safely)}]
 If $[[|- e : tau]]$ then $[[e]]$ \emph{runs safely}.
 \end{theorem}
 
@@ -607,23 +628,23 @@ what it means to run safely another way.
 
 We say that an expression $[[e]]$ steps to $[[e']]$ in $[[k]]$ steps 
 using the following inductive definition.
-\begin{definition}
+\begin{definition}[\link{stlc/safety.v}{step_k}{Counted steps}]
 \drules[ms-k]{$[[e ~k> e' ]]$}{$k$ steps}
 {refl,step}
 \end{definition}
 
-\begin{definition}[Safe for $k$]
+\begin{definition}[\link{stlc/safety.v}{safe_run_k}{Safe for $k$}]
 An expression evaluates safely for $k$ steps if it either there is some
 $[[e']]$, such that $[[e ~k> e']]$, or there is some number of steps $j$
 strictly less than $k$ where the term terminates with a value 
-(i.e. there is some $v$ and $j <= k$ such that $[[e ~j> v]]$).
+(i.e. there is some $v$ and $j < k$ such that $[[e ~j> v]]$).
 \end{definition}
 
 We can now state type safety using this step-counting definition. We can't
 really talk about an infinite computation, but we can know that for an
 arbitrarily long time, $e$ will run safely during that time.
 
-\begin{theorem}[Type Safety (step-counting)]
+\begin{theorem}[\link{stlc/safety.v}{type_safety_step_counting}{Type Safety (step-counting)}]
 If $[[|- e : tau]]$ then for all natural numbers $k$, $e$ is safe for $k$.
 \end{theorem}
 We show this result by induction on $k$.

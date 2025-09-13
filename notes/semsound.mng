@@ -1,0 +1,224 @@
+\chapter[Termination]{Big-step termination and Semantic soundness}
+
+In this chapter we will show how to prove the strong version of type safety
+for a language with a big-step semantics. After completing the proof, not only
+will we know that programs do not crash, we will also know that they do not
+diverge either. Every well-typed program can produce a value.
+
+\section{Big-step type safety}
+
+Here is an initial statement of type safety for the big-step semantics. It
+states that any closed, well-typed term $[[e]]$ must evaluate to some value
+$[[v]]$. This means that the term cannot crash or diverge. For simplicity, we
+will work with a version of type safety that is a little weaker than the
+version in the previous chapter; it doesn't require the result to be well
+typed.
+
+\begin{conjecture}[Big Step Safety] 
+If $[[|- e : tau]]$ then $[[e => v]]$.
+\end{conjecture}
+
+We won't be able to prove this theorem directly by induction on $e$ or on the
+typing derivation. But, looking at how this proof fails will tell us how to
+strengthen it so that it is provable. We will do this strengthening
+incrementally, generalizing the induction hypothesis as necessary.
+
+Our first attempt to prove the big step safety theorem is by induction 
+on $[[e]]$.
+\begin{itemize}
+\item For the literal case, we know that $[[e]]$ is a constant 
+$[[k]]$ (which is a value) because it is well typed, then $[[tau]]$ is the type $[[Nat]]$. 
+Immediately we have $[[k => k]]$ and $[[|- k : Nat]]$.
+\item Similarly for the abstraction case, we know that $[[e]]$ is $[[\x.e']]$ 
+and that $[[tau]]$ is $[[tau1 -> tau2]]$. Again, immediately, we have 
+$[[\x.e' => \x.e']]$ and $[[|- \x.e' : tau1 -> tau2]]$.
+\item We don't need to consider the variable case as the term is closed.
+\item Finally, consider the application case, where $[[e]]$ is $[[e1 e2]]$ 
+  and $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1 ]]$.
+  We can use induction on $[[e1]]$ and $[[e2]]$ to get $[[|- v1 : tau1 -> tau]]$
+  and $[[|- v2 : tau1 ]]$. Furthermore, the only closed values with function 
+  types are functions, so $[[v]]$ must be some $[[\x.e1']]$.
+  However, here we are stuck. We want to show that there is 
+  some $[[|- v3 : tau1]]$ such that $[[ e1' [v2 / x ] => v3]]$. But we don't 
+  have a way to conclude this. We can't use induction because $[[e1'[v2/x] ]]$
+  isn't a subterm of $[[e]]$.
+\end{itemize}
+
+The solution at this point is to observe that our induction hypothesis was not
+strong enough. We needed to know more about $[[e1]]$ than just that it
+terminates and has a function type. We also need to know that when given an
+argument, the application will also terminate (and produce a value of the same
+type).
+
+Therefore, we will strengthen the property that we prove. Above, in the
+application case we want to know something about $[[e1'[v2/x] ]]$, so we
+cannot use the induction hypothesis on this term. However, we get this term
+from evaluating $[[e1]]$ and $[[e2]]$, so we can strengthen the conclusion of
+our lemma.  Above, all we know about $[[v]]$ is that it is well-typed. But,
+depending on this type, we can assert stronger properties about this value.
+
+\begin{definition}[\link{stlc/semsound.v}{V}{Value set}] Define the family of sets $[[V tau]]$ by structural 
+recursion on $[[tau]]$.
+\[
+\begin{array}{lcl}
+[[ V Nat ]] &=& [[nats]] \\
+[[ V tau1 -> tau2 ]] &=& [[{ \x. e | forall v, v elem V tau1 implies exists v', e[v / x] => v' and v' elem V tau2 }]]  \\
+\end{array}
+\]
+\end{definition}
+
+This definition interprets each type as a set of values. The values in each
+set make sense for the associated type. The set for $[[Nat]]$ contains all
+natural numbers, and the sets for each function type only contain
+abstractions. These abstractions must themselves act like they have the right
+type: they must take any value from the interpretation of the argument type
+and, after substitution, evaluate to a value in that is in the result type.
+It is this requirement for function types that will help us complete the proof 
+above---we know that the substitution we need $[[e'[v2/x] ]]$ will terminate
+(and satisfy the condition of our stronger theorem).
+
+This idea of evaluating a term to a value in a particular set will come up
+again, so let's name it. The computational interpretation of a type includes
+all expressions that evaluate to a value in the value set for that type.
+\begin{definition}[\link{semsound.v}{C}{Computation set}]
+\[
+[[ C tau ]] = [[ { e | e => v and v elem V tau } ]]
+\]
+\end{definition}
+
+Now we can use these definitions to strengthen our safety theorem. Not only do 
+we require that a term evaluate to a value, but that value must be in the 
+appropriate set for that type.
+\begin{lemma}[Semantic soundness]
+If $[[|- e : tau]]$ then $[[e elem C tau]]$.
+\end{lemma}
+
+However, as you might guess, our induction hypothesis is \emph{still} not strong 
+enough to prove the result. Let's try a case where it works, and one where  
+it doesn't. 
+
+We'll again prove the theorem by induction on $[[|- e : tau]]$. The variable case is impossible and the literal case is immediate. Now consider the application
+case, where we have $[[ |- e1 e2 : tau ]]$, with $[[ |- e1 : tau1 -> tau]]$ and
+$[[ |- e2 : tau1 ]]$.
+By induction, we know that $[[ e1 elem C tau1 -> tau]]$ and $[[e2 elem C tau1]]$. 
+So that means that both of these terms must evaluate to values in their 
+appropriate sets. i.e. $[[ e1 => v1]]$ where $[[v1 elem V tau1 -> tau]]$ and 
+$[[e2 => v2]]$ where $[[v2 elem V tau1]]$. To construct an evaluation in this 
+case, we need to know that $[[v1]]$ is some abstraction, and that if we substitute $[[v2]]$ for the parameter the program terminates. But this is exactly what the set $[[V tau1 -> tau]]$ gives us! We have fixed this case.
+
+However, now consider the application case. In this case we have $[[ |- \x.e : tau1 -> tau2]]$. We
+need to show that this abstraction is in $[[C tau1 -> tau2]]$. We know
+already that this term has the right type. It also terminates as it is already
+a value; i.e. $[[ \x.e => \x.e]]$. Our remaining goal is to show
+$[[ \x.e elem V tau1 -> tau2]]$. But, we cannot make any more progress.  We
+don't have an induction hypothesis that we can use in this case, because our lemma
+only applies to closed terms.
+
+Therefore, we will strengthen our lemma \emph{again}, so that it applies not just to
+closed terms, but also gives us an induction hypothesis for open terms. But,
+our sets are only sets of closed terms! How can we do this?
+
+The answer is that our revised lemma should quantify over \emph{closing
+  substitutions}, i.e. substitutions that replace all free variables with
+closed values. Furthermore, to make sure that our theorem is strong enough, we
+also require that these closed values be part of our semantic sets.
+
+\begin{definition}[\link{stlc/semsound.v}{semantic_env}{Semantic substitution}]
+Define $[[ sigma elem [ G ] ]]$ when $\forall x \in [[dom G]], [[ sigma x elem V (G x) ]]$.
+\end{definition}
+
+With this definition, we can now restate our lemma in its final form.
+
+\begin{lemma}[\link{stlc/semsound.v}{soundness}{Semantic soundness}]
+If $[[G |- e : tau]]$ then forall $[[sigma elem [ G ]  ]]$, $[[e[sigma] elem C tau ]]$.
+\end{lemma}
+\begin{proof}
+Proof is by induction on the derivation of $[[G |- e : tau]]$. 
+\begin{itemize}
+\item If $[[ G |- x : G x ]]$, then given an arbitrary $[[sigma elem [G] ]]$, 
+we need to show that $[[x[sigma] elem C (G x) ]]$. However, in our definition of 
+substitution, we have $[[ x[sigma] ]] = [[sigma x]]$, so we know that $[[ sigma x elem V (G x)]]$
+by assumption. This also implies that $[[ sigma x elem C (G x)]]$ because values evaluate to 
+themselves.
+\item If $[[ G |- k : Nat ]]$, then  given an arbitrary $[[sigma elem [ G ] ]]$, 
+we need to show that $[[k[sigma] elem C Nat ]]$. This is the same as showing 
+that $[[k => k]]$ and $[[k elem nats ]]$.
+\item Say $[[ G |- e1 e2 : tau ]]$ where $[[ G |- e1 : tau1 -> tau ]]$ and $[[ G |- e2 : tau1 ]]$
+  are subderivations.  Given an arbitrary $[[sigma elem [ G ] ]]$, 
+we need to show that $[[(e1 e2)[sigma] elem C tau ]]$. 
+By induction we know that $[[ e1[sigma] elem C tau1 -> tau]]$ and $[[e2[sigma] elem C tau1]]$. This 
+means that the former steps to some $[[v1 elem V tau1 -> tau]]$ and the latter steps to some $[[v2 elem V tau1]]$. Furthermore, we know that $[[v1]]$ must be some $\lambda$-term $[[\x.e]]$, and that 
+$[[ e[v2/x] => v ]]$ with $[[ v elem V tau]]$. But, by \rref{bs-app}, we also 
+have $[[e1[sigma] e2[sigma] => v]]$, which gives us our goal.
+\item Say $[[ G |- \x . e : tau1 -> tau ]]$ where $[[ G , x : tau1 |- e : tau ]]$.
+ Given an arbitrary $[[sigma elem [ G ] ]]$, 
+we need to show that $[[(\x. e)[sigma] elem C tau ]]$. We know that 
+$[[ (\x.e)[sigma] ]] = [[ \x. e[x/x,sigma] ]]$ (assuming that $x$ is not in the domain or range of $[[sigma]]$). By our substitution lemma, we know that $[[|- (\x.e)[sigma] : tau1 -> tau2]]$.
+It is a value, so it steps to itself. To show that this term is in the appropriate 
+value set, we need to assume some $[[v1 elem V tau1]]$ and show that $[[ e[x/x,sigma][v1/x] elem V tau ]]$. Substitutions compose, so this is the same as saying $[[ e [v1/x, sigma] elem V tau]]$.
+This goal follows by our induction hypothesis as long as $[[ v1/x , sigma elem [G, x : tau] ]]$. But this follows by definition because $[[ sigma elem [G] ]]$ and $[[ v1 elem V tau ]]$.
+\end{itemize}
+\end{proof}
+
+After strengthening our lemma twice, we have put it in a form that we can prove. Furthermore, this form 
+implies the original version of our lemma, so we have proven type safety.
+
+\section{Rephrasing semantic soundness}
+
+Where does the name \emph{semantic soundness} come from in this lemma? What is semantic about this argument?
+
+The type safety proofs we have seen so far are syntactic: they involve working
+with the syntax of programs, typing derivations (which are syntactic objects),
+substitution and rewriting relations (which is a syntactic
+manipulation). Semantic interpretations of the $\lambda$-calculus give us a
+more mathematical meaning for our programs. And one idea in semantics is to
+give a meaning to types based on sets of values.
+
+Furthermore, some authors like to define $[[ V tau ]]$ by first defining operations on sets. 
+
+\begin{definition}[Function set]
+Define $[[S1 => S2]]$, which constructs a set of terms from two given sets of terms $[[S1]]$ and $[[S2]]$ as follows:
+\[ [[ S1 => S2 ]] = [[ { \x.e2 | forall e1, e1 elem S1 implies e2 [e1/x] elem S2 } ]] \]
+\end{definition}
+
+With this definition, we can define our value set using this operation:
+\[
+\begin{array}{lcl}
+[[ V Nat ]] &=& [[nats]] \\
+[[ V tau1 -> tau2 ]] &=& [[V tau1 => C tau2]]  \\
+\end{array}
+\]
+
+Furthermore, we can also define a notion for ``semantic typing'': the idea that 
+a term is well typed semantically when given any closing substitution, it is 
+an element of the appropriate substitution set.
+
+\begin{definition}[\link{stlc/semsound.v}{semantic_typing}{Semantic typing}]
+Define $[[G |= e : tau]]$ when forall $[[sigma elem [G] ]]$, $[[e[sigma] elem C tau ]]$.
+\end{definition}
+
+With this definition, we can prove semantic typing rules that are analogous
+to each syntactic typing rule.
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_var}{Semantic var rule}]
+$[[G |= x : G x ]]$.
+\end{lemma}
+\begin{lemma}[\link{stlc/semsound.v}{semantic_lit}{Semantic lit rule}]
+$[[G |= k : Nat ]]$.
+\end{lemma}
+\begin{lemma}[\link{stlc/semsound.v}{semantic_abs}{Semantic abs rule}]
+If $[[ G, x :tau |= e : tau1 -> tau]]$, then $[[ G |= \x.e : tau1 -> tau]]$.
+\end{lemma}
+\begin{lemma}[\link{stlc/semsound.v}{semantic_app}{Semantic app rule}]
+If $[[ G |= e1 : tau1 -> tau2 ]]$ and $[[ G |= e2 : tau1 ]]$, then $[[ G |= e1 e2 : tau2 ]]$.
+\end{lemma}
+
+These lemmas allow us to rephrase the semantic soundness theorem nicely.
+
+\begin{theorem}[\link{stlc/semsound.v}{semantic_typing}{Semantic typing}]
+If $[[G |- e : tau]]$ then $[[ G |= e : tau]]$
+\end{theorem}
+\begin{proof} Induction on the typing derivation, applying the appropriate 
+semantic typing rule in each case.
+\end{proof}
+

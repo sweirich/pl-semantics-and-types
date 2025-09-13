@@ -135,6 +135,27 @@ Proof.
 
 (* FILL IN HERE *) Admitted.
 
+
+Corollary single_substitution {n}{Γ : Ctx n}{e v τ τ1}:
+  typing (τ1 .: Γ) e τ -> typing Γ v τ1 -> 
+  typing Γ e[v..] τ.
+Proof. 
+  intros h1 h2.
+  eapply substitution; eauto.
+  eapply typing_subst_cons; eauto.
+  eapply typing_subst_id; eauto.
+Qed.
+
+Corollary single_weakening {n}{Γ : Ctx n}{ e τ τ1 } : 
+  typing Γ e τ -> typing (τ1 .: Γ) e⟨↑⟩ τ.
+Proof. 
+  intros h1.
+  eapply renaming. eauto.
+  unfold typing_renaming.
+  intro x. asimpl.
+  done.
+Qed.
+
 (*** Preservation *)
 
 Lemma preservation : forall e e', 
@@ -235,6 +256,8 @@ Qed.
 CoInductive safe_run (step : Tm 0 -> Tm 0 -> Prop) (e : Tm 0) : Prop := 
   | safe_val : is_value e = true -> safe_run step e
   | safe_step e' : step e e' -> safe_run step e' -> safe_run step e.
+
+
 
 Lemma type_safety_coinductive : 
   forall e τ, null |- e ∈ τ -> safe_run Small.step e.

@@ -14,27 +14,38 @@ the successor of some natural number.
 
 Let's redefine the syntax of natural numbers to make this structure explicit. 
 
-\[ [[k]] \in [[nats]] ::= [[0]]\ |\ [[S k]] \]
+\[ [[k]] ::= [[0]]\ |\ [[S k]] \]
 
 Now, instead of saying 1, or 2, or 3, we could say $[[S 0]]$, or $[[S (S 0)]]$, 
 or $[[S (S (S 0))]]$. Isn't that better? Ok, perhaps maybe not. We will keep the 
-syntax 1, 2, 3 around for clarity, but remember that these arabic numerals stand 
-for the unary structure. 
+syntax 1, 2, 3 around for clarity, but remember that these Arabic numerals stand 
+for this unary structure. 
 
-The advantage of working with the inductive structure of natural numbers is that 
-they now come with an induction principle (for reasoning mathematically) and 
-a recursion principle (for creating new definitions). This is the justification that we used in the previous section for the step-counting definition of type safety. 
+The advantage of working with an inductive structure of natural numbers is
+that they now come with an induction principle (for reasoning mathematically)
+and a recursion principle (for creating new definitions). This induction
+principle is the justification that we used in the previous section for the
+step-counting definition of type safety. Natural number induction is 
+a common proof technique so we will see more of in the future!
 
 Now that we have observed the inductive structure of natural numbers, let's
-add a \emph{primitive recursion} operator to STLC that can be used to define
-programs, in that language, by recursion. This form of recursion will always
-be bounded; we will be able to write more interesting computations but will
-still be able to know that all experssions terminate.
+incorporate this structure into our programming language so that STLC programs 
+can work with natural numbers. 
 
-In fact, we will add \emph{two} new expression forms in this section, as 
-shown in the grammar below. 
+In this chapter, we add \emph{two} new expression forms, as shown in the
+grammar below.
 
 \[ [[e]] ::= \ldots |\ [[succ e]]\ |\ [[ nrec e of { 0 => e0 ; S x => e1 } ]] \]
+
+The first form, written $[[succ e]]$, lifts the natural number successor $[[S
+    k]]$ to be a primitive operation. Instead of only being able to take the
+successor of a literal number, with this operation, we can compute the
+successor of any expression that evaluates to a number.
+
+Second, we add a \emph{primitive recursion} operator to STLC. This extension
+allows us to define STLC programs by recursion. This form of recursion will
+always be bounded; we will be able to write interesting computations but will
+be able to know that all expressions terminate.
 
 Along with these new expression forms, we also add the typing and small-step 
 semantics rules shown in Figure~\ref{fig:nrec}. 
@@ -67,7 +78,12 @@ to $[[e1]]$ where $[[k]]$ replaces $[[x]]$. But that is not all! The rule also
 applies the result of this substitution to the recursive execution of the loop
 on $[[k]]$.
 
-For example, we can define a doubling function on natural numbers with the 
+\section{Examples}
+
+Let's use these operation!
+
+\paragraph{double}
+First, we define a doubling function on natural numbers with the 
 following definition.
 
 \[ [[double x]] = [[ nrec x of { 0 => 0 ; S y => \z. succ (succ z) } ]] \]
@@ -101,6 +117,8 @@ semantics for iteration. The rules should fully evaluate the recursive call on
 the predecessor before evaluating $[[e1]]$. Because our operational semantics
 for application is already call-by-value, we get this behavior automatically.
 
+\paragraph{pred}
+
 Note that the way that we have defined this natural number recursor through 
 pattern matching makes it particularly simple to define a \emph{predecessor}
 function:
@@ -109,19 +127,25 @@ function:
 
 This is not the case for all recursion principles. A more restricted form, sometimes called \emph{iteration} does not bind $[[y]]$ in the successor case.
 
+\section{Exercises}
+
+Proof assistants, such as Rocq, have built-in natural number types with induction and recursion 
+principles. To become more familiar with using $\ottkw{nrec}$, you can try defining operations
+in Rocq using its primitive recursion principles.
+
 These new extensions satisfy the properties of \emph{substitution},
 \emph{progress}, and \emph{preservation} that we saw in the previous
-chapter. As an exercise, you might try to extend those proofs with appropriate
-new cases.
+chapter. As an exercise, extend those proofs with appropriate new cases.
 
 \section{Further Reading}
+
 This chapter is adapted from Chapter 9 of Harper~\cite{harper:pfpl}, with the 
 recursor modified to for our call-by-value semantics.
-Harper calls this language to G\"odel's System T~\cite{goedel:systemt}, designed 
-to study the consistency of arithmetic. The terminology that we use for ``primitive recursion'' is not quite the same as the related concept of the same name from computability theory. In that context, the natural number recursor is restricted 
+Harper calls this language G\"odel's System T~\cite{goedel:systemt}, which was designed 
+to study the consistency of arithmetic. The terminology that we use for ``primitive recursion'' is not quite the same as the related concept from computability theory. In that context, the natural number recursor is restricted 
 to produce functions with types of the form $[[Nat]] [[->]] [[Nat]] [[->]] \ldots [[->]] [[Nat]]$, i.e. functions that take any number of naturals as arguments and 
 return a natural number. This operator does not have that restriction, and can define functions that are not usually considered ``primitive recursive''.
 
 In general, primitive recursion is not just for natural numbers. Any inductive
 type, such as lists or trees, can be equipped with its own primitive recursion
-operation (see Mendler's dissertation~\cite{mender:phd}).
+operation (see Mendler's dissertation~\cite{mendler:phd}).
