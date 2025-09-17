@@ -40,11 +40,9 @@ Proof.
 Qed.
 
 Lemma same_semantics : 
-  (forall e v, e ⇓ v  -> e ⟱ v) 
-.
+  (forall e v, e ⇓ v  -> e ⟱ v).
 Proof.
   intros e v h. induction h.
-
   all: intros.
   - eapply s_val; auto.
   - eapply s_app; eauto.
