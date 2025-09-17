@@ -5,14 +5,50 @@ for a language with a big-step semantics. After completing the proof, not only
 will we know that programs do not crash, we will also know that they do not
 diverge either. Every well-typed program can produce a value.
 
-\section{Big-step type safety}
+\section{Big-step preservation}
 
-Here is an initial statement of type safety for the big-step semantics. It
+Before we start with type safety, let's consider the preservation and progress lemmas
+from the small step relation.
+
+\begin{lemma}[Preservation]
+If $[[|- e : tau]]$ and $[[e => v]]$ then $[[|-v : tau]]$.
+\end{lemma}
+\begin{proof}
+Proof by induction on $[[|-e : tau]]$. 
+\begin{itemize}
+\item For the literal case, $[[e]]$ is some number $[[k]]$ that steps to itself. 
+It already has type $[[Nat]]$.
+\item For the variable case, we assume the term is closed, so this case is impossible.
+\item For the abstraction case, $[[e]]$ is some well-typed lambda expression $[[\x.e]]$
+that steps to itself. 
+\item For the application case, $[[e]]$ is $[[e1 e2]]$ where 
+  $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1]]$. By inversion on the evaluation 
+  relation, we also know that $[[e1 => \x.e1']]$ and $[[e2 => v2]]$ 
+  and $[[e1'[v2/x] => v]]$. By induction, we know that $[[|- \x.e1' : tau1 -> tau]]$ and 
+  $[[|- v2 : tau1]]$. By inverting the former, we also know that $[[ x: tau1 |- e1' : tau]]$. 
+  This means that we can use our substitution lemma to conclude $[[ |- e1' [v2/x] : tau]]$.
+\end{itemize}
+\end{proof}
+
+The preservation lemma goes through readily. However, by itself, it isn't a type safety 
+theorem because it does not give use any confidence that the type system rules out 
+run-time errors. The lemma is stated so that we can only make a conclusion when we already
+have a successful run to a value. But, even if a term type checks, we can't tell whether 
+it will produce anything.
+
+The small step semantics had a progress lemma that reassured us that good things would happen 
+if a program type checks --- that program would make some incremental progress. But with this 
+semantics we do not have a notion of incremental progress. So there isn't a ready analogue 
+of this lemma available for us.
+
+\section{Big Step Safety}
+
+Instead, consider this statement of type safety for the big-step semantics. It
 states that any closed, well-typed term $[[e]]$ must evaluate to some value
-$[[v]]$. This means that the term cannot crash or diverge. For simplicity, we
+$[[v]]$. This means that the term cannot crash or diverge.\footnote{For simplicity, we
 will work with a version of type safety that is a little weaker than the
 version in the previous chapter; it doesn't require the result to be well
-typed.
+typed.}
 
 \begin{conjecture}[Big Step Safety] 
 If $[[|- e : tau]]$ then $[[e => v]]$.
@@ -28,33 +64,34 @@ on $[[e]]$.
 \begin{itemize}
 \item For the literal case, we know that $[[e]]$ is a constant 
 $[[k]]$ (which is a value) because it is well typed, then $[[tau]]$ is the type $[[Nat]]$. 
-Immediately we have $[[k => k]]$ and $[[|- k : Nat]]$.
+Immediately we have $[[k => k]]$.
 \item Similarly for the abstraction case, we know that $[[e]]$ is $[[\x.e']]$ 
 and that $[[tau]]$ is $[[tau1 -> tau2]]$. Again, immediately, we have 
-$[[\x.e' => \x.e']]$ and $[[|- \x.e' : tau1 -> tau2]]$.
+$[[\x.e' => \x.e']]$.
 \item We don't need to consider the variable case as the term is closed.
-\item Finally, consider the application case, where $[[e]]$ is $[[e1 e2]]$ 
-  and $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1 ]]$.
-  We can use induction on $[[e1]]$ and $[[e2]]$ to get $[[|- v1 : tau1 -> tau]]$
-  and $[[|- v2 : tau1 ]]$. Furthermore, the only closed values with function 
-  types are functions, so $[[v]]$ must be some $[[\x.e1']]$.
+\item Finally, consider the application case, where $[[e]]$ is $[[e1 e2]]$ and 
+  by inversion on the typing derivation we know that
+  $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1 ]]$.
+  We can use induction on $[[e1]]$ and $[[e2]]$ to get $[[e1 => v1]]$
+  and $[[e2 => v2]]$. Furthermore, preservation tells us that $[[|- v1 : tau1 -> tau]]$, 
+  and we also know (via canonical forms) that the only closed values with function 
+  types are functions, so $[[v1]]$ must be some $[[\x.e1']]$.
   However, here we are stuck. We want to show that there is 
-  some $[[|- v3 : tau1]]$ such that $[[ e1' [v2 / x ] => v3]]$. But we don't 
+  some $[[v3]]$ such that $[[ e1' [v2 / x ] => v3]]$. But we don't 
   have a way to conclude this. We can't use induction because $[[e1'[v2/x] ]]$
   isn't a subterm of $[[e]]$.
 \end{itemize}
 
 The solution at this point is to observe that our induction hypothesis was not
 strong enough. We needed to know more about $[[e1]]$ than just that it
-terminates and has a function type. We also need to know that when given an
-argument, the application will also terminate (and produce a value of the same
-type).
+terminates. We also need to know that when given any
+argument, \emph{the application will also terminate}.
 
-Therefore, we will strengthen the property that we prove. Above, in the
+Therefore, let's strengthen the property that we prove. Above, in the
 application case we want to know something about $[[e1'[v2/x] ]]$, so we
 cannot use the induction hypothesis on this term. However, we get this term
 from evaluating $[[e1]]$ and $[[e2]]$, so we can strengthen the conclusion of
-our lemma.  Above, all we know about $[[v]]$ is that it is well-typed. But,
+our lemma.  Above, all we know about $[[v]]$ is that it is a value. But,
 depending on this type, we can assert stronger properties about this value.
 
 \begin{definition}[\link{stlc/semsound.v}{V}{Value set}] Define the family of sets $[[V tau]]$ by structural 
@@ -62,7 +99,7 @@ recursion on $[[tau]]$.
 \[
 \begin{array}{lcl}
 [[ V Nat ]] &=& [[nats]] \\
-[[ V tau1 -> tau2 ]] &=& [[{ \x. e | forall v, v elem V tau1 implies exists v', e[v / x] => v' and v' elem V tau2 }]]  \\
+[[ V tau1 -> tau2 ]] &=& \{ [[\x. e]]\ |\ \forall v,\ [[v elem V tau1]]\ \mathit{implies}\ \exists [[v']], [[e[v / x] => v']]\ \mathit{and}\ [[v' elem V tau2]] \}  \\
 \end{array}
 \]
 \end{definition}
@@ -97,7 +134,7 @@ However, as you might guess, our induction hypothesis is \emph{still} not strong
 enough to prove the result. Let's try a case where it works, and one where  
 it doesn't. 
 
-We'll again prove the theorem by induction on $[[|- e : tau]]$. The variable case is impossible and the literal case is immediate. Now consider the application
+Let's prove the theorem by induction on $[[|- e : tau]]$. The variable case is impossible and the literal case is immediate. Now consider the application
 case, where we have $[[ |- e1 e2 : tau ]]$, with $[[ |- e1 : tau1 -> tau]]$ and
 $[[ |- e2 : tau1 ]]$.
 By induction, we know that $[[ e1 elem C tau1 -> tau]]$ and $[[e2 elem C tau1]]$. 
@@ -106,7 +143,8 @@ appropriate sets. i.e. $[[ e1 => v1]]$ where $[[v1 elem V tau1 -> tau]]$ and
 $[[e2 => v2]]$ where $[[v2 elem V tau1]]$. To construct an evaluation in this 
 case, we need to know that $[[v1]]$ is some abstraction, and that if we substitute $[[v2]]$ for the parameter the program terminates. But this is exactly what the set $[[V tau1 -> tau]]$ gives us! We have fixed this case.
 
-However, now consider the application case. In this case we have $[[ |- \x.e : tau1 -> tau2]]$. We
+However, now consider the application case. In this case we have 
+$[[ |- \x.e : tau1 -> tau2]]$. We
 need to show that this abstraction is in $[[C tau1 -> tau2]]$. We know
 already that this term has the right type. It also terminates as it is already
 a value; i.e. $[[ \x.e => \x.e]]$. Our remaining goal is to show
@@ -161,7 +199,7 @@ This goal follows by our induction hypothesis as long as $[[ v1/x , sigma elem [
 \end{proof}
 
 After strengthening our lemma twice, we have put it in a form that we can prove. Furthermore, this form 
-implies the original version of our lemma, so we have proven type safety.
+implies the original version, so we have proven type safety.
 
 \section{Rephrasing semantic soundness}
 
@@ -198,7 +236,8 @@ Define $[[G |= e : tau]]$ when forall $[[sigma elem [G] ]]$, $[[e[sigma] elem C 
 \end{definition}
 
 With this definition, we can prove semantic typing rules that are analogous
-to each syntactic typing rule.
+to each syntactic typing rule. The proofs of these lemmas are the subcases 
+of the semantic soundness proof.
 
 \begin{lemma}[\link{stlc/semsound.v}{semantic_var}{Semantic var rule}]
 $[[G |= x : G x ]]$.
@@ -221,4 +260,36 @@ If $[[G |- e : tau]]$ then $[[ G |= e : tau]]$
 \begin{proof} Induction on the typing derivation, applying the appropriate 
 semantic typing rule in each case.
 \end{proof}
+
+\section{Variations}
+
+This proof is usually stated with a small-step semantics and tutorials are available from 
+a variety of references. However, with a small-step semantics you need an additional lemma:
+closure under reverse evaluation. Terms that step to terms in the computation sets are 
+themselves in the computation set.
+\begin{lemma}[Closure under expansion]
+If $[[e ~> e']]$ and $[[e' elem C tau]]$ then $[[e elem C tau]]$.
+\end{lemma}
+
+Not all authors make a distinction between value sets $[[V tau]]$ and computation sets 
+$[[C tau]]$, combining them together into a uniform definition. 
+
+You might also ask whether semantic \emph{completeness} holds. 
+\begin{lemma}[Semantic completeness]
+If $[[G |= e : tau]]$ then $[[G |- e : tau]]$. 
+\end{lemma}
+In other words, do our sets of terms contain only well-typed terms? The answer is no! A program
+can include any sort of stuck subterm, as long as that subterm 
+is never executed. For example, consider $[[ (\x. 3) (\y. 1 0)]]$. This term doesn't type check 
+because it has the stuck application $[[1 0]]$ as a subterm. But it evaluates to $[[3]]$ which is in $[[V Nat]]$, so we can say that $[[ |= (\x. 3) (\y. 1 0) : Nat]]$. 
+
+The reason that semantic completeness fails, is that we include ill-typed terms in our sets as long as they are harmless. But, it you believe that only typed terms are worth discussing, you might prefer to restrict the sets to well-typed terms. In that case, completeness holds trivially.
+
+\section{Further reading}
+
+Robert Harper's note: \emph{How to (Re)Invent Tait’s Method}\url{https://www.cs.cmu.edu/~rwh/courses/chtt/pdfs/tait.pdf} includes this 
+proof for a small-step semantics of STLC with booleans, unit, products and functions. Harper calls the computation sets ``hereditarily terminating.'' 
+
+This proof is the simplest example of a general proof technique called \emph{proof by logical relations}. The set $[[V tau]]$ is a \emph{unary} logical relation, also called a logical predicate. Binary logical relations can be used to show program equivalence or noninterference. Or, extending 
+the sets to include open terms means that we can show that full reduction for STLC (even inside functions) always terminates. However, these proofs take a few more steps than the one that we 
 
