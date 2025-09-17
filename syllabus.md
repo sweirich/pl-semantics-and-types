@@ -24,8 +24,8 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> What is Type Safety? | 
 | M 9/8   | Preservation and substitution | 
 | W 9/10  | Progress <br/> Natural number recursion | 
-| M 9/15  | Big step semantics <br/> Semantic soundness | 
-| W 9/17  | | 
+| M 9/15  | Big step semantics | 
+| W 9/17  | Semantic soundness | 
 | M 9/22  | HW #1 due |
 | W 9/24  | |
 | M 9/29  | |
