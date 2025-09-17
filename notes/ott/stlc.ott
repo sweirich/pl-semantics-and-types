@@ -202,6 +202,9 @@ terminals :: 'terminals_' ::=
   | nats              ::   :: nats          {{ tex \mathbb{N} }}
   | forall            ::   :: forall        {{ tex \forall }}
   | exists            ::   :: exists        {{ tex \exists }}
+  | nrec_           ::   :: nrec_k
+   {{ tex \ottkw{nrec} }}
+
 
 formula :: 'formula_' ::=
   | judgement                  ::   :: judgement
@@ -212,11 +215,11 @@ formula :: 'formula_' ::=
   | e elem S                   ::   :: tmelem
    {{ tex [[e]] \in [[S]] }}
   | forall e , formula         ::   :: forall_quant
-   {{ tex \mathit{for all} [[e]],[[formula]] }}
+   {{ tex \forall [[e]], [[formula]] }}
   | forall x elem S , formula         ::   :: forall_elem_quant
    {{ tex \forall [[x]][[elem]][[S]],[[formula]] }}
-
   | exists e , formula         ::   :: exists_quant
+   {{ tex \exists [[e]], [[formula]] }}
   | sigma elem  U              ::   :: sem_sub
   | G |= e : tau               ::   :: sem_typing
 

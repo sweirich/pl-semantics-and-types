@@ -5,40 +5,50 @@
 
 ## Homework
 
-1. [HW1](homework/hw1.pdf), due Monday, September 29th at midnight
+Submit via [gradescope](https://www.gradescope.com/courses/1126105)
+
+1. [HW1](homework/hw1.pdf), due Monday, September 22th at midnight
+   
 
 ## Schedule
 
-| Date    | Topic | 
-| ------  | ----- | 
+The course content is summarized in the [Lectures notes](notes/plst.pdf).
+
+> [!WARNING]
+> This schedule is tentative and may be revised.
+
+| Date    | Topic |
+| ------  | ----- |
 | W 8/27  | **No Class**: Instructor travel              |
 | M 9/1   | **No Class**: Labor day                      |
-| W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> [Type Safety for STLC](notes/plst.pdf) |
-| M 9/8   | Preservation and substitution proofs |
-| W 9/10  | Progress <br/> Natural number recursion |
-| M 9/22  | |
+| W 9/3   | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> What is Type Safety? | 
+| M 9/8   | Preservation and substitution | 
+| W 9/10  | Progress <br/> Natural number recursion | 
+| M 9/15  | Big step semantics | 
+| W 9/17  | Semantic soundness | 
+| M 9/22  | HW #1 due |
 | W 9/24  | |
 | M 9/29  | |
 | W 10/1  | |
-| M 10/6  | |
+| M 10/6  | HW #2 due |
 | W 10/8  | | 
 | M 10/13 | | 
 | W 10/15 | | 
-| M 10/20 | |
+| M 10/20 | HW #3 due |
 | W 10/22 | | 
-| M 10/27 | |
+| M 10/27 | midterm exam |
 | W 10/29 | | 
 | M 11/3  | | 
 | W 11/5  | | 
-| M 11/10 | |
+| M 11/10 | HW #4 due |
 | W 11/12 | | 
 | M 11/17 | | 
 | W 11/19 | | 
-| M 11/24 | | 
+| M 11/24 | HW #5 due | 
 | W 11/26 | **No Class**: Friday schedule |
 | M 12/1  | |
 | W 12/3  | | 
-| M 12/8  | | 
+| M 12/8  | HW #6 due | 
 | TBA     | Final exam |
 
 ## Grading and Assignments
@@ -46,7 +56,7 @@
 * **Participation (10%)**: This is a new, experimental class and everyone in
 the class will be co-developers. As a result, you are expected to actively
 contribute. This mainly means being a part of the lectures by ask questions,
-thinking about puzzles, particpating in the discussion, and generally
+thinking about puzzles, participating in the discussion, and generally
 volunteering your insights and reactions. You can also participate by chatting
 during office hours or submitting pull-requests on the lecture notes. Let me
 know if you are sick or otherwise need to miss class.

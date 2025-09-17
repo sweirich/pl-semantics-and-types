@@ -58,7 +58,7 @@ it must reject this definition.
 To work around this issue in our metalogic, we can work with a \emph{relational} version of 
 \texttt{eval} instead. We define the inductive relation $[[e => v]]$ that holds when $[[e]]$ evaluates $[[v]]$.
 
-\begin{definition}[Big-step semantics]\ \\
+\begin{definition}[\link{stlc/red.v}{Big.step}{Big-step semantics}]\ \\
 \drules[bs]{$[[e => v]]$}{term $e$ big-steps to $[[v]]$}
 {val,app}
 \end{definition}
@@ -69,33 +69,34 @@ when the function evaluates to an abstraction, the argument evaluates to a
 value and the substitution of the argument the parameter also evaluates to a
 value.
 
+
 \begin{theorem}[Equivalence of semantics] 
 For closed expressions $e$, we have $[[e ~>* v]]$ if and only if $[[e => v]]$.
 \end{theorem}
 
-We prove each direction of this lemma separately. For the forward direction (small-step implies big-step), we need to show the following
+We prove each direction of this lemma separately. For the forward direction (\link{stlc/red_equiv.v}{SmallBig.same_semantics}{small-step implies big-step}), we need to show the following
 lemma:
 
-\begin{lemma}
+\begin{lemma}[\link{stlc/red_equiv.v}{same_semantics_step}{Step expansion}]
 If $[[e ~> e']]$ then for forall $v$, if $[[e' => v]]$ then $[[e => v]]$.
 \end{lemma}
 
-For the backwards direction (big-step implies small-step), we need to define multi-step analogues
+For the backwards direction (\link{stlc/red_equiv.v}{BigSmall.same_semantics}{big-step implies small-step}), we need to define multi-step analogues
 of the two evaluation rules of the big-step semantics.
 
-\begin{lemma}[s\_val] $[[v ~>* v]]$
+\begin{lemma}[\link{stlc/red_equiv.v}{BigSmall.s_val}{s\_val}] $[[v ~>* v]]$
 \end{lemma}
 
-\begin{lemma}[s\_app] If $[[e1 ~>* \x.e1']]$ and $[[e2 ~>* v1]]$ and $[[e1'[v1/x] ~>* v2]]$ then $[[e1 e2 ~>* v2]]$.
+\begin{lemma}[\link{stlc/red_equiv.v}{BigSmall.s_app}{s\_app}] If $[[e1 ~>* \x.e1']]$ and $[[e2 ~>* v1]]$ and $[[e1'[v1/x] ~>* v2]]$ then $[[e1 e2 ~>* v2]]$.
 \end{lemma}
 
 This lemma itself relies on showing multi-step analogues of the single-step congruence rules for the 
 small step semantics.
-\begin{lemma}[ms\_app\_cong1] 
+\begin{lemma}[\link{stlc/small_step.v}{ms_app_cong1}{ms\_app\_cong1}] 
 If $[[e1 ~>* e1']]$ then $[[e1 e2 ~>* e1' e2]]$.
 \end{lemma}
 
-\begin{lemma}[ms\_app\_cong2] 
+\begin{lemma}[\link{stlc/small_step.v}{ms_app_cong2}{ms\_app\_cong2}] 
 If $[[e2 ~>* e2']]$ then $[[v1 e2 ~>* v1 e2']]$.
 \end{lemma}
 
