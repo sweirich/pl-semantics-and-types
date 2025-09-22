@@ -1,0 +1,52 @@
+
+metavar alpha {{ tex \alpha }} , beta {{ tex \beta }} ::=
+  {{ lex alphanum }} 
+
+grammar 
+
+tau :: '' ::=
+  | alpha ::   :: a_var
+  | tau1 [ tau2 / alpha ] :: M :: subst
+
+e :: '' ::= 
+  | a_nrec x = { 0 => e0 ; S y => e1 }  ::  :: a_nrec
+
+v :: '' ::=
+  | a_nrec x = { 0 => e0 ; S y => e1 }  ::  :: a_nrec
+
+defns
+JTyping :: '' ::=
+
+defn
+
+G |- e : tau   ::   :: typing :: 't_'
+{{ com Typing }}
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+
+G |- e0 : tau
+G , x : Nat -> tau, y : tau |- e1 : tau 
+--------------------------------------------------------- :: a_nrec
+G |- a_nrec x = { 0 => e0 ; S y => e1 } : Nat -> tau
+
+
+G |- e0 : tau
+G , x : alpha -> tau, y : alpha |- e1 : tau [Nat / alpha]
+--------------------------------------------------------- :: m_nrec
+G |- a_nrec x = { 0 => e0 ; S y => e1 } : Nat -> tau
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+-------------------------------------------- :: a_zero
+a_nrec x = { 0 => e0 ; S y => e1 } 0 ~> e0 
+
+---------------------------------------------------------------------------------------------- :: a_succ
+a_nrec x = { 0 => e0 ; S y => e1 } (S k) ~> e1 [ a_nrec x = { 0 => e0 ; S y => e1 } / x , k / y ]

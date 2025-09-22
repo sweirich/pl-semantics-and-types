@@ -58,7 +58,8 @@ Proof.
     eapply typing_renaming_lift; auto.
   - eapply t_app; eauto.
   - eapply t_lit; eauto.
-Qed.
+
+(* FILL IN HERE *) Admitted.
 
 (* Here's a more automated proof of the renaming lemma. *)
 Example renaming' {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ : 

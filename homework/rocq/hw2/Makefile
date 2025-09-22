@@ -1,6 +1,6 @@
 COQMAKEFILE=CoqMakefile
 LIBNAME=plst
-LANGS=stlc rec
+LANGS=stlc
 SYNTAX = $(addsuffix /syntax.sig,$(LANGS))
 SYNTAXV = $(SYNTAX:.sig=.v)
 SOURCEV = $(addsuffix /*.v,$(LANGS))

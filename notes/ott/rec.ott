@@ -1,0 +1,240 @@
+metavar alpha {{ tex \alpha }} , beta {{ tex \beta }} ::= 
+        {{ com type variables }}
+
+grammar 
+
+tau {{ tex \tau }} :: 'ty_' ::= 
+   | Void            ::   :: Void
+   | alpha           ::   :: Var
+   | mu alpha . tau  ::   :: Mu
+     {{ tex \mu[[alpha]].[[tau]] }}
+   | nu alpha . tau  ::   :: Nu
+     {{ tex \nu[[alpha]].[[tau]] }}
+   | tau1 * tau2     ::   :: Prod
+   | tau1 + tau2     ::   :: Sum
+   | tau [ tau1 / alpha ] ::   :: Subst
+
+e :: 'e_' ::= 
+   | ( e1 , e2 )                             ::   :: Pair
+   | ret v                                   ::   :: Ret
+   | inj1 e                                  ::   :: Inj1
+   | inj2 e                                  ::   :: Inj2
+   | prj1 e                                  ::   :: Prj1
+   | prj2 e                                  ::   :: Prj2
+   | case e of { ( x1 , x2 ) => e1 }             ::   :: Split
+   | case e of { inj1 x1 => e1 ; inj2 x2 => e2 } ::   :: SCase
+   | case e of { 0 => e1 ; S y => e2 }       ::   :: NCase
+   | let x <= e1 in e2                       :: M  :: EagerLet      
+    {{ tex [[let]]\ [[x]]\ [[<=]]\ [[e1]]\ \ottkw{in}\ [[e2]] }}
+   | rec x . v                               ::   :: Rec
+   | fold e                                  ::   :: Fold
+   | unfold e                                ::   :: Unfold
+   | roll e                                  ::   :: Roll
+   | unroll e                                ::   :: Unroll
+
+v , w :: 'v_' ::= 
+   | x           ::   :: Var
+   | ( v1 , v2 ) ::   :: Pair
+   | inj1 v      ::   :: Inj1
+   | inj2 v      ::   :: Inj2
+   | rec x . v   ::   :: Rec
+   | fold v      ::   :: Fold
+   | roll e      ::   :: Roll
+
+terminals :: 'terminals_' ::=
+   | ||-         ::   :: turn {{ tex \vdash }}
+   | inj1        ::   :: inj1  {{ tex \ottkw{inj}_1 }}
+   | inj2        ::   :: inj2  {{ tex \ottkw{inj}_2 }}
+   | prj1        ::   :: prj1  {{ tex \ottkw{prj}_1 }}
+   | prj2        ::   :: prj2  {{ tex \ottkw{prj}_2 }}
+
+defns
+JREC_OK :: '' ::= 
+
+
+defn 
+tau ok ::  :: rec_ok :: ''
+by
+
+------------------ :: fun_ok
+(tau1 -> tau2) ok
+
+------------------ :: prod_ok
+(tau1 * tau2) ok
+
+
+defns 
+JPCFTyping :: '' ::= 
+
+defn 
+G ||- e : tau  ::  :: typing_tm :: 'te_'
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+G ||- v : tau 
+----------------- :: ret
+G ||- ret v : tau
+
+G ||- e1 : tau1 
+G, x : tau1 ||- e2 : tau 
+--------------------------------- :: let
+G ||- let x = e1 in e2 : tau
+
+G ||- v1 : tau1 -> tau2
+G ||- v2 : tau1
+--------------------- :: app
+G ||- v1 v2 : tau2
+
+G ||- v : tau1 * tau2
+------------------------- :: prj1
+G ||- prj1 v : tau1
+
+G ||- v : tau1 * tau2
+------------------------- :: prj2
+G ||- prj2 v : tau2
+
+
+G ||- v : tau1 * tau2
+G , x1 : tau1 , x2 : tau2 ||- e1 : tau
+---------------------------------------- :: split
+G ||- case v of { (x1,x2) => e1 } : tau
+
+G ||- v : tau1 + tau2
+G , x1 : tau1 ||- e1 : tau
+G , x2 : tau2 ||- e2 : tau
+----------------------------------------------- :: case
+G ||- case v of { inj1 x1 => e1 ; inj2 x2 => e2 } : tau
+
+G ||- v : Nat
+G ||- e1 : tau
+G , x2 : Nat ||- e2 : tau
+----------------------------------------------- :: ifz
+G ||- case v of { 0 => e1 ; S x2 => e2 } : tau
+
+G ||- v : mu alpha . tau  
+------------------------------------- :: unfold
+G ||- unfold v : tau [mu alpha.tau/alpha]
+
+
+G ||- v : nu alpha . tau  
+------------------------------------- :: unroll
+G ||- unroll v : tau [nu alpha.tau/alpha]
+
+
+%% typing rules for some derived forms
+
+G ||- e1 : tau1
+G ||- e2 : tau2
+--------------------------------- :: pair
+G ||- ( e1 , e2 ) : tau1 * tau2
+
+G ||- e1 : tau1
+--------------------------------- :: inj1
+G ||- inj1 e1 : tau1 + tau2
+
+G ||- e2 : tau2
+--------------------------------- :: inj2
+G ||- inj2 e2 : tau1 + tau2
+
+defn 
+G ||- v : tau ::  :: typing_val :: 'tv_' 
+{{ tex [[G]] \vdash [[v]] \in [[tau]] }}
+by
+
+ x : tau elem G
+--------------------- :: var
+ G ||- x : tau
+
+
+---------------------- :: lit
+ G ||- k : Nat 
+
+G, x:tau1 ||- e : tau2
+------------------------  ::  abs
+G ||- \x.e : tau1 -> tau2
+
+G ||- v1 : tau1
+G ||- v2 : tau2 
+------------------------- :: pair
+G ||- ( v1 , v2 ) :  tau1 * tau2 
+
+
+G ||- v1 : tau1
+--------------------------------- :: inj1
+G ||- inj1 v1 : tau1 + tau2
+
+G ||- v2 : tau2
+--------------------------------- :: inj2
+G ||- inj2 v2 : tau1 + tau2
+
+
+tau ok
+G , x:tau ||- v : tau
+------------------------- :: rec
+G ||- rec x . v : tau
+
+
+G ||- v : tau [ mu alpha . tau / alpha ] 
+--------------------------------- :: fold
+G ||- fold v : mu alpha . tau
+
+
+G ||- e : tau [ nu alpha . tau / alpha ] 
+--------------------------------- :: roll
+G ||- roll e : nu alpha . tau
+
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+------------------------------ :: let_ret
+let x = ret v in e ~> e [v/x]
+
+
+------------------------------ :: succ
+succ k ~> S k
+
+----------------------------------------  :: case_zero
+case 0 of { 0 => e1 ; S x => e2 } ~> e1
+
+---------------------------------------------------------  :: case_succ
+case (S k) of { 0 => e1 ; S x => e2 } ~> e2 [ k / x ] 
+
+----------------------------------------------------------- :: split
+case (v1, v2) of { (x1, x2) => e } ~> e [v1/x1][v2/x2]
+
+
+--------------------------------- :: prj1
+prj1 (v1,v2) ~> ret v1
+
+--------------------------------- :: prj2
+prj2 (v1,v2) ~> ret v2
+
+
+-----------------------------------------------------------  :: case_inj1
+case (inj1 v) of { inj1 x => e1 ; inj2 x => e2 } ~> e1 [v/x]
+
+-----------------------------------------------------------  :: case_inj2
+case (inj2 v) of { inj1 x => e1 ; inj2 x => e2 } ~> e2 [v/x]
+
+
+------------------------------------- :: app_rec
+(rec x. v1) v2 ~> v1 [rec x. v1/x] v2
+
+----------------------------------------------------------------------- :: split_rec
+case rec x. v of { (x1, x2) => e } ~> case v[rec x.v/x] of { (x1, x2) => e }
+
+------------------------------------- :: prj1_rec
+prj1 (rec x .v) ~> prj1 v[rec x.v/x] 
+
+------------------------------------- :: prj2_rec
+prj2 (rec x .v) ~> prj2 v[rec x.v/x] 
+
+------------------------- :: unfold
+unfold (fold v) ~> ret v

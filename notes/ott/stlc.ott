@@ -80,6 +80,7 @@ e :: 'tm_' ::=
   | sigma x          :: M :: VarSub    {{ com lookup from substitution }}
 
   | let x = e1 in e2 ::   :: Let
+    {{ tex [[let]]\ [[x]]\ = [[e1]]\ \ottkw{in}\ [[e2]] }}
 
   | \ x . e          ::   :: Abs       {{ com function definition }}
     {{ tex \lambda [[x]]. [[e]] }}
@@ -374,25 +375,18 @@ e => k
 --------------------- :: succ
 succ e => succ k
 
-e => k
-nrec_k of { 0 => e0 ; S x => e1 } => v
---------------------------------------------- :: nrec
-nrec e of { 0 => e0 ; S x => e1 } => v
-
-
-defn 
-nrec_ k of { 0 => e0 ; S x => e1 } => v ::   :: big_nrec :: 'bsn_'
-by 
-
+e => 0
 e0 => v
 ------------------------------------------------ :: nrec_zero
-nrec_ 0 of {0 => e0 ; S x => e1 }  => v
+nrec e of {0 => e0 ; S x => e1 }  => v
 
+e => S k
 e1 [k / x] => \y. e' 
-nrec_ k of { 0 => e0 ; S x => e1 } => v1
+nrec k of { 0 => e0 ; S x => e1 } => v1
 e' [ v1 / y] => v
 --------------------------------------------- :: nrec_succ
-nrec_ (S k) of {0=> e0 ; S x => e1 } => v
+nrec e of {0=> e0 ; S x => e1 } => v
+
 
 defns
 JBigEnv :: '' ::=
@@ -430,24 +424,17 @@ by
 -------------------------- :: succ
 <rho | succ e> => succ k
 
-
-<rho | e> => k
-<rho | nrec_ k of {0 => e0 ; S x => e1 }> => v
------------------------------------------------------- :: nrec
-<rho | nrec e of { 0 => e0 ; S x => e1 }> => v
-
-
-defn 
-< rho | nrec_ k of { 0 => e0 ; S x => e1 } > => v ::   :: big_env_nrec :: 'big_env_nrec_'
-by 
-
-
+<rho | e > => 0
 <rho | e1 > => v
 ---------------------------------------------------- :: nrec_zero
-<rho | nrec_ 0 of { 0=> e0 ; S x => e1 }> => v
+<rho | nrec e of { 0=> e0 ; S x => e1 }> => v
 
-<rho | nrec_ k of { 0 => e0 ; S x => e1}> => v1
+<rho | e > => S k
+<rho | nrec k of { 0 => e0 ; S x => e1}> => v1
 < k/x, rho | e1 > =>  < rho' , \y.e' >
 < v1/y, rho' | e > => v2
 ------------------------------------------------------------------ :: nrec_succ
-<rho | nrec_ (S k) of { 0=> e0 ; S x => e1 }> => v2
+<rho | nrec (S k) of { 0=> e0 ; S x => e1 }> => v2
+
+
+

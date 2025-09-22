@@ -40,8 +40,10 @@
 \interfootnotelinepenalty=10000
 
 \title{CIS 7000-1 Homework 1}
+\author{NAME: FILL IN HERE}
+\date{\today}
 
-\input{all-rules}
+\inputott{all-rules}
 
 \begin{document}
 \maketitle

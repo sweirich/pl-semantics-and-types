@@ -1,4 +1,4 @@
-OTT_SOURCE = ../notes/ott/stlc ott/hw1
+OTT_SOURCE = ../notes/ott/stlc ott/hw1 ott/hw2 ../notes/ott/bigstep
 BIBFILES = 
 
 OTTFILES  = $(foreach i, $(OTT_SOURCE), $(i).ott)
@@ -9,8 +9,7 @@ PAPER_MNG = $(wildcard *.mng)
 PAPER_SOURCE = $(patsubst %.mng,%.tex,$(PAPER_MNG))
 OTT_FILTER := $(subst .mng,.mng ,$(addprefix -tex_filter ,$(join $(PAPER_MNG), $(PAPER_SOURCE))))
 
-TOP=hw1
-PDFS=hw1.pdf
+TOP=hw2
 
 all: $(TOP).pdf
 

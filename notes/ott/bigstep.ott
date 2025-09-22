@@ -1,0 +1,133 @@
+
+grammar
+
+r :: '' ::= 
+  | Timeout         ::   :: Timeout
+  | Stuck           ::   :: Error
+  | v               ::   :: Value
+
+
+defns
+JResType :: '' ::=
+
+defn 
+r : tau ::    :: result_typing :: 'rt_'
+by
+
+---------------- :: timeout
+Timeout : tau
+
+
+---------------  :: Stuck
+Stuck : tau
+
+
+|- v : tau
+---------------- :: value
+v : tau
+
+
+defns
+JBigError :: '' ::=
+
+defn 
+e =s> r ::     :: big_Stuck :: 'ts_'
+{{ com big-step semantics, potentially stuck }}
+{{ tex [[e]] \Rightarrow [[r]] }}
+by
+
+
+------------- :: val
+v =s> v
+
+
+e1 =s> \x.e1'
+e2 =s> v1
+e1' [ v1 / x] =s> r
+--------------------  :: app
+e1 e2 =s> r
+
+
+e1 =s> k 
+---------------------- :: app_stuck
+e1 e2 =s> Stuck
+
+e1 =s> Stuck
+---------------------- :: app1
+e1 e2 =s> Stuck
+
+e1 =s> v
+e2 =s> Stuck
+---------------------- :: app2
+e1 e2 =s> Stuck
+
+
+defns
+JBigCounted :: '' ::=
+
+defn
+e = i > r ::   :: big_counted :: 'tk_'
+{{ com big-step semantics }}
+{{ tex [[e]] \Rightarrow_{[[i]]} [[r]] }}
+by
+
+----------------- :: timeout
+e = 0 > Timeout 
+
+
+------------- :: val
+v = S i > v
+
+
+e1 = i > \x.e1'
+e2 = i > v1
+e1' [ v1 / x] = i > r
+--------------------  :: app
+e1 e2 = S i > r
+
+
+e1 = i > Timeout
+--------------------  :: app1
+e1 e2 = S i > Timeout
+
+e1 = i > \x.e1'
+e2 = i > Timeout
+--------------------  :: app2
+e1 e2 = S i > r
+
+
+e1 = i > v1
+e2 [ v1 / x ] = i > r
+-----------------------   :: let
+let x = e1 in e2 = S i > r
+
+e1 =i> Timeout
+-----------------------   :: let1
+let x = e1 in e2 =S i> Timeout
+
+e = i> k
+--------------------- :: succ
+succ e =S i> succ k
+
+e =i> 0
+e0 =i> r
+------------------------------------------------ :: nrec_zero
+nrec e of {0 => e0 ; S x => e1 }  =S i> r
+
+e =i> S k
+e1 [k / x] =i > \y. e' 
+nrec k of { 0 => e0 ; S x => e1 } = i > v1
+e' [ v1 / y] = i> r
+--------------------------------------------- :: nrec_succ
+nrec e of {0=> e0 ; S x => e1 } =S i> r
+
+e=i> S k
+e1 [k / x] =i > Timeout 
+--------------------------------------------- :: nrec_succ1
+nrec e of {0=> e0 ; S x => e1 } =S i> v
+
+e=i> S k
+e1 [k / x] =i > \y. e' 
+nrec k of { 0 => e0 ; S x => e1 } = i > Timeout
+--------------------------------------------- :: nrec_succ2
+nrec e of {0=> e0 ; S x => e1 } =S i> Timeout
