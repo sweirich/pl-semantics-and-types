@@ -1,0 +1,259 @@
+\chapter{Recursive definitions}
+
+In this chapter, we introduce our first \emph{effectful} programming language:
+a fine-grained call-by-value language with recursive definitions. That effect
+is \emph{nontermination}, where evaluating a program may not actually result
+in a value.
+
+We will add nontermination through two sorts of recursive definitions: first
+through recursive values and then through recursive types.
+
+
+%% Homework idea. Design a type system that identifies a terminating
+%% sub-language. Show that all programming in language terminate.
+
+\section{Recursive definitions in CBV languages}
+
+To build intuition about the language structures we 
+are adding in this section, we will first start out 
+with some examples written in the OCaml programming 
+language.
+
+For example, a straightforward definition of the 
+doubling function, which we previously implemented 
+via primitive recursion, looks like this:
+
+\code{../ocaml/plst/lib/recursion.ml}{double}
+
+However, we are not limited to primitive recursion in 
+this language. 
+
+\subsection{Mutual recursion via recursive tuples}
+
+\code{../ocaml/plst/lib/recursion.ml}{mutual}
+
+\code{../ocaml/plst/lib/recursion.ml}{single}
+
+\code{../ocaml/plst/lib/recursion.ml}{product}
+
+\subsection{Another example with recursive tuples}
+
+\code{../ocaml/plst/lib/recursion.ml}{stream}
+
+\code{../ocaml/plst/lib/recursion.ml}{streamex}
+
+\subsection{Recursive values via recursive types}
+
+
+
+\section{A fine-grained CBV language}
+
+Before we consider the semantics of recursive definitions, let's refactor the
+base language to make it easier to extend. At the same time, we will add a few
+more common language features, such as products, sums and an empty type.
+
+Here is the \link{rec/syntax.sig}{Val}{syntax} of the base language that we
+will work with.
+
+\[
+\begin{array}{lcll}
+[[tau]] &::=& [[Void]]\ |\ [[Nat]]\ |\ [[tau1 -> tau2]]
+          |\ [[tau1 * tau2]]\ |\ [[tau1 + tau2]] & \mbox{types} \\
+
+[[v]] &::=& [[k]]\                  & \mbox{Natural numbers} \\
+      & | & [[\x. e]]\              & \mbox{Functions} \\
+      & | & [[(v1,v2)]]\            & \mbox{Pairs} \\
+      & | & [[inj1 v]]\ |\ [[inj2 v]] & \mbox{Sums} \\ 
+\\
+[[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
+      & | & [[succ v]]                & \mbox{successor} \\ 
+      & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
+      & | & [[prj1 v]]\ |\ [[prj2 v]]\ & \mbox{projection} \\
+      & | & [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] & \mbox{case} \\
+      & | & [[ret v]]                 & \mbox{value} \\
+      & | & [[let x = e1 in e2]]      & \mbox{sequencing} \\
+\end{array}
+\]
+
+The first thing to notice about this language is that it makes a 
+syntactic distinction between values and expressions. These two grammars 
+are mutually defined. Terms appear inside values in function bodies. 
+Values can appear in terms in several ways. First by being ``returned'' via $[[ret v]]$. 
+(Some versions of fine-grained CBV make the $\ottkw{ret}$ implicit, as it often 
+can be inferred from context. For clarity, we will make it explicit.)
+
+Furthermore, notice that almost all terms restrict their ``active'' subterms
+to be values. The arguments of $[[succ v]]$, the scrutinee for the various
+forms of pattern matching, and both the function and the argument in an
+application must be values. 
+
+There are several reasons for this modification. The one that we will discuss
+now is that it allows us to extend the small-step semantics with new
+constructs while skipping the associated congruence rules in the operational
+semantics. All we need to add are the main computation rules. As the active
+part of the expression must be a value, we do not need to add any rules to
+evaluate that subexpression.
+
+\begin{definition}[\link{rec/reduction.v}{step}{Active rules}]
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
+{beta,succ,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo}
+\end{definition}
+
+In this language, the let term controls the sequencing of evaluation. We only
+have a single congruence rule, which evaluates right-hand side of a let
+expression if it is not a returned value.
+
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
+{let-ret,let-cong}
+
+In this language, there is no question about the ordering in which evaluation
+happens. In some CBV languages, we might evaluate the argument of an
+application before we evaluate the function. Or we might evaluate the function
+before the argument.  Or, the language might say that this order is undefined,
+giving flexibility to the language implementation. For example, the OCaml
+bytecode compiler chooses a different order than the native code compiler.
+
+In STLC, the order doesn't matter, and either version will produce the same
+result. However, in some effectful languages, the order of this evaluation can
+matter.
+
+Therefore, to rule out ambiguity, this language puts the onus 
+on the programmer to explicitly say what they want, by 
+writing either
+
+\[ [[ let x1 = e1 in let x2 = e2 in x1 x2]] 
+   \qquad \mbox{or} \qquad 
+  [[ let x2 = e2 in let x1 = e1 in x1 x2]] \]
+
+\subsection{Type system}
+
+With a syntactic distinction between values and expressions, we have two
+separate typing judgements: one for values and one for terms.
+
+\begin{definition}[\link{rec/typing.v}{typing}{Type system}]\ \\
+\drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
+{lit,var,abs,pair,injOne,injTwo}
+\drules[te]{$[[G ||- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{ret,let,app,prjOne,prjTwo,case}
+\end{definition}
+
+These two judgements are mutually defined. 
+
+\subsection{Recovering expressiveness}
+
+Note that this restriction does not limit the expressiveness of the
+language. We can \emph{define} the standard expression forms.
+
+For example, instead of application of the form $[[e1 e2]]$, the only
+application form in this language is $[[v1 v2]]$.
+
+\begin{definition}[\link{rec/extensions.v}{eagerlet}{Eager let}]
+Define $[[let x <= e1 in e2]]$ as $[[e2 [v/x] ]]$ when $[[e1]]$ is $[[ret v]]$ and 
+$[[let x = e1 in e2]]$ elsewise.
+\end{definition}
+
+We use this eager let in the definition of some derived forms.
+
+\begin{definition}[\link{rec/extensions.v}{app\_tm}{Extended Application}]
+Define $[[e1 e2]]$ as $[[let x1 <= e1 in let x2 <= e2 in x1 x2]]$.
+\end{definition}
+
+\begin{definition}[\link{rec/extensions.v}{succ\_tm}{Extended Successor}]
+Define $[[succ e]]$ as $[[let x <= e in succ x]]$.
+\end{definition}
+
+The reason for the eager let is so that we can prove that our derived forms
+have the appropriate operational behavior.
+
+\begin{lemma}[\link{rec/extensions.v}{}{Application steps}]
+\begin{enumerate}
+\item $[[ (ret(\x.e)) (ret v) ~> e[v/x] ]]$. 
+\item If $[[e1 ~> e1']]$ then $[[e1 e2 ~>* e1 e2']]$.
+\item If $[[e2 ~> e2']]$ then $[[v e2 ~>* v e2']]$.
+\end{enumerate}
+\end{lemma}
+
+\section{Recursive values}
+
+Now, let's add general recursion. We will do so by adding a new form of value,
+called a \emph{recursive value}, written $[[rec x . v]]$. Here, the variable
+$[[x]]$ is bound inside $v$ and refers to the whole value.
+
+\[ [[v]] ::= [[rec x . v]] \] 
+
+Usually $[[v]]$ will be a function, and this will give is a way to define 
+recursive functions. But it doesn't have to be.
+The typing rule allows any type. 
+
+\[ \drule{tv-rec} \]
+
+However, to allow any type, we need small-step rules to unwind the value 
+when that type is used.
+
+\[ \drule{s-app-rec} \]
+\[ \drule{s-prjOne-rec} \qquad  \drule{s-prjTwo-rec} \]
+
+Why do we do it this way? Because this is a call-by-value language, our
+formalization looks different from most versions. We can only substitute
+values for values.
+
+\section{Recursive types (strict)}
+
+Finally we will add recursive types to the language.  This means adding a
+recursive definition form $\mu$, along with type variables to the syntax of
+types.  And, in the syntax of terms, we introduce two coercions, for
+introducing and eliminating values with the recursive type.
+
+\[ 
+\begin{array}{lcll}
+[[tau]] &::=& [[alpha]]\ |\ [[mu alpha . tau]] & \mbox{variables and recursive types} \\
+[[v]]   &::=& [[fold v]]                       & \mbox{introduction form} \\
+[[t]]   &::=& [[unfold v]]                     & \mbox{elimination form} \\
+\end{array}
+\]
+
+\[
+\drule{tv-fold}
+\drule{te-unfold}
+\]
+
+The single new rule of the operational semantics removes the coercions.
+
+\[ \drule{s-unfold} \]
+
+\subsection{Recursive type variations}
+
+The language we have presented so far includes strict recursive types, where only values can 
+be given recursive types. An alternative form delays evaluation when the recursive value is 
+defined. 
+
+\[ 
+\begin{array}{lcll}
+[[tau]] &::=& [[alpha]]\ |\ [[nu alpha . tau]] & \mbox{variables and recursive types} \\
+[[v]]   &::=& [[roll e]]                       & \mbox{introduction form} \\
+[[t]]   &::=& [[unroll v]]                     & \mbox{elimination form} \\
+\end{array}
+\]
+
+\[
+\drule{tv-roll}
+\drule{te-unroll}
+\]
+
+\[ \drule{s-unroll} \]
+
+
+The presense of $[[fold v]]$ and $[[unfold v]]$ introduction and elimination
+forms, means that language includes \emph{iso-}recursive types. The types
+$[[mu alpha.tau]]$ and $[[tau [mu alpha.tau/alpha] ]]$ are isomorphic, but not
+  equal types. The introduction and elimination terms are coercions for the
+  isomorphism.  Iso-recursive types are the most straightforward way to add
+  recursive types to a language, as it only requires $\alpha$-equivalence for
+  type equality.
+
+Alternatively, some languages include a definitional type equivalence, i.e. an
+equivalence relation that states when two types are equal and is coarser than
+$\alpha$-equality. In this case, the language includes some sort of conversion rule, 
+giving terms any equivalent types. This conversion rule can make the metatheory of the 
+language more complex to work with as often the type system is not syntax-directed.
+

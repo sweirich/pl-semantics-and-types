@@ -80,6 +80,37 @@
 }
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Typesetting source code
+
+\usepackage{listings}
+\lstset{
+  language=[Objective]Caml,
+  basicstyle=\upshape\ttfamily,
+  framexleftmargin=1ex,
+  framexrightmargin=1ex,
+  showstringspaces=false,
+  commentstyle=\itshape\ttfamily,
+  columns=fixed,
+  stringstyle=\ttfamily,
+  mathescape=true,
+  escapeinside={;*}{*;}
+}
+
+\newcommand{\codeplus}[3]{%
+  \lstinputlisting[%
+        #3,
+        linerange={#2},
+        columns=fixed,
+        rangebeginprefix=(*\ begin\ ,%
+        rangebeginsuffix=\ *),%
+        rangeendprefix=(*\ end\ ,%
+        rangeendsuffix=\ *),
+        includerangemarker=false]{#1}}
+\newcommand{\code}[2]{\codeplus{#1}{#2}{}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \title{Programming Languages: Semantics and Types}
 \author{Stephanie Weirich}
 \date{\today}
@@ -98,6 +129,7 @@
 \input{nrec}
 \input{bigstep}
 \input{semsound}
+\input{rec}
 
 \backmatter
 
