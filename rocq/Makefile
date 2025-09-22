@@ -1,11 +1,13 @@
 COQMAKEFILE=CoqMakefile
 LIBNAME=plst
-LANGS=stlc 
+LANGS=stlc rec
 SYNTAX = $(addsuffix /syntax.sig,$(LANGS))
 SYNTAXV = $(SYNTAX:.sig=.v)
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: coq syntax clean fullclean
+
+all: coq
 
 # compile all .v files in _CoqProject
 coq: CoqSrc.mk $(VFILES)
@@ -18,8 +20,6 @@ CoqSrc.mk: _CoqProject
 clean:
 	make -f CoqSrc.mk clean
 
-
-syntax:	$(SYNTAXV)
 
 # Generate the syntax.v files with Autosubst 2 and add imports
 # This will run Autosubst 2 

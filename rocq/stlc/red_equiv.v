@@ -39,14 +39,16 @@ Proof.
   eapply ms_trans. eapply Small.s_beta. auto. auto.
 Qed.
 
+(* FILL IN HERE *)
+
 Lemma same_semantics : 
   (forall e v, e ⇓ v  -> e ⟱ v).
 Proof.
-  intros e v h. induction h.
+  intros e v h. induction h. 
   all: intros.
   - eapply s_val; auto.
   - eapply s_app; eauto.
-Qed.
+(* FILL IN HERE *) Admitted.
     
 End BigSmall.
 
@@ -65,55 +67,7 @@ Proof.
     eapply Big.s_app; eauto.
   - inversion h2; try done. subst. clear h2.
     eapply Big.s_app; eauto.
-    Qed.
-
-(* This is by induction on the bigstep relation.
- *)
-Lemma same_semantics_step' : 
-  (forall e' v, e' ⇓ v -> forall e, (e ⤳ e') -> e ⇓ v).
-Proof.
-  intros e' v h. induction h. 
-  - intros e hS. 
-    (* Case s_val : v ⇓ v *)
-    inversion hS; subst.
-    (* rule out those that don't produce a value *)
-    all: try solve [simpl in H; done].
-    + destruct e0; cbn in H; try done.
-      ++ destruct f. done. asimpl.
-         eapply Big.s_app; eauto.
-         eapply Big.s_val; eauto.
-         eapply Big.s_val; eauto.
-         asimpl. 
-         eapply Big.s_val; eauto.
-      ++ asimpl.
-         eapply Big.s_app; eauto.
-         eapply Big.s_val; eauto.
-         eapply Big.s_val; eauto.
-         asimpl. 
-         eapply Big.s_val.
-         cbn. done.
-      ++ asimpl.
-         eapply Big.s_app; eauto.
-         eapply Big.s_val; eauto.
-         eapply Big.s_val; eauto.
-         asimpl. 
-         eapply Big.s_val.
-         cbn. done.
-      - (* Case s_app: e ⤳ e1 e2  and e1 e2 ⇓ v2 *)
-    intros e hS.
-    inversion hS; subst.
-    + destruct e0; asimpl in H1; try done.
-      ++ destruct f. done. asimpl in H. subst.
-         cbn in H1. done.
-      ++ inversion H. subst.
-         eapply Big.s_app.
-         eapply Big.s_val; eauto.
-         eapply Big.s_val; eauto.
-         asimpl.
-         eapply Big.s_app; eauto.
-    + eapply Big.s_app; eauto.
-    + eapply Big.s_app; eauto.
-    Qed.
+    (* FILL IN HERE *) Admitted.
 
 Lemma same_semantics : forall e v,  e ⟱ v -> e ⇓ v.
 Proof.
@@ -125,5 +79,3 @@ Qed.
 
 End SmallBig.
 
-
- 

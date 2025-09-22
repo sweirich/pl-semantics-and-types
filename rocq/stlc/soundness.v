@@ -7,6 +7,7 @@ Import RedNotations.
 
 (* ----------------------------------------------------- *)
 
+Module Big.
 Import red.Big.
 
 (* Exercise: where does the following proof go wrong? *)
@@ -54,7 +55,7 @@ Definition C (τ : Ty) : Tm 0 -> Prop :=
 Definition Env n := fin n -> Tm 0.
 
 Definition semantic_subst {n} (Γ : Ctx n) (ρ : Env n) := 
-  forall x, V (Γ x) (ρ x). (*  /\ is_value (ρ x) = true. *)
+  forall x, V (Γ x) (ρ x). 
 
 Definition semantic_typing {n} (Γ : Ctx n) e τ :=
   forall ρ, semantic_subst Γ ρ -> C τ e[ρ].
@@ -91,10 +92,7 @@ Proof.
   intros Vv h.
   auto_case.
 Qed.
-(*
-  split. auto. eapply is_value_V; eauto.
-Qed.
-*)
+
 
 Lemma semantic_var {n} (Γ : Ctx n) x : 
   Γ ⊨ var x ∈ Γ x.
@@ -158,6 +156,7 @@ Proof.
   eapply s_val; eauto.
 Qed.
 
+
 Lemma soundness n (Γ : Ctx n) e τ : 
   Γ |- e ∈ τ -> Γ ⊨ e ∈ τ.
 Proof.
@@ -167,5 +166,8 @@ Proof.
   - eapply semantic_abs; eauto.
   - eapply semantic_app; eauto.
   - eapply semantic_lit; eauto.
-Qed.
+(* FILL IN HERE *) Admitted.
+
+
+End Big.
 
