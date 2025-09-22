@@ -342,3 +342,7 @@ TSWLatexianTemp*
 CoqSrc.mk
 CoqSrc.mk.conf
 _CoqProject
+
+
+# ignore output pdf
+*/hw1.pdf
