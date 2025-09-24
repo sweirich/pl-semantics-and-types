@@ -1,9 +1,9 @@
-\chapter{Recursive definitions}
+\chapter{\rec: Recursive definitions}
 
 In this chapter, we introduce our first \emph{effectful} programming language:
-a fine-grained call-by-value language with recursive definitions. That effect
-is \emph{nontermination}, where evaluating a program may not actually result
-in a value.
+a fine-grained call-by-value language with recursive definitions, called
+\rec. That effect is \emph{nontermination}, where evaluating a program may not
+actually result in a value.
 
 We will add nontermination through two sorts of recursive definitions: first
 through recursive values and then through recursive types.
@@ -376,3 +376,14 @@ $\alpha$-equality. In this case, the language includes some sort of conversion r
 giving terms any equivalent types. This conversion rule can make the metatheory of the 
 language more complex to work with as often the type system is not syntax-directed.
 
+\section{Type safety}
+
+Let's consider type safety for \rec. Notably, we will do so by proving preservation and 
+progress with the small-step semantics. While it is possible to define a big-step semantics
+for this language, the fact that computations may diverge means that we have to be careful.
+
+\section{Further reading}
+
+Fine-grained CBV is from~\cite{LEVY:fgcbv}.
+
+The definition of \emph{eager let} is from Forster et al.~\cite{forster:cbpv}.

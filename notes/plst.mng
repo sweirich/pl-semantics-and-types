@@ -80,6 +80,10 @@
 }
 
 
+\newcommand\stlc{\textsc{STLC}}
+\newcommand\rec{\textsc{REC}}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Typesetting source code
 
@@ -130,6 +134,7 @@
 \input{bigstep}
 \input{semsound}
 \input{rec}
+\input{steps}
 
 \backmatter
 

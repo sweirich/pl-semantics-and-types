@@ -117,7 +117,7 @@ above---we know that the substitution we need $[[e'[v2/x] ]]$ will terminate
 This idea of evaluating a term to a value in a particular set will come up
 again, so let's name it. The computational interpretation of a type includes
 all expressions that evaluate to a value in the value set for that type.
-\begin{definition}[\link{semsound.v}{C}{Computation set}]
+\begin{definition}[\link{stlc/semsound.v}{C}{Computation set}]
 \[
 [[ C tau ]] = [[ { e | e => v and v elem V tau } ]]
 \]

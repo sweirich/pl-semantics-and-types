@@ -28,7 +28,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | M 9/15  | Big step semantics                                                                                  |
 | W 9/17  | Semantic soundness                                                                                  |
 | M 9/22  | **HW #1 due** <br/> Recursive definitions                                                           |
-| W 9/24  |                                                                                                     |
+| W 9/24  | Metatheory of recursive definitions                                                                 |
 | M 9/29  |                                                                                                     |
 | W 10/1  |                                                                                                     |
 | M 10/6  | HW #2 due                                                                                           |

@@ -8,6 +8,11 @@ Require Export common.renaming.
 Require Export rec.syntax.
 Import ScopedNotations.
 
+Disable Notation "↑__Val" (all).
+Disable Notation "↑__Tm" (all).
+Disable Notation "↑__Ty" (all).
+
+
 (* We'll use more automation in these proofs. *)
 Create HintDb rec.
 
@@ -79,6 +84,8 @@ Notation "'inj1'" := (inj true) (at level 70) : rec_scope.
 Notation "'inj2'" := (inj false) (at level 70) : rec_scope.
 Notation "e ~> e'" := (Small.step e e') (at level 70) : rec_scope.
 Notation "e ~>* e'" := (multi Small.step e e') (at level 70) : rec_scope.
+Notation "⇑" := (up_Val) : rec_scope.
+Notation "⇑" := (up_Val_Val) : rec_scope.
 End Notations.
 
 Open Scope rec_scope.
@@ -98,7 +105,7 @@ Lemma ret_steps_to_itself v e :
   ret v ~>* e -> e = ret v.
 Proof. intro h. inversion h. done. inversion H. Qed.
 
-
+(** The small step relation is deterministic *)
 Lemma deterministic e e1 e2 : 
   e ~> e1 -> e ~> e2 -> e1 = e2.
 Proof.

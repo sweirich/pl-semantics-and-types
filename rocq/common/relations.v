@@ -38,3 +38,8 @@ Inductive step_n {A} (step : A -> A -> Prop) : nat -> A -> A -> Prop :=
     step e1 e2 -> 
     step_n step k e2 e3 -> 
     step_n step (S k) e1 e3.
+
+(* 
+Lemma step_n_app {A} (step : A -> A -> Prop) k1 k2 e1 e2 e3 :
+  step_n step k1 e1 e2 -> step_n step k2 e2 e3 -> step_n step (k1 + k2) e1 e3.
+*)
