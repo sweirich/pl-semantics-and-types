@@ -123,9 +123,10 @@ Note that the way that we have defined this natural number recursor through
 pattern matching makes it particularly simple to define a \emph{predecessor}
 function:
 
-\[ [[ pred x]] = [[nrec x of { 0 => 0 ; S y => y } ]] \]
+\[ [[ pred x]] = [[nrec x of { 0 => 0 ; S y => \ z. y } ]] \]
 
-This is not the case for all recursion principles. A more restricted form, sometimes called \emph{iteration} does not bind $[[y]]$ in the successor case.
+This is not the case for all recursion principles. A more restricted form,
+sometimes called \emph{iteration} does not bind $[[y]]$ in the successor case.
 
 \section{Exercises}
 

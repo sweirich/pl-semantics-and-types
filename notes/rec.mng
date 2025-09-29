@@ -260,7 +260,7 @@ application form in this language is $[[v1 v2]]$.
 
 \begin{definition}[\link{rec/extensions.v}{eagerlet}{Eager let}]
 Define $[[let x <= e1 in e2]]$ as $[[e2 [v/x] ]]$ when $[[e1]]$ is $[[ret v]]$ and 
-$[[let x = e1 in e2]]$ else wise.
+$[[let x = e1 in e2]]$ otherwise.
 \end{definition}
 
 We use this eager let in the definition of some derived forms.
@@ -295,24 +295,27 @@ $[[x]]$ is bound inside $v$ and refers to the whole value.
 Usually $[[v]]$ will be a function, and this will give is a way to define 
 recursive functions. But it doesn't have to be, as we saw in OCaml.
 
-The typing rule includes an auxiliary judgment that specifies which types 
-may be used in recursive definition.
+The typing rule includes an auxiliary judgment written $[[tau ok]]$ that
+specifies which types may be used in recursive definition.
 
 \[ \drule{tv-rec} \]
 
 For now, the rules specify that function and product types are ok.
+
+\[ \drule{fun-ok} \qquad \drule{prod-ok} \]
+
 Analogously, we need small-step rules to unwind the value when that type is
 used.
 
 \[ \drule{s-app-rec} \]
 \[ \drule{s-prjOne-rec} \qquad  \drule{s-prjTwo-rec} \]
 
-Why do we do it this way? Because this is a call-by-value language!  We can
-only substitute values for values.
+Why do we do it this way? Because of our syntactic separation between values
+and computations!  We can only substitute values for values.
 
 \section{Recursive types}
 
-Finally we will add recursive types to the language.  This means adding a
+Finally we add recursive types to the language.  This means adding a
 recursive definition form $\mu$ and type variables to the syntax of
 types.  And, in the syntax of terms, we introduce two coercions, for
 introducing and eliminating values with the recursive type.

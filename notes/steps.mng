@@ -1,0 +1,590 @@
+\chapter{Step-indexing: Semantic type safety for \rec}
+\label{chapter:steps}
+
+We proved a semantic soundness theorem for STLC. Can prove the same result for
+\rec? Of course not. We know that we are doomed to failure as the semantic
+soundness theorem for STLC also proves that all programs terminate, but that
+is not the case for this language.
+
+\section{A failing proof: semantic sets}
+
+However, let's take a look at the proof because it first gives us a chance to
+redo the argument from before, but using a small-step semantics this time
+instead of a big-step semantics. It is also instructive to look at where our
+proof breaks down, so we can think about how to modify the statement of the 
+theorem so that we can prove something that is true.
+
+First, we need to define our semantic sets for our fine-grained CBV
+language. Our definition is similar to last time, with a few changes.
+
+\begin{definition}[\link{rec/soundness.v}{C}{Semantic sets}]
+\[
+\begin{array}{lcl}
+[[ C tau ]] &=& [[ { e | e ~>* ret v and v elem V tau } ]]\\
+\\
+[[ V Nat ]] &=& [[nats]] \\
+[[ V Void ]] &=& \{\} \\
+[[ V tau1 -> tau2 ]] &=& \{\ [[v]]\ |\ 
+           \forall v_2,\ [[v2 elem V tau1]]\ \mbox{\it implies}\ [[v v2 elem C tau2]] \} \\  
+[[ V tau1 * tau2 ]] &=& \{\ [[v]]\ |\ 
+    [[prj1 v elem C tau1]]\ \mbox{\it and}\ [[prj2 v elem C tau2]] \}
+\\
+[[ V tau1 + tau2 ]] &=& \{\ [[inj1 v]]\ |\ [[v1 elem V tau1]] \} \cup
+                        \{\ [[inj2 v]]\ |\ [[v2 elem V tau2]] \} \\
+
+\\
+\end{array}
+\]
+\end{definition}
+
+First, we define the sets for computations and values mutually. That will 
+allow us to use the definition of computation sets directly in the 
+definition of the value sets, so we can localize our description of 
+the evaluation. 
+
+Next, we have a few more types around, so we need more cases in our definition
+of the value sets. We now have cases for the empty type (there are no values
+of this type, so its semantics is an empty set), product types and sum
+types. These cases are in addition to the natural number and function type
+cases from last time.
+
+One case that is missing from the definition is the case for recursive
+types. We might like to add a definition like the following: a ``folded''
+value is in the set for a recursive type if the underlying value is in the set
+for the unfolded type.
+
+\[ [[ V mu alpha.tau]] = \{ [[fold v]] |\ [[v elem V tau [mu alpha.tau/alpha] ]] \} \]
+
+However, we \textbf{cannot} add this case to our definition. The reason is that with this case, the
+definition is no longer well-founded. Above, the semantic sets are defined by
+recursion over the type structure. This means that each recursive part of the
+definition must be to a set for a smaller type. However, the type 
+$[[ tau [mu alpha.tau/alpha] ]]$ is not necessarily smaller than 
+$[[ mu alpha.tau]]$. So we cannot use $[[ V tau [mu alpha.tau/alpha] ]]$ to
+define $[[ V mu alpha.tau]]$.
+
+So to define these sets recursively, we need to recur on something else if we
+want to include recursive types.
+
+The second difference in this definition is in the case for function types. We
+want to allow function values to be either explicit lambda expressions or
+recursive functions. By defining the set in terms of the elimination form for 
+function types instead of the introduction form, we can implicitly include 
+$[[rec x. v]]$ as a value in this set, as long as it behaves like a recursive 
+function.
+
+Consider what would happen if we tried to do it the other way around, and add 
+an alternative for recursively defined values to our prior definition for 
+lambda terms. We cannot do this definition either because our definition is 
+not well-founded: in the first line 
+we define $[[ V tau1 -> tau2 ]]$ in terms of $[[ V tau1 -> tau2 ]]$.
+
+\[ 
+\begin{array}{lcl}
+[[ V tau1 -> tau2 ]]& =& 
+    \{\ [[rec x. v]]\ |\ [[ v[rec x.v/x] elem V tau1 -> tau2 ]]\ \}\ \cup \\
+&&   \{\ [[\x.e]]\ |\ 
+           \forall v2,\ [[v2 elem V tau1]]\ \mbox{\it implies}\ [[e[v2/x] elem C tau2]]\ \}
+\end{array}
+\]
+
+\subsection{Semantic lemmas with  small-step evaluation}
+
+Continuing our (doomed) proof attempt, we can restate some of the definitions
+that were present in the previous proof. We need to know when a substitution only 
+includes values in the semantic set, and can use this to define a semantic form of 
+the value and computation typing relations.
+
+\begin{definition}[\link{rec/semsound.v}{semantic_typing}{Semantic substitution and typing}]
+\begin{enumerate}
+\item Define $[[sigma elem [ G ] ]]$ when $\forall x \in [[dom G]], [[ sigma x elem V G x]]$.
+\item Define $[[G |= e : tau]]$ when forall $[[sigma elem [G] ]]$, $[[e[sigma] elem C tau ]]$.
+\item Define $[[G |= v : tau]]$ when forall $[[sigma elem [G] ]]$, $[[v[sigma] elem V tau ]]$.
+\end{enumerate}
+\end{definition}
+
+Because we are working with a small-step semantics, we will also need the following property.
+
+\begin{lemma}[\link{rec/semsound.v}{reverse_evaluation}{Reverse evaluation}]
+If $[[e ~> e']]$ and $[[e' elem C tau]]$ then $[[e elem C tau]]$.
+\end{lemma}
+\begin{proof}
+The proof is by definition---we just extend the multi-step evaluation one more step.
+\end{proof}
+
+Now let's think about which of our semantic typing rules are true. Some go
+through very similarly to their analogs for the STLC (and the big-step
+semantics). And in some places the division between value typing rules and
+computation typing rules cleans things up nicely. No more need to reason about
+how values evaluate to themselves.
+
+The base cases are straightforward.
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_var}{Semantic var rule}]
+$[[G |= x : G x ]]$.
+\end{lemma}
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_lit}{Semantic lit rule}]
+$[[G |= k : Nat ]]$.
+\end{lemma}
+
+Let's look that the case for (non-recursive) functions.
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_abs}{Semantic abs rule}]
+If $[[ G, x :tau |= e : tau1 -> tau2]]$, then $[[ G |= \x.e : tau1 -> tau2]]$.
+\end{lemma}
+\begin{proof}
+Let $[[ sigma elem [G] ]]$ be arbitrary. We want to prove that for any 
+$[[v1 elem V tau1]]$, we have $[[ (\x.e)[sigma] v1 elem C tau2 ]]$. 
+%
+Using our assumption, we know that $[[ e [ v1 / x, sigma ] elem C tau2 ]]$.
+%
+Because $[[C tau2]]$ is closed under reverse evaluation, and  
+$[[ (\x.e)[sigma] v1 ~> e [ v1 / x, sigma ] ]]$ we are done.
+\end{proof}
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_app}{Semantic app rule}]
+If $[[ G |= v1 : tau1 -> tau2 ]]$ and $[[ G |= v2 : tau1 ]]$, 
+then $[[ G |= v1 v2 : tau2 ]]$.
+\end{lemma}
+\begin{proof} 
+Let $[[ sigma elem [G] ]]$ be arbitrary. We want to prove that for any 
+$[[v1v2[sigma] elem C tau2]]$. 
+By our assumptions, we know that $[[v1[sigma] elem V tau1 -> tau2 ]]$
+and $[[v2[sigma] elem V tau1  ]]$. By definition, we know our desired result. 
+\end{proof}
+
+We have isolated all of our computation to let expressions.
+
+\begin{lemma}[\link{stlc/semsound.v}{semantic_let}{Semantic let rule}]
+If $[[ G |= e1 : tau1 ]]$ and $[[ G , x : tau1 |= e2 : tau2 ]]$, 
+then $[[ G |= let x = e1 in e2 : tau2 ]]$.
+\end{lemma}
+\begin{proof}
+Let $[[ sigma elem [G] ]]$ be arbitrary. We want to prove that for any 
+$[[(let x = e1 in e2)[sigma] elem C tau2]]$. 
+By our assumptions we know that $[[e1[sigma] elem C tau1]]$. 
+This means that there is some $[[e1[sigma] ~>* v1 ]]$ and $[[v1 elem V tau1]]$.
+Furthermore by assumption, we know that $[[e2 [v1/x, sigma] elem C tau2 ]]$.
+We can put these evaluation sequences together to have 
+$[[let x = e1 in e2]] [[~>*]] [[let x = ret v1 in e2 ]] [[~>]] [[ e2[v1/x,sigma] ]]$.
+And, because the computation set is closed under reverse evaluation, we are done.
+\end{proof}
+
+\subsection{A problem}
+
+Our typing rule for recursive values looks like this. 
+\begin{lemma}[Semantic rec rule]
+If $[[G , x: tau |= v : tau ]]$ then $[[G |= rec x . v : tau ]]$.
+\end{lemma}
+Let's consider the case only when $[[tau]]$ is a function type, i.e. $[[tau]] = [[tau1 -> tau2]]$. 
+
+Let $[[ sigma elem [G] ]]$ be arbitrary.
+We want to show that $[[ rec x. v[sigma] elem V (tau1 -> tau2) ]]$.
+Let $[[v1 elem V tau1]]$ be arbitrary. We now want to show that 
+\[ [[ rec x. v[sigma] v1 elem C tau2 ]] \]
+By closure under reverse evaluation, this is the same as showing that
+\[ [[ v[rec x. v[sigma]/x,sigma] v1 elem C tau2 ]] \]
+By assumption, we can conclude this as long as we have 
+\[ [[ rec x.v[sigma]/x,sigma elem [G,x:tau1 -> tau2] ]] \]
+This requires showing that 
+\[ [[ rec x.v[sigma] elem V tau1 -> tau2 ]] \]
+But now we are stuck! This is \emph{exactly} the result that we were 
+already trying to show.
+
+\section{Fixing the problem: counting evaluation steps}
+
+In the previous section, we saw that there were two problems with the
+approach.  The first is that if we want to include recursive types, we cannot
+define the value relation by recursion over type structure. The semantics of 
+recursive types are defined in terms of themselves, not in terms of smaller 
+components. 
+
+The second issue is that when we are trying to prove that recursive values are
+in the relation, because they do a self-substitution, we need to know that
+they are already in the relation to show that they are in the relation.
+
+Now, if our semantic sets were coinductively defined, we would solve both
+problems. We could define the set in terms of itself (allowing recursive
+types) and to show that an element was a member of a set, we could use
+coinduction. But, we cannot do that with a straightforward definition.  The
+case for function types features a negative occurrence of the value set, so
+the naive definition cannot be used in a coinductive relation.
+
+Instead, we are going to define these sets a little less
+directly. 
+
+Recall this definition of ``runs safely'' from 
+before:
+
+\begin{definition}[\link{stlc/safety.v}{safe_run_k}{Safe for $k$}]
+A program $[[e]]$ runs safely for $[[k]]$ steps in two ways. 
+If $[[e]]$ cannot step, then $[[e]]$ must be some $[[ret v]]$. Otherwise,
+if it steps $[[e ~> e']]$ and $[[0 < k]]$ then $[[e']]$ must run safely for $[[k-1]]$ steps.
+\end{definition}
+
+\begin{definition}[Runs safely]
+A program runs safely if for all $k$, it is safe for $k$.
+\end{definition}
+
+The definition of safe for $k$ is inductively defined over $k$. It holds for
+all programs that do not get stuck within $k$ steps. By requiring that this
+predicate hold for all $k$, we can define type safety without requiring
+programs to terminate.  Diverging programs satisfy this relation because they
+do not get stuck after any number of steps of evaluation.
+
+\begin{lemma}[\link{rec/steps.v}{}{Safe programs don't get stuck}]
+If $e$ is safe, then for all $[[e ~>* e']]$, either $[[e']]$ is $[[ret v]]$, or $[[e']]$ can 
+take another step.
+\end{lemma}
+
+Another way to say this is to think about sets.
+
+Let $S_k$ be the set of all programs that are safe for $k$ steps. That means that 
+we have an infinite chain of decreasing sets. 
+
+\[ S_0 \subseteq S_1 \supseteq S_2 \supseteq S_3 \ldots \]
+
+This sequence is \emph{downward closed}: for each $i \leq j$ we have $S_j \subseteq S_i$.
+
+Furthermore, the set of safe programs is the intersection of all of the sets in this sequence.
+
+\[ S = \bigcap_i S_i \]
+
+What we have just done is define a set by coinduction. Another way to set up this definition 
+of safety is to consider this function from sets of terms to sets of terms. 
+
+\[ F X = \{ [[e irreducible implies e = ret v]] \mbox{ or } [[e ~> e']] \mbox{ implies } e' \in X\ \} \]
+
+Say $F^i X$ is $i$ applications of $F$ to $X$. Then we have:
+
+\[ S = \bigcap_i F^i \mathcal{U} \]
+
+The function $F$ is monotonic: $X \subseteq Y$ implies that
+$F X \subseteq F Y$, so we can prove a coinduction principle for this
+definition.  This principle states that if we want to prove that some element
+is in $S$, then we need to show that it is in some set $S_1$, such that
+$S_1 \subseteq F (S_1)$.
+
+For example, say we have some term $[[(rec f . \ x . f x) 3]]$ and we want to 
+show that this term runs safely. Intuitively we know that this is the case because we 
+have the evaluation sequence:
+
+\[ [[(rec f. \x. f x) 3]] [[~>]] [[(\x.(rec f.\x.f x)) 3]] [[~>]] [[(rec f. \x. f x) 3]] [[~>]] \ldots \]
+
+Then we can pick $S_1$ to be the set containing just this term and its
+unfolding. Our proof obligation is to show that $S_1 \in F S_1$, i.e. that both
+terms step to an element of $S_1$.
+ 
+\section{Step-indexed semantic safety}
+
+Let's use this idea to define our logical relation as a
+downward-closed step-indexed sequence of sets.
+
+As before, we'll split our logical relation into two parts, mutually defining
+sets of values and sets of terms (computations). What is different this time
+is that these sets are also indexed by a step-count. So our relations are now
+three place relations, between types, values or terms, and step counts.  This
+time, we write $[[V tau v k]]$ and $[[C tau e k]]$, when $[[v]]$ and $[[e]]$
+are in their respective relations at step index $[[k]]$.
+
+Furthermore, our computation set will contain terms that don't get stuck.
+
+\begin{lemma}[\link{rec/steps.v}{}{Semantic safety}]
+If for any $k$, we have $[[C tau e k]]$, 
+then for all $[[e ~>* e']]$, either $[[e']]$ is $[[ret v]]$, or $[[e']]$ can 
+take another step.
+\end{lemma}
+
+
+Our fundamental lemma will be to show that closed, well-typed terms $[[|- e : tau]]$ are 
+in $[[C tau e k]]$ for any $k$. This will give us (the hard way) a type safety theorem 
+for statically well-typed terms.
+
+While this result is a bit underwhelming (the preservation/progress based
+theorem is a lot easier) it will give us a framework that we can extend to
+prove more interesting theorems.
+
+\subsection{Step-indexed propositions}
+
+Sometimes, we want to work with our relations as functions from steps to propositions. For example, if 
+we write $[[V tau v]]$, without the argument $[[k]]$, we are talking about a function. There are two 
+meta-operations on step-indexed propositions that we can use to clarify our reasoning.
+
+The first operation is called the \emph{later modality}, and takes a step-indexed proposition and 
+produces a new step-indexed proposition. This operation accesses its argument at the previous 
+step count. If the step is zero, then it holds trivially.
+
+\begin{definition}[Later modality]                             
+Define $[[|> k phi]]$ by case analysis on $[[k]]$.
+\begin{itemize}
+  \item $[[|> 0 phi]]$ always holds 
+  \item $[[|> (S k) phi]]$ holds iff $[[phi k]]$.
+\end{itemize}
+\end{definition}
+
+The next operation is called \emph{stepped implication}, and takes \emph{two} step-indexed propositions
+to produce a new step-indexed proposition.
+
+\begin{definition}[Step-indexed implication]
+Define $[[phi]][[===>]]_k[[phi']]$ as 
+\[ 
+\textit{for all}\ j < k,\ [[phi j]]\ \textit{implies}\ [[ phi' j ]] 
+\]
+\end{definition}
+
+\begin{definition}[Downward closed]
+A step-indexed proposition is \emph{downward closed} when $j <= k$ we have $[[phi k implies phi j]]$.
+\end{definition}
+
+Suppose $[[phi]]$ and $[[phi']]$ are both downward closed. The step-indexed proposition, 
+$[[ phi k ]]\ \textit{implies}\ [[ phi' k ]]$ is not downward closed.
+Assume $j \leq k$, and that $[[phi k implies phi' k]]$. We want to show that $[[phi j implies phi' j]]$. 
+So assume $[[phi j]]$. We want to show $[[phi' j]]$. If we could show $[[phi' k]]$, we would be done because $[[phi']]$ is downward closed. Furthermore, by assumption, it also suffices to show $[[phi k]]$.
+In other words, we need $[[phi j implies phi k]]$. But  
+here we are stuck! We cannot use the fact that $[[phi]]$ is downward closed here because that gives us the 
+opposition relation between $[[phi j]]$ and $[[phi k]]$.
+
+\begin{lemma}[Step-indexed implication is downward closed]
+For any $[[phi]]$ and $[[phi']]$, $[[phi ===> phi']]$ is downward closed. 
+\end{lemma}
+\begin{proof}
+Assume that $j <= k$ and $[[phi ===>k phi']]$. We want to show that $[[phi ===>j phi']]$.
+Unfolding definitions, assume we have some $[[i < j]]$ and we want to show that $[[phi i implies phi' i]]$.
+But, we are done, because by transitivity, we have $[[i < k]]$, so we can use our original 
+assumption.
+\end{proof}
+
+
+\subsection{Logical relation}
+
+Now let's define our the logical relation by \emph{well-founded recursion} on
+the step-count $k$. 
+
+\[ 
+\begin{array}{lclcl} 
+\\
+\\
+   [[C tau e k]] 
+      & =    & [[e irreducible]]\ \mbox{\textit{implies that there exists}}\ [[v]]\ \textit{such that} \\
+      &      & \qquad\qquad  [[e = ret v and V tau v k]]  \\
+      &      & [[and]]\ [[e ~> e']]\ \textit{implies}\ [[ |> k C tau e' ]]  \\
+\\
+   [[V Void v k]]                &=& \textit{never} \\
+   [[V Nat v k]]                 &=& [[v elem nats]] \\
+   [[V tau1 -> tau2 \x.e k]]     &=& \forall [[v1]], [[V tau1 v1 ===>k C tau2 e[v2/x] ]] \\
+   [[V tau1 -> tau2 rec x.v k]]  &=& [[|> k V tau1 -> tau2 v[rec x.v/x]  ]] \\
+   [[V tau1 * tau2 (v1, v2) k]]  &=& [[|> k V tau1 v1 and |> k V tau2 v3 ]] \\
+   [[V tau1 * tau2 rec x. v k]]  &=& [[|> k V tau1 * tau2 v[rec x.v/x]   ]] \\
+   [[V tau1 + tau2 inj1 v1 k]]   &=& [[|> k V tau1 v1 ]] \\
+   [[V tau1 + tau2 inj2 v2 k]]   &=& [[|> k V tau2 v2 ]] \\
+   [[V mu alpha.tau fold v k]]   &=& [[|> k V tau [mu alpha.tau/alpha] v ]]
+
+\end{array}
+\]                 
+
+This definition is well-defined because recursive occurrences of $[[C tau e]]$
+and $[[V tau v]]$ are done with steps that are strictly smaller than
+$k$. (There is one exception: definition of $[[C tau e k]]$ refers to
+$[[V tau v k]]$ at the same index. However, $[[V tau v k]]$ makes all of its
+recursive calls to smaller indices so we never get back to $[[C tau e k]]$.)
+
+The way this works is through the use of the two auxiliary operations defined
+above: if $[[phi]]$ is a step-indexed set, then $[[|> phi k]]$ accesses
+$[[phi]]$ at the predecessor of $k$.  The use of this operation in
+$[[C tau e k]]$ means that after taking a step, the next term must be in some
+smaller set.
+
+For the case of product types, we include all pairs, where both components are
+in the previous set, and all recursive values, where the unrolling is in the
+previous set.
+
+We do a similar thing for functions, including explicitly lambda terms and
+recursive values. However, the lambda case uses the step-indexed implication
+defined above. This makes sure that we will be able to prove that
+$[[C tau e]]$ and $[[V tau v]]$ are downward closed.
+
+\begin{lemma}[\link{rec/steps.v}{dclosed_V}{Downward closed}]\ 
+\begin{enumerate}
+\item If $j \leq k$ then $[[V tau v k implies V tau v j]]$.
+\item If $j \leq k$ then $[[C tau e k implies C tau e j]]$.
+\end{enumerate}
+\end{lemma}
+
+\subsection{Semantic typing and semantic typing lemmas}
+
+Continuing on, we find that our semantic substitution and semantic typing propositions 
+are also now step-indexed. Furthermore, to make sure that the typing relations are 
+downward closed, we use step-indexed implication.
+
+\begin{definition}[\link{rec/steps.v}{semantic_typing}{Semantic substitution and typing}]
+\begin{enumerate}
+\item Define $[[ G sigma k]]$ when for all  $x \in [[dom G]]$, we have $[[V G x sigma x k]]$.
+\item Define $[[ G |= k e : tau]]$ when $[[ G sigma ===>k C tau e[sigma] ]]$.
+\item Define $[[ G |= k v : tau]]$ when $[[ G sigma ===>k V tau v[sigma] ]]$.
+\end{enumerate}
+\end{definition}
+
+\begin{lemma}[\link{rec/steps.v}{semantic_var}{Semantic var rule}]
+forall $k$, we have $[[G |=k x : G x ]]$.
+\end{lemma}
+\begin{proof}
+We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
+$[[V (G x) x[sigma] j]]$. But this is true by unfolding definitions.
+\end{proof}
+
+\begin{lemma}[\link{rec/steps.v}{semantic_lit}{Semantic lit rule}]
+forall $k$, $[[G |=k i : Nat ]]$.
+\end{lemma}
+We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
+$[[V Nat i[sigma] j]]$. But this is again true by unfolding definitions.
+
+
+\begin{lemma}[\link{rec/steps.v}{semantic_abs}{Semantic abs rule}]
+forall $k$, if $[[ G, x :tau |=k e : tau1 -> tau2]]$, then $[[ G |=k \x.e : tau1 -> tau2]]$.
+\end{lemma}
+\begin{proof}
+We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$.
+We want to prove that $[[V tau1 -> tau2 (\x.e)[sigma] j]]$, which can be restated as 
+for any $[[i<j]]$, $[[V tau1 v i]]$ implies $[[C tau2 e[v/x,sigma] i]]$.
+%
+Using our assumption, we know that because $i < k$, if
+$[[ G,x:tau1 v/x,sigma i]]$ then $[[C tau2 e[v/x,sigma ] i ]]$.
+So it suffices to show that $[[V tau1 v i]]$ and $[[ G sigma i ]]$. However, we assumed 
+the former, and the latter holds because $[[ G sigma ]]$ is downward closed.
+\end{proof}
+
+Before we continue further, what if our definition for function types had instead been in terms 
+of application, instead of substitution. i.e. we combined both cases above into the single 
+case:
+
+\[   [[V tau1 -> tau2 v k]]   = \forall [[v1]], [[V tau1 v1 ===>k C tau2 v v2 ]]  \]
+
+We assume some $[[k]]$, $[[j<k]]$, and $[[  G sigma j ]]$.
+We want to prove that $[[V tau1 -> tau2 (\x.e)[sigma] j]]$, which can be restated as 
+for any $[[i<j]]$, $[[V tau1 v1 i]]$ implies $[[C tau2 (\x.e)[sigma]v1 i]]$.
+%
+Using our assumption, we know that for any $i' < k$, if
+$[[ G,x:tau1 v/x,sigma i' ]]$ then $[[C tau2 e[v/x,sigma ] i' ]]$.
+Our logical relation is backwards closed, but it takes a step. We need
+$[[C tau2 e[v/x,sigma ] (S i) ]]$ to show $[[C tau2 (\x.e)[sigma]v1 ]]$.
+By instantiating $i'$ with $[[S i]]$, 
+it suffices to show that $[[V tau1 v (S i)]]$ and $[[ G sigma (S i) ]]$. However, 
+here we are stuck. We know these results about $i$ but not $i'$.
+
+Now let's do the case where we were stuck before.
+
+\begin{lemma}[Semantic rec rule]
+For all $k$, if $[[G , x: tau |=k v : tau ]]$ then $[[G |=k rec x . v : tau ]]$.
+\end{lemma}
+\begin{proof}
+Let's again consider the case only when $[[tau]]$ is a function type, i.e. $[[tau]] = [[tau1 -> tau2]]$. 
+We will prove this by strong induction on $[[k]]$. We can assume that the lemma holds for 
+all indices less than $[[k]]$, and we want to show it for $[[k]]$.
+
+Now, assume some $[[j<k]]$, and $[[  G sigma j ]]$.
+We want to prove that $[[V tau1 -> tau2 (rec x.v)[sigma] j]]$, which can be restated as 
+$[[ |> j V tau1 -> tau2 v[rec x.v/x,sigma] ]]$.
+We can also assume that $j = S i$, as this is trivial otherwise. So we want to show 
+$[[ V tau1 -> tau2 v[rec x.v/x,sigma] i ]]$.
+This result holds by instantiating our assumption with $i$ and the 
+substitution $[[ rec x.v/x, sigma ]]$. We also need to show that 
+$[[ G,x:tau1 -> tau2 rec x.v/x, sigma i]]$. This holds because $[[ G sigma ]]$ is 
+downward closed. So we really only need to show $[[ G |=i rec x. v: tau ]]$. But as $i<k$ we 
+can use our induction hypothesis, and reduce this to $[[G, x:tau|=i v : tau]]$. 
+However, semantic typing is also downward closed, and we assumed this judgment at $k$, so 
+we can also have it at $i$.
+\end{proof}
+
+Compared to where we got stuck before, we needed the semantic typing of the
+recursive value, but only at a smaller index, which was available via
+induction. 
+
+
+
+\begin{lemma}[\link{rec/steps.v}{semantic_app}{Semantic app rule}]
+For all $k$, if $[[ G |=k v1 : tau1 -> tau2 ]]$ and $[[ G |=k v2 : tau1 ]]$, 
+then $[[ G |=k v1 v2 : tau2 ]]$.
+\end{lemma}
+
+To prove this lemma, we can assume some $[[j<k]]$, and $[[ G sigma j ]]$.
+That gives us a goal of $[[ C tau2 v1 v2 k ]]$. We can prove this result 
+with a sub-lemma, that applies after instantiating our premises with the assumptions.
+
+\begin{lemma}[\link{rec/steps.v}{C_app}{Set app}]
+For all $k$, if $[[ V tau1 -> tau2 v1 k ]]$ and $[[ V tau1 v2 k ]]$, 
+then $[[ C tau2 v1 v2 k ]]$.
+\end{lemma}
+\begin{proof} 
+We will prove this by strong induction on $[[k]]$. 
+
+We want to prove that $[[C tau2 v1 v2 k]]$. 
+We have two cases for $[[V tau1 -> tau2 v1 k]]$:
+\begin{enumerate}
+\item If $[[v1]]$ is $[[rec x. v]]$, then we know that 
+  $[[ |> k V tau1 -> tau2 v[rec x.v/x] ]]$.
+We want to show two things:
+If $[[e irreducible]]$ then there exists some $v$ such that
+$[[e = ret v and V tau v k]]$  and 
+if $[[e ~> e']]$ then $[[ |> k C tau2 e' ]]$.
+The first case does not apply because $[[(rec x.v) v2]]$ is always reducible, 
+as it steps to $[[v[rec x.v/x] v2]]$.
+So we focus on the second, where we need to show that $[[ |>k C tau2 v[rec x.v/x] v2]]$.
+Here we can assume that $k = S j$ as the zero case is trivial. So we need to 
+show that $[[C tau2 v[rec x.v/x] v2 j]]$. As $j$ is less than $k$, we can use 
+our induction hypothesis, with our initial assumption about $v1$ and the downward 
+closure of $[[C tau2 v2]]$.
+\item If $[[v1]]$ is $[[\x.e]]$, then we know that 
+$\forall [[v1]], [[V tau1 v2 ===>k C tau2 e[v2/x] ]]$.
+Again we want to show two things:
+If $[[e irreducible]]$ then there exists some $v$ such that
+$[[e = ret v and V tau v k]]$  and 
+if $[[e ~> e']]$ then $[[ |> k C tau2 e' ]]$. And again 
+we have $[[(\x.e) v2 ~> e[v2/x] ]]$ so the first case doesn't apply. 
+So we need to show $[[ |>k C tau2 e[v2/x] ]]$. 
+Again we assume that $k = S j$, and reduce this to 
+$[[ C tau2 e[v2/x] j]]$.
+By our assumption about $[[v1]]$, as $j$ is strictly smaller than $k$, 
+we only need to show $[[V tau1 v2 j]]$. This holds by downward 
+closure.
+\end{enumerate}
+\end{proof}
+
+Now let's prove the rules specific to fine-grained CBV. In particular, we have 
+isolated all sequencing to $\ottkw{let}$ terms, so here is where we will need 
+to consider how our computation set is closed under evaluation.
+
+\begin{lemma}[\link{rec/steps.v}{semantic_let}{Semantic let rule}]
+For all $k$, if $[[ G |=k e1 : tau1 ]]$ and $[[ G , x : tau1 |=k e2 : tau2 ]]$, 
+then $[[ G |=k let x = e1 in e2 : tau2 ]]$.
+\end{lemma}
+
+Like the application rule, we will show this result with the help of
+a sub-lemma. 
+
+\begin{lemma}
+For all $k$, if $[[C tau1 e1 k]]$ and 
+$\forall v, [[V tau1 v ===>k C tau2 let x = ret v in e2]]$ 
+then $[[C tau2 (let x = e1 in e2) k]]$.
+\end{lemma}
+
+
+
+\section{Further Reading}
+
+Step-indexed logical relations were invented by Appel and
+McAllester~\cite{appel:steps} and developed by Ahmed~\cite{ahmed:phd}.
+
+This methodology forms the foundation of the Iris logic. Timany et
+al~\cite{timany:logical-soundness} describes how to prove this and more
+sophisticated results using Iris, while hiding the step-counts altogether
+using a special purpose logic.
+
+The approach taken in this section was inspired by Xavier Leroy's lectures on
+step-indexed logical relations, from the lecture series titled "Programming =
+proving? The Curry-Howard correspondence today".  Slides available from
+\url{https://xavierleroy.org/CdF/2018-2019/8.pdf}.
+
+Additional reading about the foundations of inductive and coinductive definitions can be 
+found in Ron Garcia's lecture notes available from
+\url{https://www.cs.ubc.ca/~rxg/cpsc509-spring-2022/06-coinduction.pdf}

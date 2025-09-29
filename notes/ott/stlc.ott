@@ -126,25 +126,29 @@ v , w :: 'v_' ::=
 
   | ( v )           :: S :: Paren
 
-S  :: 'tms_' ::= 
+T , V :: 'tms_' ::= 
 {{ com sets of terms }} 
   | nats            ::   :: Nat
   | V tau           :: M :: LRV
    {{ tex \mathcal{V}[\![ [[tau]] ]\!] }}
   | C tau           :: M :: LRC
    {{ tex \mathcal{C}[\![ [[tau]] ]\!] }}
-  | { e | formula } :: M :: Comprehension
-   {{ tex \{ [[e]]\ |\ [[formula]]\, \} }}
-  | S1 => S2        :: M :: Function
-  | S1 * S2         :: M :: Product
-  
+  | { e | formula1 } :: M :: Comprehension
+   {{ tex \{\ [[e]]\ |\ [[formula1]]\, \} }}
+  | T1 => T2        :: M :: Function
+  | T1 * T2         :: M :: Product
+  | T1 u T2         :: M :: Union
+   {{ tex [[T1]] \cup [[T2]] }}
+  | T1 /\ T2        :: M :: Intersection
+   {{ tex [[T1]] \cap [[T2]] }}
+  | ( T )           :: M :: Parens
 
 U  :: 'tms_' ::= 
 {{ com sets of substitutions }} 
   | [ G ]         :: M :: LRG
    {{ tex \mathcal{G}[\![ [[G]] ]\!] }}
-  | { sigma | formula } :: M :: SComprehension
-   {{ tex \{ [[sigma]]\ |\ [[formula]]\, \} }}
+  | { sigma | formula1 } :: M :: SComprehension
+   {{ tex \{ [[sigma]]\ |\ [[formula1]]\, \} }}
 
 
 subrules
@@ -213,16 +217,18 @@ formula :: 'formula_' ::=
   | x : tau elem G             ::   :: inG
   | formula1 and formula2      ::   :: and
   | formula1 implies formula2  ::   :: implies
-  | e elem S                   ::   :: tmelem
-   {{ tex [[e]] \in [[S]] }}
-  | forall e , formula         ::   :: forall_quant
-   {{ tex \forall [[e]], [[formula]] }}
-  | forall x elem S , formula         ::   :: forall_elem_quant
-   {{ tex \forall [[x]][[elem]][[S]],[[formula]] }}
-  | exists e , formula         ::   :: exists_quant
-   {{ tex \exists [[e]], [[formula]] }}
+  | e elem T                   ::   :: tmelem
+   {{ tex [[e]] \in [[T]] }}
+  | forall e , formula1         ::   :: forall_quant
+   {{ tex \mbox{\textit{for all} }\ [[e]], [[formula1]] }}
+  | forall x elem T , formula1         ::   :: forall_elem_quant
+   {{ tex \mbox{\textit{for all} }\ [[x]][[elem]][[T]],[[formula1]] }}
+  | exist e , formula1         ::   :: exists_quant
+   {{ tex \mbox{\textit{exists} } [[e]], [[formula1]] }}
   | sigma elem  U              ::   :: sem_sub
   | G |= e : tau               ::   :: sem_typing
+  | e1 = e2                    ::   :: equal
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -373,7 +379,7 @@ e1 e2 => v2
 
 e => k
 --------------------- :: succ
-succ e => succ k
+succ e => S k
 
 e => 0
 e0 => v
@@ -422,7 +428,7 @@ by
 
 <rho | e> => k
 -------------------------- :: succ
-<rho | succ e> => succ k
+<rho | succ e> => S k
 
 <rho | e > => 0
 <rho | e1 > => v
