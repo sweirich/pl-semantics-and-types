@@ -135,14 +135,6 @@ Proof.
 (* FILL IN HERE *) Admitted.
 
 
-(* 
- | t_rec : forall (v : Val (S n)) (τ : Ty 0), 
-      is_rec_ty τ = true -> 
-      τ .: Γ |-v v ∈ τ -> 
---------------------------------
-      Γ |-v rec v ∈ τ
-*)
-
 (** Now let's try to repeat the argument for rec. *)
 Lemma semantic_rec {n} (Γ : Ctx n) (v : Val (S n)) τ1 τ2 : 
   Arr τ1 τ2 .: Γ ⊨v v ∈ (Arr τ1 τ2) -> 
