@@ -243,7 +243,7 @@ Another way to say this is to think about sets.
 Let $S_k$ be the set of all programs that are safe for $k$ steps. That means that 
 we have an infinite chain of decreasing sets. 
 
-\[ S_0 \subseteq S_1 \supseteq S_2 \supseteq S_3 \ldots \]
+\[ S_0 \supseteq S_1 \supseteq S_2 \supseteq S_3 \ldots \]
 
 This sequence is \emph{downward closed}: for each $i \leq j$ we have $S_j \subseteq S_i$.
 
