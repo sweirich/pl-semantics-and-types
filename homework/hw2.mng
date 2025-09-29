@@ -128,7 +128,7 @@ problem.)
 \begin{enumerate}
 \item Prove the following lemma:
 \begin{lemma}[Type Safety (Not stuck)]
-If $[[ G |- e : tau ]]$ and $[[ e =s> r ]]$ then $[[r]]$ is not $[[Stuck]]$.
+If $[[ |- e : tau ]]$ and $[[ e =s> r ]]$ then $[[r]]$ is not $[[Stuck]]$.
 \end{lemma}
 \item How does this statement of the lemma compare to the preservation and progress lemmas 
 described in Chapter 1?

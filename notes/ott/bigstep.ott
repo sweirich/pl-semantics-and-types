@@ -107,7 +107,7 @@ let x = e1 in e2 =S i> Timeout
 
 e = i> k
 --------------------- :: succ
-succ e =S i> succ k
+succ e =S i> S k
 
 e =i> 0
 e0 =i> r
