@@ -1,0 +1,189 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\newcommand\scw[1]{\ifcomments\emph{\textcolor{violet}{#1}}\fi}
+
+% requires dvipsnames
+%\usepackage{lstpi}
+%\usepackage{lsthaskell}
+\newcommand\cd[1]{\lstinline[language=Haskell]{#1}}
+
+\theoremstyle{definition}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{conjecture}{Conjecture}[section]
+\newtheorem{assumption}{Assumption}[section]
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 2}
+\author{NAME: FILL IN HERE}
+
+\inputott{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Big-steps for let expressions and natural number recursion}
+
+We talked in class about the small-step and typing rules for let expressions
+and the successor operation and for natural number recursion. You can find the
+small-step rules in Chapter 3 of the lecture notes, and for convenience, the
+typing rules are below:
+
+\drules[t]{$ \Gamma  \vdash  \ottnt{e}  \in  \tau $}{typing}{let,succ,nrec}
+
+Now consider adding rules to the \emph{big-step semantics} for these
+operations (this is in addition to the existing val and app rules).
+
+\drules[bs]{$\ottnt{e}  \Rightarrow  \ottnt{v}$}{term $e$ big-steps to $\ottnt{v}$}
+{let,succ,nrec-zero,nrec-succ}
+
+\begin{enumerate}
+\item
+Prove that the small-step and big-step languages produce the same 
+values, extending the proof from Chapter 3.
+\begin{theorem}[Equivalence of semantics] 
+For closed expressions $e$, we have $\ottnt{e}  \leadsto^{\ast}  \ottnt{v}$ if and only if $\ottnt{e}  \Rightarrow  \ottnt{v}$.
+\end{theorem}
+
+\item
+Extend the semantic soundness proof from Chapter 4.
+This means that you need to prove semantic typing rules equivalent 
+to \rref{t-let,t-succ,t-nrec}.
+
+\begin{lemma}[Semantic let] 
+If $\Gamma  \vDash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \tau_{{\mathrm{1}}}$ and $\Gamma  \ottsym{,}   \ottmv{x} \! :\! \tau_{{\mathrm{2}}}   \vDash  \ottnt{e_{{\mathrm{2}}}}  \ottsym{:}  \tau_{{\mathrm{2}}}$ 
+then $\Gamma  \vDash   \ottkw{let} \  \ottmv{x} \ =  \ottnt{e_{{\mathrm{1}}}} \ \ottkw{in}\  \ottnt{e_{{\mathrm{2}}}}   \ottsym{:}  \tau_{{\mathrm{2}}}$.
+\end{lemma}
+
+\begin{lemma}[Semantic succ] 
+If $\Gamma  \vDash  \ottnt{e}  \ottsym{:}  \ottkw{Nat}$ then $\Gamma  \vDash  \ottkw{succ} \, \ottnt{e}  \ottsym{:}  \ottkw{Nat}$
+\end{lemma}
+
+\begin{lemma}[Semantic nrec] 
+If $\Gamma  \vDash  \ottnt{e}  \ottsym{:}  \ottkw{Nat}$ and $\Gamma  \vDash  \ottnt{e_{{\mathrm{0}}}}  \ottsym{:}  \tau$ and $\Gamma  \ottsym{,}   \ottmv{x} \! :\! \ottkw{Nat}   \vDash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \tau  \to  \tau$, 
+then $\Gamma  \vDash  \ottkw{nrec} \, \ottnt{e} \, \ottkw{of} \, \ottsym{\{}  \ottsym{0}  \Rightarrow  \ottnt{e_{{\mathrm{0}}}}  \ottsym{;}  \ottnt{S} \, \ottmv{x}  \Rightarrow  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}}  \ottsym{:}  \tau$.
+\end{lemma}
+
+
+\end{enumerate}
+
+\newpage
+
+\section{Big-steps with errors}
+
+In class, we observed that we cannot use a direct induction on the typing
+judgment to show type safety for the big-step semantics. Instead, we 
+switched to a logical relations based argument. However, this proof 
+is rather strong as it shows that all expressions terminate.
+
+The issue is that the big-step semantics 
+cannot distinguish between terms that fail to produce a value
+ due to some type error and those that fail to produce a value because they 
+diverge. 
+
+In this problem, let's revise the big step semantics so that it can talk about
+type errors. In this version, the result of evaluation is either some value
+$\ottnt{v}$, or a special error result, written $\ottkw{Stuck}$.
+
+\[ \mathit{result}\ \ottnt{r}\ ::=\ \ottkw{Stuck}\ |\ \ottnt{v} \]
+
+Our rules for the big step semantics this result when we try to apply a
+non-function (\rref{ts-app-stuck}), or when one of the subterms of an
+application produces an error (\rref{ts-app1,ts-app2}). (You do not need to
+consider $\ottkw{let}$, $\ottkw{succ}$ or $\ottkw{nrec}$ terms in this
+problem.)
+
+\begin{definition}[Big-step]\ \\
+\drules[ts]{$ \ottnt{e}  \Rightarrow  \ottnt{r} $}{term $e$ bigsteps to $\ottnt{v}$ or gets stuck}
+{val,app,app-stuck,appOne,appTwo}
+\end{definition}
+
+\begin{enumerate}
+\item Prove the following lemma:
+\begin{lemma}[Type Safety (Not stuck)]
+If $ \Gamma  \vdash  \ottnt{e}  \in  \tau $ and $ \ottnt{e}  \Rightarrow  \ottnt{r} $ then $\ottnt{r}$ is not $\ottkw{Stuck}$.
+\end{lemma}
+\item How does this statement of the lemma compare to the preservation and progress lemmas 
+described in Chapter 1?
+
+For example, suppose that we somehow made a design error in the
+big-step semantics or the typing rules. For example, say we forgot to 
+add a rule, or that we added an extra, nonsensical rule. (You might consider 
+variants of the unsafe type systems from homework 1.)
+
+What sort of errors would this safety lemma catch? What would still be considered type safe?
+
+Furthermore, we discussed that there were some languages that we wanted to
+call type safe, but did not satisfy the small-step properties of preservation
+and progress. Would these languages satisfy this lemma?
+\end{enumerate}
+
+\newpage
+
+\section{Big-steps with timeouts}
+
+Recall our step-counting definition of type-safety for the small-step
+semantics:
+
+\begin{definition}[(Small-step) Safe for $k$]
+An expression evaluates safely for $k$ steps if it either there is some
+$\ottnt{e'}$, such that $ \ottnt{e}  \leadsto^{ \ottnt{k} }  \ottnt{e'} $, or there is some number of steps $j$
+strictly less than $k$ where the term terminates with a value 
+(i.e. there is some $v$ and $j < k$ such that $ \ottnt{e}  \leadsto^{ \ottnt{j} }  \ottnt{v} $).
+\end{definition}
+
+We can use this idea to prove a form of type safety theorm for a language with
+a big-step semantics. The first step is to revise our semantics to incorporate
+a count, using the notation $ \ottnt{e}  \Rightarrow_{ \ottnt{i} }  \ottnt{r} $.  Here, $\ottnt{i}$ is the maximum
+\emph{height} of the derivation; every rule must use a smaller $\ottnt{i}$ for its
+premises. Furthermore, it may or may not be possible to fully evaluate an
+expression within a bounded height derivation. So we modify the second
+argument of this judgement to be a result: either a value or $\ottkw{Timeout}$,
+indicating an incomplete evaluation.
+
+\[ \mathit{result}\ \ottnt{r}\ ::=\ \ottkw{Timeout}\ |\ \ottnt{v} \]
+\begin{definition}[(Big-step) Safe for $k$]\ \\
+\drules[tk]{$ \ottnt{e}  \Rightarrow_{ \ottnt{i} }  \ottnt{r} $}{term $e$ times out or steps to $\ottnt{v}$ in derivation of height less than $i$}
+{timeout,val,app,appOne,appTwo}
+\end{definition}
+
+With this definition, we can use this definition of type safety. 
+
+\begin{theorem}[Type Safety (step-counting)]
+If $   \vdash  \ottnt{e}  \in  \tau $ then for all natural numbers $k$, $ \ottnt{e}  \Rightarrow_{ \ottnt{k} }  \ottnt{r} $, i.e. $e$ is Safe for $k$.
+\end{theorem}
+
+\begin{enumerate}
+\item Prove this theorem by induction on $k$.
+\item Analyze this statement of type safety just as you did for the previous problem. Is it possible for a language to satisfy the step-counting theorem, but not the not-stuck theorem? Or vice versa?
+\end{enumerate}
+
+
+\end{document}
