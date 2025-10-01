@@ -8,10 +8,6 @@ actually result in a value.
 We will add nontermination through two sorts of recursive definitions: first
 through recursive values and then through recursive types.
 
-
-%% Homework idea. Design a type system that identifies a terminating
-%% sub-language. Show that all programming in language terminate.
-
 \section{Recursive definitions in CBV languages}
 
 To build intuition about the language structures we 
@@ -276,6 +272,9 @@ Define $[[succ e]]$ as $[[let x <= e in succ x]]$.
 The reason for the eager let is so that we can prove that our derived forms
 have the appropriate operational behavior.
 
+For example, we can prove the following lemmas about the behavior of the 
+extended application form.
+
 \begin{lemma}[\link{rec/extensions.v}{}{Application steps}]
 \begin{enumerate}
 \item $[[ (ret(\x.e)) (ret v) ~> e[v/x] ]]$. 
@@ -328,7 +327,8 @@ introducing and eliminating values with the recursive type.
 \end{array}
 \]
 
-Although we have type variables in our types, they are only used for recursion in this language. It will be an invariant of our type system that we only work with closed 
+Although we have type variables in our types, they are only used for recursion in this language. 
+It will be an invariant of our type system that we only work with closed 
 types. Furthermore, a recursive type $[[mu alpha.tau]]$ is closed, if and only if 
 its unfolding $[[tau [mu alpha.tau/alpha] ]]$ is also closed.
 
@@ -344,26 +344,6 @@ The single new rule of the operational semantics removes the coercions.
 \[ \drule{s-unfold} \]
 
 \subsection{Recursive type variations}
-
-The language we have presented so far includes strict recursive types, where only values can 
-be given recursive types. An alternative form delays evaluation when the recursive value is 
-defined. 
-
-\[ 
-\begin{array}{lcll}
-[[tau]] &::=& [[alpha]]\ |\ [[nu alpha . tau]] & \mbox{variables and recursive types} \\
-[[v]]   &::=& [[roll e]]                       & \mbox{introduction form} \\
-[[t]]   &::=& [[unroll v]]                     & \mbox{elimination form} \\
-\end{array}
-\]
-
-\[
-\drule{tv-roll}
-\drule{te-unroll}
-\]
-
-\[ \drule{s-unroll} \]
-
 
 The presence of $[[fold v]]$ and $[[unfold v]]$ introduction and elimination
 forms, means that language includes \emph{iso-}recursive types. The types
@@ -387,6 +367,5 @@ for this language, the fact that computations may diverge means that we have to 
 
 \section{Further reading}
 
-Fine-grained CBV is from~\cite{LEVY:fgcbv}.
-
+Fine-grained CBV is from~\cite{LEVY:fgcbv} as a way to control the sequence of effects. 
 The definition of \emph{eager let} is from Forster et al.~\cite{forster:cbpv}.

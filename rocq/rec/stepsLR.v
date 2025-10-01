@@ -11,7 +11,6 @@
 *)
 
 (* Axioms *)
-(* From Stdlib Require Import Logic.FunctionalExtensionality. *)
 From Stdlib Require Import Logic.PropExtensionality.
 
 (* For reasoning about numbers *)
@@ -54,18 +53,20 @@ lt_wf : forall (x : nat) : Acc lt x
 
 Require Export common.core.
 Require Export rec.steps.
-Import reduction.Notations.
-Import iprop.Notations.
+
 
 (* We put these definitions in a Module so that Rocq can check that 
    they match our previous assumptions about the definitions that 
    we made in rec.steps. *)
 Module LR : LogicalRelation.
 
+Import reduction.Notations.
+Import iprop.Notations.
+
 (** To make the definitions more similar to our axiomatization. We 
     define two operations that are analogous to iLater and iImp. 
     The difference is that in addition to a step count, they also 
-    require an accessibility proof for that step count.
+    require an accessibility proof `(Acc lt n)` for that step count.
 *)
 
 Definition iaProp := forall n, Acc lt n -> Prop.
@@ -121,6 +122,8 @@ Fixpoint V' (t : Ty 0) (v : Val 0) k (ACC : Acc lt k) {struct ACC} :=
              (later (V' (τ [(Mu τ)..]) v2)) k ACC)
     | _ => False
 end.
+    
+    
 
 (* For our top level definitions, we provide the accessibility proof 
    for lt on natural numbers. *)

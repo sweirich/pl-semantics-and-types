@@ -1,19 +1,20 @@
-(** This file demonstrates a semantic soundness proof using a step-indexed logical 
-    relation. The main result of this file (type safety) is underwhelming, as we 
-    could already prove it more straightforwardly using preservation and progress. 
+(** This file demonstrates a semantic soundness proof using a step-indexed
+    logical relation. The main result of this file (type safety) is somewhat
+    underwhelming, as we can already prove it more straightforwardly using
+    preservation and progress.
 
-    However, this proof is meant to be a template for more powerful results that 
-    are later to come. For that reason, we make sure that the language that we 
-    consider stresses the proof technique by including both recursive values and 
-    iso-recursive types.
+    However, this proof is meant to be a template for more powerful results
+    that are later to come. For that reason, we make sure that the language
+    that we consider stresses the proof technique by including both recursive
+    values and iso-recursive types.
 
-    Further reading: Some of the definitions in this development are inspired by 
-    Lectures given by Xavier Leroy, titled "Programming = proving?
-    The Curry-Howard correspondence today" 
+    Further reading: Some of the definitions in this development are inspired
+    by Lectures given by Xavier Leroy, titled "Programming = proving?  The
+    Curry-Howard correspondence today"
     https://xavierleroy.org/CdF/2018-2019/8.pdf
 
-    Additional reading about the foundations of induction and coinduction is available
-    in the execellent lecture notes by Ron Garcia:
+    Additional reading about the foundations of induction and coinduction is
+    available in the execellent lecture notes by Ron Garcia:
     https://www.cs.ubc.ca/~rxg/cpsc509-spring-2022/06-coinduction.pdf
 
 *)
@@ -25,21 +26,25 @@ Require Export common.core.
 Require Export rec.typing.
 Import reduction.Notations.
 
-(** ----------------------------------------------- *)
-(** Step-indexed propositions                       *)
-
-(* See iprop. *)
-
+(* See iprop. We need to work with downward closed, step-indexed propositions. 
+   This module defines what that means and introduces two operations for building 
+   them. *)
 Require Export rec.iprop.
 Import iprop.Notations.
 
 
 Section Safety.
 
+(** A program is safe if it never gets stuck. In other words, after any number of 
+    steps, if the program cannot take any more steps then it must be a value. *)
+Definition safe (e : Tm 0) : Prop := 
+  forall e', e ~>* e' -> irreducible e' -> exists v, e' = ret v.
+  
+
 (* Recall our step-indexed version of type safety: a program is **safe for n
    steps** if it doesn't get stuck within n steps of execution. Let P_i be the
    set of all terms that are safe for i steps. That gives us a sequence of
-   sets, where P_0 contains all programs,, which is a superset of P_1, which
+   sets, where P_0 contains all programs, which is a superset of P_1, which
    includes all programs except those that are immediately stuck, etc.
 
       P_0 ⊇ P_1 ⊇ P_2 ⊇ P_3 ⊇ P_4 ⊇ P_5 ....
@@ -57,14 +62,9 @@ Local Definition next ϕ := (fun k => match k with O => True | S j => ϕ j end).
 Fixpoint P e k := 
   (irreducible e -> exists v, e = ret v) /\ (forall e', e ~> e' -> next (P e') k).
 
-Lemma P_def e k : 
-  P e k = ((irreducible e -> exists v, e = ret v) /\ (forall e', e ~> e' -> next (P e') k)).
-Proof. destruct k; cbn; reflexivity. Qed.
-
-
-(** This definition lines up with a more usual definition of type safety *)
+(** If this property holds for every k, then the program is safe. *)
 Lemma P_safety e : 
-  (forall k, P e k) -> forall e', e ~>* e' -> irreducible e' -> exists v : Val 0, e' = ret v.    
+  (forall k, P e k) -> safe e.
 Proof.
   intros h e' RED.
   induction RED.
@@ -73,19 +73,29 @@ Proof.
     intros k.  destruct (h (S k)) as [h1 h2]. eapply h2; eauto.
 Qed.
 
+
+(* Because defined P with Fixpoint, we need a lemma to unfold it. *)
+Lemma P_def e k : 
+  P e k = ((irreducible e -> exists v, e = ret v) /\ (forall e', e ~> e' -> next (P e') k)).
+Proof. destruct k; cbn; reflexivity. Qed.
+
+(** Show that well-typed terms are safe for all k. *)
 Lemma safety e τ : typing null e τ -> forall k, P e k.
 Proof.
-intros h k. move: e h.
-eapply strong_ind with (P := fun k => forall e : Tm 0, typing null e τ -> P e k).
-clear k. intros k ih.
-intros e h. rewrite P_def. 
-split.
-- destruct (progress _ _ h).
-  + intros _. auto.
-  + is_reducible.
-- intros e' SS. destruct k; try done. cbn.
-  eapply ih. auto.
-  eapply preservation; eauto.
+  (** the ssreflect elim tactic allows us to use the strong induction principle 
+      in a convenient way, also long as our goal starts with "forall k". So 
+      we rearrange things to get the quantification in the right order.
+   *)
+  intros h k. move: k e h.
+  elim /strong_ind; intros k ih.
+  intros e h. rewrite P_def. 
+  split.
+  - destruct (progress _ _ h).
+    + intros _. auto.
+    + is_reducible.
+  - intros e' SS. destruct k; try done. cbn.
+    eapply ih. auto.
+    eapply preservation; eauto.
 Qed.
 
 
@@ -138,8 +148,7 @@ Ltac lrsimpl := autorewrite with LR.
 
 (* Proof that C implies type safety *)
 Lemma C_safety e tau : 
-  (forall k, C tau e k) -> 
-  forall e', e ~>* e' -> irreducible e' -> exists v : Val 0, e' = ret v.    
+  (forall k, C tau e k) -> safe e.
 Proof. 
  intros h e' RED.
  induction RED.
@@ -178,6 +187,19 @@ Lemma semantic_subst_cons {τ v} {n} {Γ : Ctx n} {ρ} {k} :
   V τ v k ->  ⟦ Γ ⟧ ρ k ->  ⟦ τ .: Γ ⟧ (v .: ρ) k.
 Proof. intros. unfold semantic_subst in *. auto_case. Qed.
 
+Lemma semantic_safety e τ :
+  (forall k, null ⊨ e ∈ τ @ k) -> safe e.
+Proof.
+  intros h.
+  unfold safe.
+  eapply C_safety with (tau := τ).
+  intros k.
+  specialize (h k ids k).
+  asimpl in h.
+  eapply h; eauto.
+  unfold semantic_subst; auto_case.
+Qed.
+
 (** --------------------------------------------------- *)
 (** Proof that the Logical relation is downward closed  *)
 
@@ -185,10 +207,8 @@ Ltac prep_ih j LE :=
   inversion LE; subst;[done| destruct j;[ done| cbn in *]].
 
 #[export] Instance dclosed_V {τ}{v : Val 0} : IProp (V τ v).
-split. move=> k. move: τ v.
-eapply strong_ind with (P := fun k =>
-  forall τ v, V τ v k -> forall j : nat, j <= k -> V τ v j).
-clear k. intros k ih.
+split. move=> k. move: k τ v.
+elim /strong_ind. intros k ih.
 intros t v.
 intros Vk j LE.
 destruct t; autorewrite with LR in Vk; autorewrite with LR.
@@ -342,12 +362,8 @@ Lemma ST_rec_Arr τ1 τ2 v k :
   (* --------------------------------- *)
   Γ ⊨v rec v ∈ (Arr τ1 τ2) @ k.
 Proof.
-  move: v.
-  eapply strong_ind with 
-    (P := fun k => forall v : Val (S n), 
-              ((Arr τ1 τ2 .: Γ) ⊨v v ∈ Arr τ1 τ2 @) k -> 
-              (Γ ⊨v rec v ∈ Arr τ1 τ2 @) k).
-  clear k. intros k ih.
+  move: k v.
+  elim /strong_ind. intros k ih.
   intros v SV ρ j LEj hρ.
   destruct j. rewrite V_Arr. cbn. left; eauto.
   cbn.
@@ -366,11 +382,8 @@ Lemma C_app k : forall τ1 τ2 (v1 v2 : Val 0),
   C τ2 (app v1 v2) k.
 Proof.
   intros τ1 τ2.
-  eapply strong_ind with 
-    (P := fun k => 
-            forall v1 v2 : Val 0, V (Arr τ1 τ2) v1 k -> V τ1 v2 k -> 
-                             C τ2 (app v1 v2) k).
-  clear k. intros k ih.
+  move: k.
+  elim /strong_ind. intros k ih.
   intros v1 v2 h1 h2. 
   rewrite V_Arr in h1. rewrite C_def.
   destruct h1 as [[v1' [EQ h1]]|[e [EQ h1]]]; subst.
@@ -425,12 +438,8 @@ Lemma C_let τ1 τ2 e2 k : forall e1,
   (forall v, (V τ1 v ⇒ C τ2 (let_ (ret v) e2)) k) -> 
   C τ2 (let_ e1 e2) k.
 Proof.
-  eapply strong_ind with 
-    (P := fun k => forall e1,
-              C τ1 e1 k -> 
-              (forall v, (V τ1 v ⇒ C τ2 (let_ (ret v) e2)) k) -> 
-              C τ2 (let_ e1 e2) k).
-  clear k. intros k ih.
+  move: k.
+  elim /strong_ind. intros k ih.
   intros e1 h1 h2.
   destruct (canstep e1) as [[e' hS]| IR].
   - eapply backwards. 

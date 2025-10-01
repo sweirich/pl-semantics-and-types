@@ -214,17 +214,24 @@ the naive definition cannot be used in a coinductive relation.
 Instead, we are going to define these sets a little less
 directly. 
 
-Recall this definition of ``runs safely'' from 
-before:
+Recall this definition from before, which says that safe programs do not get
+stuck. We use $\ottkw{irreducible}$ to refer to programs that cannot step.
 
-\begin{definition}[\link{stlc/safety.v}{safe_run_k}{Safe for $k$}]
-A program $[[e]]$ runs safely for $[[k]]$ steps in two ways. 
-If $[[e]]$ cannot step, then $[[e]]$ must be some $[[ret v]]$. Otherwise,
+\begin{definition}[\link{rec/steps.v}{safe}{Safe program}]
+A closed program is $[[e]]$ is \textbf{safe} if, for any $[[e']]$ such that $[[e ~>* e']]$, 
+if $[[e' irreducible]]$ then $[[e']]$ is $[[ret v]]$ for some $[[v]]$.
+\end{definition}
+
+One way we showed type safety was to decompose this definition into steps.
+
+\begin{definition}[\link{rec/steps.v}{P}{Safe for $k$}]
+A program $[[e]]$ run safely for $[[k]]$ steps in two ways. 
+If $[[e irreducible]]$, then $[[e]]$ must be some $[[ret v]]$. Otherwise,
 if it steps $[[e ~> e']]$ and $[[0 < k]]$ then $[[e']]$ must run safely for $[[k-1]]$ steps.
 \end{definition}
 
 \begin{definition}[Runs safely]
-A program runs safely if for all $k$, it is safe for $k$.
+A program \emph{runs safely} if for all $k$, it runs safely for $k$ steps.
 \end{definition}
 
 The definition of safe for $k$ is inductively defined over $k$. It holds for
@@ -233,10 +240,18 @@ predicate hold for all $k$, we can define type safety without requiring
 programs to terminate.  Diverging programs satisfy this relation because they
 do not get stuck after any number of steps of evaluation.
 
-\begin{lemma}[\link{rec/steps.v}{}{Safe programs don't get stuck}]
-If $e$ is safe, then for all $[[e ~>* e']]$, either $[[e']]$ is $[[ret v]]$, or $[[e']]$ can 
-take another step.
+\begin{lemma}[\link{rec/steps.v}{P_safety}{Programs that run safely are safe}]
+If $e$ runs safely, then it is safe.
 \end{lemma}
+\begin{proof}
+This proof is by induction on the number of steps of evaluation of $[[e ~>* e']]$. 
+If there are zero steps, because we know that the program runs safely for 0 steps, 
+then we know it is safe.
+If the evaluation is $[[e ~> e1]]$ and $[[e1 ~>* e']]$, then, by induction we know that 
+$[[e1]]$ is safe, which gives us $[[e]]$ is safe. But, we have to show that 
+$[[e']]$ runs safely, which follows because $[[e]]$ runs safely.
+\end{proof}
+
 
 Another way to say this is to think about sets.
 
@@ -251,10 +266,13 @@ Furthermore, the set of safe programs is the intersection of all of the sets in 
 
 \[ S = \bigcap_i S_i \]
 
-What we have just done is define a set by coinduction. Another way to set up this definition 
-of safety is to consider this function from sets of terms to sets of terms. 
+\paragraph{Aside: Coinduction}
 
-\[ F X = \{ [[e irreducible implies e = ret v]] \mbox{ or } [[e ~> e']] \mbox{ implies } e' \in X\ \} \]
+This is very similar to a definition of safety that uses coinduction. Another
+way to set up this definition is to consider this function from sets of terms
+to sets of terms.
+
+\[ F X = \{ [[e irreducible]] \mbox{ implies } [[e = ret v]] \mbox{ or } [[e ~> e']] \mbox{ implies } e' \in X\ \} \]
 
 Say $F^i X$ is $i$ applications of $F$ to $X$. Then we have:
 
@@ -288,16 +306,14 @@ three place relations, between types, values or terms, and step counts.  This
 time, we write $[[V tau v k]]$ and $[[C tau e k]]$, when $[[v]]$ and $[[e]]$
 are in their respective relations at step index $[[k]]$.
 
-Furthermore, our computation set will contain terms that don't get stuck.
+Furthermore, we will define these sets so that all terms in the computation set
+are safe.
 
-\begin{lemma}[\link{rec/steps.v}{}{Semantic safety}]
-If for any $k$, we have $[[C tau e k]]$, 
-then for all $[[e ~>* e']]$, either $[[e']]$ is $[[ret v]]$, or $[[e']]$ can 
-take another step.
+\begin{lemma}[\link{rec/steps.v}{C_safety}{Semantic safety}]
+If for any $k$, we have $[[C tau e k]]$, then $e$ is safe.
 \end{lemma}
 
-
-Our fundamental lemma will be to show that closed, well-typed terms $[[|- e : tau]]$ are 
+Our fundamental lemma will show that closed, well-typed terms $[[|- e : tau]]$ are 
 in $[[C tau e k]]$ for any $k$. This will give us (the hard way) a type safety theorem 
 for statically well-typed terms.
 
@@ -315,7 +331,7 @@ The first operation is called the \emph{later modality}, and takes a step-indexe
 produces a new step-indexed proposition. This operation accesses its argument at the previous 
 step count. If the step is zero, then it holds trivially.
 
-\begin{definition}[Later modality]                             
+\begin{definition}[\link{rec/iprop.v}{iLater}{Later modality}]                             
 Define $[[|> k phi]]$ by case analysis on $[[k]]$.
 \begin{itemize}
   \item $[[|> 0 phi]]$ always holds 
@@ -326,14 +342,14 @@ Define $[[|> k phi]]$ by case analysis on $[[k]]$.
 The next operation is called \emph{stepped implication}, and takes \emph{two} step-indexed propositions
 to produce a new step-indexed proposition.
 
-\begin{definition}[Step-indexed implication]
+\begin{definition}[\link{rec/iprop.v}{iImp}{Step-indexed implication}]
 Define $[[phi]][[===>]]_k[[phi']]$ as 
 \[ 
 \textit{for all}\ j < k,\ [[phi j]]\ \textit{implies}\ [[ phi' j ]] 
 \]
 \end{definition}
 
-\begin{definition}[Downward closed]
+\begin{definition}[\link{rec/iprop.v}{IProp}{Downward closed}]
 A step-indexed proposition is \emph{downward closed} when $j <= k$ we have $[[phi k implies phi j]]$.
 \end{definition}
 
@@ -345,7 +361,7 @@ In other words, we need $[[phi j implies phi k]]$. But
 here we are stuck! We cannot use the fact that $[[phi]]$ is downward closed here because that gives us the 
 opposition relation between $[[phi j]]$ and $[[phi k]]$.
 
-\begin{lemma}[Step-indexed implication is downward closed]
+\begin{lemma}[\link{rec/iprop.v}{IProp_iImp}{Step-indexed implication is downward closed}]
 For any $[[phi]]$ and $[[phi']]$, $[[phi ===> phi']]$ is downward closed. 
 \end{lemma}
 \begin{proof}
@@ -361,10 +377,9 @@ assumption.
 Now let's define our the logical relation by \emph{well-founded recursion} on
 the step-count $k$. 
 
+\begin{definition}[\link{rec/stepsLR.v}{C}{Step-indexed Logical Relation}]
 \[ 
 \begin{array}{lclcl} 
-\\
-\\
    [[C tau e k]] 
       & =    & [[e irreducible]]\ \mbox{\textit{implies that there exists}}\ [[v]]\ \textit{such that} \\
       &      & \qquad\qquad  [[e = ret v and V tau v k]]  \\
@@ -382,6 +397,7 @@ the step-count $k$.
 
 \end{array}
 \]                 
+\end{definition}
 
 This definition is well-defined because recursive occurrences of $[[C tau e]]$
 and $[[V tau v]]$ are done with steps that are strictly smaller than

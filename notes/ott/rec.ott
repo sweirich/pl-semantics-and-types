@@ -77,6 +77,7 @@ formula :: 'formula_' ::=
    | G |= k v : tau    ::  :: typing_valK
      {{ tex [[G]] [[|=]]_{[[k]]} [[v]] \in [[tau]] }}
    | j < k         ::  :: lt
+     {{ tex [[j]] < [[k]] }}
    | j <= k        ::  :: le
     
 
@@ -283,3 +284,6 @@ prj2 (rec x .v) ~> prj2 v[rec x.v/x]
 
 ------------------------- :: unfold
 unfold (fold v) ~> ret v
+
+------------------------- :: unroll
+unroll (roll e) ~> e
