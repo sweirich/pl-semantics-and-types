@@ -93,7 +93,7 @@ e1 e2 = S i > Timeout
 e1 = i > \x.e1'
 e2 = i > Timeout
 --------------------  :: app2
-e1 e2 = S i > r
+e1 e2 = S i > Timeout
 
 
 e1 = i > v1
