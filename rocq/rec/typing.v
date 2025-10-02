@@ -1,8 +1,10 @@
+Require Export rec.typesyntax.
+Disable Notation "↑__Ty" (all).
+
 Require Export rec.reduction.
+Import rec.reduction.Notations.
 
 (** Typing relation *)
-
-Import rec.reduction.Notations.
 
 Definition allows_rec_ty (ty : Ty 0) := 
   match ty with 
@@ -100,20 +102,21 @@ intros <-. eapply t_var. Qed.
 Module Notations.
 Export reduction.Notations.
 Notation "Γ |-v v ∈ τ" := (typing_val Γ v τ) (at level 70) : rec_scope.
-Notation "Γ |- e ∈ τ" := (typing Γ e τ) (at level 70) : rec_scope.
+Notation "Γ |-e e ∈ τ" := (typing Γ e τ) (at level 70) : rec_scope.
 End Notations.
 
 Ltac impossible_var := 
   match goal with | [ x : (fin 0) |- _ ] => destruct x end.
 
+Open Scope rec_scope.
 Import Notations.
 
 (** Renaming lemma *)
 
-Fixpoint renaming_val {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ : 
-  Γ |-v e ∈ τ -> typing_renaming Δ δ Γ -> Δ |-v e⟨δ⟩ ∈ τ
+Fixpoint renaming_val {n} (Γ : Ctx n) v τ {m} (Δ:Ctx m) δ : 
+  Γ |-v v ∈ τ -> typing_renaming Δ δ Γ -> Δ |-v v⟨δ⟩ ∈ τ
 with renaming_tm {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ : 
-  Γ |- e ∈ τ -> typing_renaming Δ δ Γ -> Δ |- e⟨δ⟩ ∈ τ.
+  Γ |-e e ∈ τ -> typing_renaming Δ δ Γ -> Δ |-e e⟨δ⟩ ∈ τ.
 Proof. 
   - intros h tR; inversion h.
     all: asimpl.
@@ -131,7 +134,7 @@ Hint Resolve renaming_val renaming_tm : rec.
 
 Definition typing_subst {n} (Δ : Ctx n) {m} (σ : fin m -> Val n)
   (Γ : Ctx m) : Prop := 
-  forall x, typing_val Δ (σ x) (Γ x).
+  forall x, (Δ |-v (σ x) ∈ (Γ x)).
 
 Lemma typing_subst_null {n} (Δ : Ctx n) :
   typing_subst Δ null null.
@@ -142,14 +145,14 @@ Lemma typing_subst_id {n} (Δ : Ctx n) :
 Proof. unfold typing_subst. intro x. econstructor. Qed.
 
 Lemma typing_subst_cons {n} (Δ : Ctx n) {m} (σ : fin m -> Val n)
-  (Γ : Ctx m) e τ : 
- typing_val Δ e τ -> typing_subst Δ σ Γ ->
- typing_subst Δ (e .: σ) (τ .: Γ).
+  (Γ : Ctx m) v τ : 
+ Δ |-v v ∈ τ -> typing_subst Δ σ Γ ->
+ typing_subst Δ (v .: σ) (τ .: Γ).
 Proof. intros. unfold typing_subst in *. intros [y|]; asimpl; eauto. Qed.
 
 Lemma typing_subst_lift {n} (Δ : Ctx n) {m} (σ : fin m -> Val n)
   (Γ : Ctx m) τ : 
-  typing_subst Δ σ Γ -> typing_subst (τ .: Δ) (up_Val_Val σ) (τ .: Γ).
+  typing_subst Δ σ Γ -> typing_subst (τ .: Δ) (⇑ σ) (τ .: Γ).
 Proof.
   unfold typing_subst in *.
   intros h. auto_case; eauto with renaming rec. 
@@ -159,11 +162,11 @@ Qed.
 #[export] Hint Resolve typing_subst_lift typing_subst_cons
              typing_subst_id typing_subst_null : rec.
 
-Fixpoint substitution_val {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) σ : 
-  typing_val Γ e τ -> typing_subst Δ σ Γ -> typing_val Δ e[σ] τ
+Fixpoint substitution_val {n} (Γ : Ctx n) v τ {m} (Δ:Ctx m) σ : 
+  Γ |-v v ∈ τ -> typing_subst Δ σ Γ -> Δ |-v v[σ] ∈ τ
 with
   substitution_tm {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) σ : 
-  typing Γ e τ -> typing_subst Δ σ Γ -> typing Δ e[σ] τ.
+  Γ |-e e ∈ τ -> typing_subst Δ σ Γ -> Δ |-e e[σ] ∈ τ.
 Proof.
   all: intros h tS.
   all: inversion h; subst.
@@ -177,7 +180,7 @@ Qed.
 (** Type safety *)
 
 Lemma preservation e e' τ :
-  null |- e ∈ τ -> e ~> e' -> null |- e' ∈ τ.
+  null |-e e ∈ τ -> e ~> e' -> null |-e e' ∈ τ.
 Proof. 
   intro h.
   move: e'.
@@ -191,7 +194,7 @@ Proof.
 Qed.
 
 Lemma progress e τ :
-  null |- e ∈ τ -> (exists v, e = ret v) \/ (exists e', e ~> e').
+  null |-e e ∈ τ -> (exists v, e = ret v) \/ (exists e', e ~> e').
 Proof.
   intros h.
   dependent induction h.

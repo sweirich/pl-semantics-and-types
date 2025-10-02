@@ -8,10 +8,6 @@ actually result in a value.
 We will add nontermination through two sorts of recursive definitions: first
 through recursive values and then through recursive types.
 
-
-%% Homework idea. Design a type system that identifies a terminating
-%% sub-language. Show that all programming in language terminate.
-
 \section{Recursive definitions in CBV languages}
 
 To build intuition about the language structures we 
@@ -260,7 +256,7 @@ application form in this language is $[[v1 v2]]$.
 
 \begin{definition}[\link{rec/extensions.v}{eagerlet}{Eager let}]
 Define $[[let x <= e1 in e2]]$ as $[[e2 [v/x] ]]$ when $[[e1]]$ is $[[ret v]]$ and 
-$[[let x = e1 in e2]]$ else wise.
+$[[let x = e1 in e2]]$ otherwise.
 \end{definition}
 
 We use this eager let in the definition of some derived forms.
@@ -275,6 +271,9 @@ Define $[[succ e]]$ as $[[let x <= e in succ x]]$.
 
 The reason for the eager let is so that we can prove that our derived forms
 have the appropriate operational behavior.
+
+For example, we can prove the following lemmas about the behavior of the 
+extended application form.
 
 \begin{lemma}[\link{rec/extensions.v}{}{Application steps}]
 \begin{enumerate}
@@ -295,24 +294,27 @@ $[[x]]$ is bound inside $v$ and refers to the whole value.
 Usually $[[v]]$ will be a function, and this will give is a way to define 
 recursive functions. But it doesn't have to be, as we saw in OCaml.
 
-The typing rule includes an auxiliary judgment that specifies which types 
-may be used in recursive definition.
+The typing rule includes an auxiliary judgment written $[[tau ok]]$ that
+specifies which types may be used in recursive definition.
 
 \[ \drule{tv-rec} \]
 
 For now, the rules specify that function and product types are ok.
+
+\[ \drule{fun-ok} \qquad \drule{prod-ok} \]
+
 Analogously, we need small-step rules to unwind the value when that type is
 used.
 
 \[ \drule{s-app-rec} \]
 \[ \drule{s-prjOne-rec} \qquad  \drule{s-prjTwo-rec} \]
 
-Why do we do it this way? Because this is a call-by-value language!  We can
-only substitute values for values.
+Why do we do it this way? Because of our syntactic separation between values
+and computations!  We can only substitute values for values.
 
 \section{Recursive types}
 
-Finally we will add recursive types to the language.  This means adding a
+Finally we add recursive types to the language.  This means adding a
 recursive definition form $\mu$ and type variables to the syntax of
 types.  And, in the syntax of terms, we introduce two coercions, for
 introducing and eliminating values with the recursive type.
@@ -325,7 +327,8 @@ introducing and eliminating values with the recursive type.
 \end{array}
 \]
 
-Although we have type variables in our types, they are only used for recursion in this language. It will be an invariant of our type system that we only work with closed 
+Although we have type variables in our types, they are only used for recursion in this language. 
+It will be an invariant of our type system that we only work with closed 
 types. Furthermore, a recursive type $[[mu alpha.tau]]$ is closed, if and only if 
 its unfolding $[[tau [mu alpha.tau/alpha] ]]$ is also closed.
 
@@ -341,26 +344,6 @@ The single new rule of the operational semantics removes the coercions.
 \[ \drule{s-unfold} \]
 
 \subsection{Recursive type variations}
-
-The language we have presented so far includes strict recursive types, where only values can 
-be given recursive types. An alternative form delays evaluation when the recursive value is 
-defined. 
-
-\[ 
-\begin{array}{lcll}
-[[tau]] &::=& [[alpha]]\ |\ [[nu alpha . tau]] & \mbox{variables and recursive types} \\
-[[v]]   &::=& [[roll e]]                       & \mbox{introduction form} \\
-[[t]]   &::=& [[unroll v]]                     & \mbox{elimination form} \\
-\end{array}
-\]
-
-\[
-\drule{tv-roll}
-\drule{te-unroll}
-\]
-
-\[ \drule{s-unroll} \]
-
 
 The presence of $[[fold v]]$ and $[[unfold v]]$ introduction and elimination
 forms, means that language includes \emph{iso-}recursive types. The types
@@ -384,6 +367,5 @@ for this language, the fact that computations may diverge means that we have to 
 
 \section{Further reading}
 
-Fine-grained CBV is from~\cite{LEVY:fgcbv}.
-
+Fine-grained CBV is from~\cite{LEVY:fgcbv} as a way to control the sequence of effects. 
 The definition of \emph{eager let} is from Forster et al.~\cite{forster:cbpv}.

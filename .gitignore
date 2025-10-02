@@ -1,7 +1,9 @@
 ## generated files from Ott
 homework/all-rules.tex
-homework/hw1.tex
+homework/*.tex
 notes/*.tex
+notes/all-rules.tex
+
 
 .DS_Store
 
@@ -342,3 +344,5 @@ TSWLatexianTemp*
 CoqSrc.mk
 CoqSrc.mk.conf
 _CoqProject
+.lia.cache
+

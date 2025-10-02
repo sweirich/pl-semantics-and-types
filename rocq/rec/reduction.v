@@ -10,7 +10,7 @@ Import ScopedNotations.
 
 Disable Notation "↑__Val" (all).
 Disable Notation "↑__Tm" (all).
-Disable Notation "↑__Ty" (all).
+
 
 
 (* We'll use more automation in these proofs. *)
@@ -120,3 +120,43 @@ Proof.
   - apply IHh in H2. f_equal. auto.
 Qed.
 
+
+(** ----------------------------------------------- *)
+(** Result about small-step semantics               *)
+
+(** An irreducible term is one that cannot step. It is either a value or a stuck term. *)
+Definition irreducible (e:Tm 0) := forall e', not (Small.step e e').
+
+(** We can decide whether a term steps or is irreducible *)
+Lemma canstep (e : Tm 0) : 
+  (exists e', Small.step e e') \/ (irreducible e).
+dependent induction e.
+all: try solve [right; intros ? h; inversion h].
+all: try (destruct v; try destruct n; try destruct b;
+     try solve [right; intros ? h; inversion h];
+     try solve [left; eauto with rec]). 
+- edestruct IHe1 as [[e1' S1] | I1]; auto.
+  left; eauto with rec. destruct e1.
+  left; eauto with rec.
+  all: right; intros ? h; inversion h; subst; eapply I1; eauto.
+Qed.
+
+(** automatically solve goals of the form "irreducible e ->" when e reduces *)
+Ltac is_reducible := 
+  match goal with 
+  | [ h : ?e ~> _  |- irreducible ?e -> _ ] => 
+      let IR := fresh in
+      intro IR; assert False; [eapply IR; eauto with rec|]; done
+  | [ H : ?e ~> _ , H2 : irreducible ?e |- _ ] => 
+      assert False; [eapply H2; eauto with rec|]; done
+  | [ H2 : irreducible ?e |- forall e', ?e ~> e' -> _ ] => 
+      let e := fresh in
+      let SS := fresh in 
+      intros e SS; is_reducible
+  | [ h : exists e' , ?e ~> _  |- irreducible ?e -> _ ] => 
+      destruct h; is_reducible
+  | [ |- irreducible ?e -> _ ] => 
+      let IR := fresh in
+      intro IR; assert False; [eapply IR; eauto with rec|]; done
+
+  end.

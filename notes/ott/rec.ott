@@ -41,12 +41,48 @@ v , w :: 'v_' ::=
    | fold v      ::   :: Fold
    | roll e      ::   :: Roll
 
+
+phi {{ tex \phi }}   :: 'iProp_' ::= 
+   {{ com step indexed sets of terms }} 
+  | V tau v           :: M :: VT
+   {{ tex \mathcal{V}[\![\, [[v]] \in [[tau]]\, ]\!] }}
+  | C tau e           :: M :: CT
+   {{ tex \mathcal{C}[\![\, [[e]] \in [[tau]]\, ]\!] }}
+  | |> phi            :: M :: iLater 
+  | phi1 ===> phi2    :: M :: iImp
+   {{ tex [[phi1]][[===>]] [[phi2]] }}
+  | G sigma           :: M :: iEnv
+    {{ tex [\![ [[sigma]] \in [[G]] ]\!] }}
+
+
 terminals :: 'terminals_' ::=
    | ||-         ::   :: turn {{ tex \vdash }}
    | inj1        ::   :: inj1  {{ tex \ottkw{inj}_1 }}
    | inj2        ::   :: inj2  {{ tex \ottkw{inj}_2 }}
    | prj1        ::   :: prj1  {{ tex \ottkw{prj}_1 }}
    | prj2        ::   :: prj2  {{ tex \ottkw{prj}_2 }}
+   | ===>        ::   :: iImp  {{ tex \Longrightarrow }}
+   | |>          ::   :: tri   {{ tex \triangleright  }}
+
+formula :: 'formula_' ::=
+   | e irreducible ::   :: irr 
+   | phi k         ::   :: step
+     {{ tex [[phi]]_{[[k]]} }}
+   | |> k phi      ::   :: iLaterK
+     {{ tex [[|>]]_{[[k]]}\ [[phi]] }}
+   | phi1 ===> k phi2 ::  :: iImpK
+     {{ tex [[phi1]]\Longrightarrow_{[[k]]} [[phi2]] }}
+   | G |= k e : tau    ::  :: typingK
+     {{ tex [[G]] [[|=]]_{[[k]]} [[e]] \in [[tau]] }}
+   | G |= k v : tau    ::  :: typing_valK
+     {{ tex [[G]] [[|=]]_{[[k]]} [[v]] \in [[tau]] }}
+   | j < k         ::  :: lt
+     {{ tex [[j]] < [[k]] }}
+   | j <= k        ::  :: le
+    
+
+parsing 
+formula_step left iProp_iLater
 
 defns
 JREC_OK :: '' ::= 
@@ -62,9 +98,19 @@ by
 ------------------ :: prod_ok
 (tau1 * tau2) ok
 
+------------------- :: sum_ok
+(tau1 + tau2) ok
+
+------------------- :: void_ok
+Void ok
+
+------------------- :: nat_ok
+Nat ok
+
+
 
 defns 
-JPCFTyping :: '' ::= 
+JRecTyping :: '' ::= 
 
 defn 
 G ||- e : tau  ::  :: typing_tm :: 'te_'
@@ -238,3 +284,6 @@ prj2 (rec x .v) ~> prj2 v[rec x.v/x]
 
 ------------------------- :: unfold
 unfold (fold v) ~> ret v
+
+------------------------- :: unroll
+unroll (roll e) ~> e

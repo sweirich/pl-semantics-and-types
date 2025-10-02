@@ -215,8 +215,8 @@ give a meaning to types based on sets of values.
 Furthermore, some authors like to define $[[ V tau ]]$ by first defining operations on sets. 
 
 \begin{definition}[Function set]
-Define $[[S1 => S2]]$, which constructs a set of terms from two given sets of terms $[[S1]]$ and $[[S2]]$ as follows:
-\[ [[ S1 => S2 ]] = [[ { \x.e2 | forall e1, e1 elem S1 implies e2 [e1/x] elem S2 } ]] \]
+Define $[[T1 => T2]]$, which constructs a set of terms from two given sets of terms $[[T1]]$ and $[[T2]]$ as follows:
+\[ [[ T1 => T2 ]] = [[ { \x.e2 | forall e1, e1 elem T1 implies e2 [e1/x] elem T2 } ]] \]
 \end{definition}
 
 With this definition, we can define our value set using this operation:
