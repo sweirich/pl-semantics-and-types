@@ -27,7 +27,7 @@ OCaml. We can do much more.
 \subsection{Mutual recursion via recursive tuples}
 
 First, OCaml allows the definition of functions that are 
-\emph{mutually} recursive using the keywords \cd{rec ... and}. Any
+\emph{mutually} recursive using the keywords \cd{rec} $\ldots$ \cd{and}. Any
 definition in a block can refer to any other in the same 
 block. 
 
@@ -167,13 +167,13 @@ will work with.
           |\ [[tau1 * tau2]]\ |\ [[tau1 + tau2]] & \mbox{types} \\
 
 [[v]] &::=& [[x]]\                  & \mbox{Variables} \\
-      & | & [[k]]\                  & \mbox{Natural numbers} \\
+      & | & [[0]]\                  & \mbox{zero} \\
+      & | & [[S v]]                 & \mbox{successor} \\ 
       & | & [[\x. e]]\              & \mbox{Functions} \\
       & | & [[(v1,v2)]]\            & \mbox{Pairs} \\
       & | & [[inj1 v]]\ |\ [[inj2 v]] & \mbox{Sums} \\ 
 \\
 [[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
-      & | & [[succ v]]                & \mbox{successor} \\ 
       & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
       & | & [[prj1 v]]\ |\ [[prj2 v]]\ & \mbox{projection} \\
       & | & [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] & \mbox{case} \\
@@ -203,7 +203,7 @@ evaluate that subexpression.
 
 \begin{definition}[\link{rec/reduction.v}{step}{Active rules}]
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
-{beta,succ,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo}
+{beta,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo}
 \end{definition}
 
 In this language, the let term controls the sequencing of evaluation. We only
@@ -239,9 +239,9 @@ separate typing judgments: one for values and one for terms.
 
 \begin{definition}[\link{rec/typing.v}{typing}{Type system}]\ \\
 \drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
-{lit,var,abs,pair,injOne,injTwo}
+{zero,succ,var,abs,pair,injOne,injTwo}
 \drules[te]{$[[G ||- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
-{ret,let,app,prjOne,prjTwo,case}
+{ret,let,app,ifz,prjOne,prjTwo,case}
 \end{definition}
 
 These two judgments are mutually defined. 
@@ -259,14 +259,12 @@ Define $[[let x <= e1 in e2]]$ as $[[e2 [v/x] ]]$ when $[[e1]]$ is $[[ret v]]$ a
 $[[let x = e1 in e2]]$ otherwise.
 \end{definition}
 
-We use this eager let in the definition of some derived forms.
+We use this eager let in the definition of some derived forms. For example, 
+we can create a ``macro'' for the usual application form for expressions, 
+with the following definition.
 
 \begin{definition}[\link{rec/extensions.v}{app\_tm}{Extended Application}]
 Define $[[e1 e2]]$ as $[[let x1 <= e1 in let x2 <= e2 in x1 x2]]$.
-\end{definition}
-
-\begin{definition}[\link{rec/extensions.v}{succ\_tm}{Extended Successor}]
-Define $[[succ e]]$ as $[[let x <= e in succ x]]$.
 \end{definition}
 
 The reason for the eager let is so that we can prove that our derived forms

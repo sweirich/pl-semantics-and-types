@@ -124,8 +124,8 @@ The base cases are straightforward.
 $[[G |= x : G x ]]$.
 \end{lemma}
 
-\begin{lemma}[\link{stlc/semsound.v}{semantic_lit}{Semantic lit rule}]
-$[[G |= k : Nat ]]$.
+\begin{lemma}[\link{stlc/semsound.v}{semantic_zero}{Semantic zero rule}]
+$[[G |= 0 : Nat ]]$.
 \end{lemma}
 
 Let's look that the case for (non-recursive) functions.
@@ -449,12 +449,19 @@ We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show
 $[[V (G x) x[sigma] j]]$. But this is true by unfolding definitions.
 \end{proof}
 
-\begin{lemma}[\link{rec/steps.v}{semantic_lit}{Semantic lit rule}]
-forall $k$, $[[G |=k i : Nat ]]$.
+\begin{lemma}[\link{rec/steps.v}{semantic_zero}{Semantic zero rule}]
+forall $k$, $[[G |=k 0 : Nat ]]$.
 \end{lemma}
 We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
-$[[V Nat i[sigma] j]]$. But this is again true by unfolding definitions.
+$[[V Nat 0[sigma] j]]$. But this is again true by unfolding definitions.
 
+\begin{lemma}[\link{rec/steps.v}{semantic_succ}{Semantic succ rule}]
+forall $k$, if $[[G |=k v : Nat ]]$ then $[[G |=k S v : Nat ]]$.
+\end{lemma}
+We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
+$[[V Nat (S v)[sigma] j]]$. Our induction hypothesis gives us 
+$[[V Nat v[sigma] j]]$, which means that $[[ v[sigma] ]]$ must be a natural number. 
+So its successor must be a natural number.
 
 \begin{lemma}[\link{rec/steps.v}{semantic_abs}{Semantic abs rule}]
 forall $k$, if $[[ G, x :tau |=k e : tau1 -> tau2]]$, then $[[ G |=k \x.e : tau1 -> tau2]]$.
