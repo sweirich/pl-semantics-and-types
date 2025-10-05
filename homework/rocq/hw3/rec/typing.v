@@ -85,6 +85,11 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
     typing_val Γ v (Prod τ1 τ2) -> 
     typing Γ (prj2 v) τ2
 
+  | t_split v e τ1 τ2 τ : 
+    typing_val Γ v (Prod τ1 τ2) -> 
+    typing (τ2 .: (τ1 .: Γ)) e τ ->
+    typing Γ (split v e) τ
+
   | t_case v e1 e2 τ1 τ2 τ : 
     typing_val Γ v (Sum τ1 τ2) ->
     typing (τ1 .: Γ) e1 τ ->
@@ -166,6 +171,21 @@ Qed.
 (** Add the substitution lemmas as hints *)
 #[export] Hint Resolve typing_subst_lift typing_subst_cons
              typing_subst_id typing_subst_null : rec.
+
+(** split requires two lifts *)
+Definition up_Val2 {m n} (σ : fin m -> Val n) := 
+  (var var_zero .: (var (shift var_zero) .: (σ >> ren_Val (shift >> shift)))).
+
+Lemma typing_subst_lift2 {n} (Δ : Ctx n) {m} (σ : fin m -> Val n)
+  (Γ : Ctx m) τ1 τ2 : 
+  typing_subst Δ σ Γ -> typing_subst (τ1 .: (τ2  .: Δ)) (up_Val2 σ) (τ1 .: (τ2 .: Γ)).
+Proof.
+  unfold typing_subst in *.
+  intros h.
+  auto_case; eauto with renaming rec.
+Qed.
+
+#[export] Hint Resolve typing_subst_lift2 : rec.
 
 Fixpoint substitution_val {n} (Γ : Ctx n) v τ {m} (Δ:Ctx m) σ : 
   Γ |-v v ∈ τ -> typing_subst Δ σ Γ -> Δ |-v v[σ] ∈ τ

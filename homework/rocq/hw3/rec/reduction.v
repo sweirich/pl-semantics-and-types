@@ -147,6 +147,9 @@ Inductive step : Tm 0 -> Tm 0 -> Prop :=
  | s_prj2 v1 v2 : 
     step (prj false (prod v1 v2)) (ret v2)
 
+ | s_split v1 v2 e :
+    step (split (prod v1 v2) e) (e [v2 .: v1..])   
+
  | s_case_inj1 v e1 e2 :
     step (case (inj true v) e1 e2) (e1 [v..])
 
