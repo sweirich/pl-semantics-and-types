@@ -31,7 +31,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 9/24  |          | Metatheory of recursive definitions                                                                 |
 | M 9/29  | Ch. 6    | Semantic soundness with recursive definitions                                                       |
 | W 10/1  |          | Step-indexed logical relations                                                                      |
-| M 10/6  | | **HW #2 due** <br/>                                                                                 |
+| M 10/6  | | **HW #2 due** <br/> More Step-indexed logical relations                                            |
 | W 10/8  | |                                                                                                    |
 | M 10/13 | |                                                                                                    |
 | W 10/15 | |                                                                                                    |
