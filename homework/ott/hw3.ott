@@ -1,0 +1,11 @@
+grammar
+
+e :: 'e_' ::= 
+  | omega :: M :: Omega
+  {{ tex \omega }} 
+  | ()    ::   :: unit
+
+v :: 'v_' ::= 
+  | omega :: M :: Omega
+  {{ tex \omega }} 
+  | ()    ::   :: unit

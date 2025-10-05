@@ -1,0 +1,245 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\usepackage{../notes/notes}
+
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 3}
+\author{NAME: FILL IN HERE}
+
+\inputott{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Recursive Nats}
+
+We saw in OCaml that we can define an ``infinite''
+natural number using a recursive value definition.
+
+\begin{lstlisting}[language=Caml,xleftmargin=1in]
+type nat = zero | succ of nat
+
+let rec omega : nat = succ omega 
+\end{lstlisting}
+
+However, recall that the premise of our introduction rule for recursive values
+limits the types of values that may be used in recursive definitions.
+
+\[ \drule{tv-rec} \] 
+
+In the type system in the lecture notes (and that we discussed in class), there were 
+two types of values that could be used.
+
+\[ \drule{fun-ok} \qquad \drule{prod-ok} \]
+
+Suppose we add the ability to define recursive nats to \rec.
+
+\[ \drule{nat-ok} \] 
+
+With this rule, we can define $\omega$ = $[[rec x. S x]]$ in \rec. (Note: I've updated the \rec\ language slightly compared to the version we discussed in 
+class. Please take a look at the lecture notes to see how this expression type 
+checks and evaluates.)
+
+\begin{enumerate}
+
+\item What small step rule(s) do we need to add to \rec\ so that the progress
+  lemma holds?
+
+\item How do the following expressions evaluate using the small step semantics?
+  Write the sequence of steps that they take, stopping when you get to a 
+  value or loop back to a prior term. Use your new step 
+  rule(s) from the previous part.
+
+\begin{itemize}
+\item $[[(\x.x) omega]] [[~>]]$
+\item $[[case omega of { 0 => 0 ; S y => y }  ]] [[~>]]$ 
+\item $[[(rec x . \y. case y of { 0 => 0 ; S y => S y }) omega]] [[~>]]$
+\item $[[(rec x . \y. case y of { 0 => 0 ; S y => x y }) omega]] [[~>]]$
+\end{itemize}
+
+\end{enumerate} 
+
+\newpage
+
+\section{Small-step CBV: derived forms}
+
+Fine-grained CBV requires that subterms be values in many cases. We showed in class 
+that we could derive the usual forms using let terms. 
+
+\subsection{Successor}
+In this language, the syntax of values include $[[0]]$ and the successor of some value, written $[[S v]]$.
+
+However, in STLC, $[[succ e]]$ was an expression and could be applied to any term, not just values. Even though 
+this term does not appear in this language, we can define it using let expressions.
+
+\begin{definition}[\link{homework/hw3/extensions.v}{}{Extended Successor}]
+Define $[[succ e]]$ as $[[let x = e in ret (S x)]]$.
+\end{definition}
+
+Now, prove that this definition acts like a successor term, by showing these properties of the encoding.
+\begin{enumerate}
+\item If $[[G ||- e : Nat]]$ then $[[G ||- succ e : Nat]]$.
+\item $[[ succ (ret v) ~> ret (S v) ]]$.
+\item If $[[ e ~> e' ]]$ then $[[ succ e ~>* succ e' ]]$.
+\end{enumerate}
+
+\subsection{Derived products}
+
+Now recall the definition of the ``eager let'' form:
+
+\begin{definition}[Eager let]
+Define $[[let x <= e1 in e2]]$ as $[[e2 [v/x] ]]$ when $[[e1]]$ is $[[ret v]]$ and 
+$[[let x = e1 in e2]]$ otherwise.
+\end{definition}
+
+In fine-grained CBV, products are values and must have values as their
+component. Define an expression form for products using eager let.
+
+\begin{definition}[\link{homework/hw3/extensions.v}{}{Extended prod}]
+Define $[[ (e1 , e2) ]]$ as $[[let x1 <= e1 in let x2 <= e2 in ret (x1, x2)]]$.
+\end{definition}
+
+Now, prove that this definition acts like a product term, by showing these properties of the encoding.
+\begin{enumerate}
+\item If $[[ G |- e1 : tau1 ]]$ and $[[ G |- e2 : tau2 ]]$ then $[[ G |- (e1,e2) : tau1 * tau2 ]]$.
+\item If $[[ e1 ~> e1' ]]$ then $[[ (e1,e2) ~>* (e1', e2) ]]$.
+\item If $[[ e2 ~> e2' ]]$ then $[[ (ret v1,e2) ~>* (ret v1, e2') ]]$.
+\end{enumerate}
+
+What if we used regular let in the definition of $[[(e1,e2)]]$. Are the two properties still true 
+for this encoding? If any fail, provide a counterexample.
+
+\newpage
+
+
+\section{Small-step semantic soundness proof} 
+
+If we consider the fine-grained call-by-value language without recursive values or recursive types, 
+then we can prove that all expressions in this language terminate with a value. Recall the 
+definition of our logical relation from class.
+
+\begin{definition}[\link{rocq/rec/semsound.v}{V}{Logical Relation}]
+\[
+\begin{array}{lcl}
+[[ C tau ]] &=& [[ { e | e ~>* ret v and v elem V tau } ]]\\
+\\
+[[ V Nat ]] &=& [[nats]] \\
+[[ V Void ]] &=& \{\} \\
+[[ V tau1 -> tau2 ]] &=& \{\ [[v]]\ |\ 
+           \forall v_2,\ [[v2 elem V tau1]]\ \mbox{\it implies}\ [[v v2 elem C tau2]] \ \} \\  
+[[ V tau1 * tau2 ]] &=& \{\ [[v]]\ |\ 
+    [[prj1 v elem C tau1]]\ \mbox{\it and}\ [[prj2 v elem C tau2]]\ \}
+\\
+[[ V tau1 + tau2 ]] &=& \{\ [[inj1 v]]\ |\ [[v1 elem V tau1]]\ \} \cup
+                        \{\ [[inj2 v]]\ |\ [[v2 elem V tau2]]\ \} \\
+
+\\
+\end{array}
+\]
+\end{definition}
+
+As well as the definitions for semantic typing for values and expressions:
+\begin{enumerate}
+\item Define $[[sigma elem [ G ] ]]$ when $\forall x \in [[dom G]], [[ sigma x elem V G x]]$.
+\item Define $[[G |= e : tau]]$ when forall $[[sigma elem [G] ]]$, $[[e[sigma] elem C tau ]]$.
+\item Define $[[G |= v : tau]]$ when forall $[[sigma elem [G] ]]$, $[[v[sigma] elem V tau ]]$.
+\end{enumerate}
+
+Complete the small-step semantic soundness proof for fine-grained CBV by proving
+semantic soundness lemmas for products and (first) projections.
+
+\begin{lemma}[\link{homework/rocq/hw3/semsound.v}{semantic_prod}{Semantic prod rule}]
+If $[[G |= v1 : tau1 ]]$ and $[[ G |=  v2 : tau2 ]]$  then
+   $[[G |= (v1, v1) : tau1 * tau2]]$.
+\end{lemma}
+
+\begin{lemma}[\link{homework/rocq/hw3/semsound.v}{}{semantic projection}]
+If $[[G |= v1 : tau1 * tau2 ]]$ then $[[G |= prj1 v1 : tau1 ]]$.
+\end{lemma}
+
+\newpage
+
+\section{Step-indexed logical relations} 
+
+Now remember the step-indexed logical relation.
+
+\begin{definition}[\link{rocq/rec/steps.v}{}{Step-indexed logical relation}]
+\[ 
+\begin{array}{lclcl} 
+   [[C tau e k]] 
+      & =    & [[e irreducible]]\ \mbox{\textit{implies that there exists}}\ [[v]]\ \textit{such that} \\
+      &      & \qquad\qquad  [[e = ret v and V tau v k]]  \\
+      &      & [[and]]\ [[e ~> e']]\ \textit{implies}\ [[ |> k C tau e' ]]  \\
+\\
+   [[V Void v k]]                &=& \textit{never} \\
+   [[V Nat v k]]                 &=& [[v elem nats]] \\
+   [[V tau1 -> tau2 \x.e k]]     &=& \forall [[v1]], [[V tau1 v1 ===>k C tau2 e[v2/x] ]] \\
+   [[V tau1 -> tau2 rec x.v k]]  &=& [[|> k V tau1 -> tau2 v[rec x.v/x]  ]] \\
+   [[V tau1 * tau2 (v1, v2) k]]  &=& [[|> k V tau1 v1 and |> k V tau2 v3 ]] \\
+   [[V tau1 * tau2 rec x. v k]]  &=& [[|> k V tau1 * tau2 v[rec x.v/x]   ]] \\
+   [[V tau1 + tau2 inj1 v1 k]]   &=& [[|> k V tau1 v1 ]] \\
+   [[V tau1 + tau2 inj2 v2 k]]   &=& [[|> k V tau2 v2 ]] \\
+   [[V mu alpha.tau fold v k]]   &=& [[|> k V tau [mu alpha.tau/alpha] v ]]
+
+\end{array}
+\]                 
+\end{definition}
+and its notion of semantic typing:
+
+\begin{enumerate}
+\item Define $[[ G sigma k]]$ when for all  $x \in [[dom G]]$, we have $[[V G x sigma x k]]$.
+\item Define $[[ G |= k e : tau]]$ when $[[ G sigma ===>k C tau e[sigma] ]]$.
+\item Define $[[ G |= k v : tau]]$ when $[[ G sigma ===>k V tau v[sigma] ]]$.
+\end{enumerate}
+
+Finish the step-indexed logical relations proof for products (including
+recursive products).
+
+\begin{lemma}[\link{homework/rocq/hw3/steps.v}{}{ST\_prod}]
+If $[[G |= k v1 : tau1 ]]$ and $[[ G |= k v2 : tau2 ]]$  then
+   $[[G |=k (v1, v1) : tau1 * tau2]]$.
+\end{lemma}
+
+\begin{lemma}[\link{homework/rocq/hw3/steps.v}{}{ST\_rec\_prod}]
+If $[[G, x:tau1 * tau2 |=k v : tau1 * tau2]]$ then $[[G |=k rec x.v : tau1 * tau2 ]]$.
+\end{lemma}
+
+\begin{lemma}[\link{homework/rocq/hw3/steps.v}{}{ST\_prj1}]
+If $[[G |= k v1 : tau1 * tau2 ]]$ then $[[G |=k prj1 v1 : tau1 ]]$.
+\end{lemma}
+
+If you would like an extra challenge, you can also prove the semantic soundness
+lemma for let expressions.
+
+\begin{lemma}[\link{homework/rocq/hw3/steps.v}{}{ST\_let}]
+If $[[G |= e1 : tau1 ]]$ and $[[G , x : tau1 |= e2 : tau2]]$ then
+$[[G |= let x = e1 in e2 : tau2 ]]$.
+\end{lemma}
+
+
+\end{document}
