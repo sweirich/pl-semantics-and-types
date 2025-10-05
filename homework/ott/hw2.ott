@@ -1,12 +1,4 @@
-
-metavar alpha {{ tex \alpha }} , beta {{ tex \beta }} ::=
-  {{ lex alphanum }} 
-
 grammar 
-
-tau :: '' ::=
-  | alpha ::   :: a_var
-  | tau1 [ tau2 / alpha ] :: M :: subst
 
 e :: '' ::= 
   | a_nrec x = { 0 => e0 ; S y => e1 }  ::  :: a_nrec

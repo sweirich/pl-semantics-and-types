@@ -7,7 +7,6 @@ b :: '' ::=
 
 tau :: 'ty_' ::= 
   | Bool     ::    :: Bool
-  | Void     ::    :: Void
   | List tau ::    :: List
 
 e :: 'tm_'  ::= 

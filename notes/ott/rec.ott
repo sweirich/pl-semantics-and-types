@@ -5,6 +5,7 @@ grammar
 
 tau {{ tex \tau }} :: 'ty_' ::= 
    | Void            ::   :: Void
+   | Unit            ::   :: Unit
    | alpha           ::   :: Var
    | mu alpha . tau  ::   :: Mu
      {{ tex \mu[[alpha]].[[tau]] }}
@@ -31,6 +32,13 @@ e :: 'e_' ::=
    | unfold e                                ::   :: Unfold
    | roll e                                  ::   :: Roll
    | unroll e                                ::   :: Unroll
+   | zero        ::   :: zero
+   | S v         ::   :: succ
+   | 0           :: M :: zero_not
+   | 1           :: M :: one_not
+   | 2           :: M :: two_not
+
+
 
 v , w :: 'v_' ::= 
    | x           ::   :: Var
@@ -40,7 +48,13 @@ v , w :: 'v_' ::=
    | rec x . v   ::   :: Rec
    | fold v      ::   :: Fold
    | roll e      ::   :: Roll
+   | zero        ::   :: zero
+   | S v         ::   :: succ
+   | 0           :: M :: zero_not
+   | 1           :: M :: one_not
+   | 2           :: M :: two_not
 
+   
 
 phi {{ tex \phi }}   :: 'iProp_' ::= 
    {{ com step indexed sets of terms }} 
@@ -192,8 +206,14 @@ by
  G ||- x : tau
 
 
----------------------- :: lit
- G ||- k : Nat 
+---------------------- :: zero
+G ||- 0 : Nat 
+
+
+G ||- v : Nat
+---------------------- :: succ
+G ||- S v : Nat 
+
 
 G, x:tau1 ||- e : tau2
 ------------------------  ::  abs
@@ -242,9 +262,6 @@ by
 ------------------------------ :: let_ret
 let x = ret v in e ~> e [v/x]
 
-
------------------------------- :: succ
-succ k ~> S k
 
 ----------------------------------------  :: case_zero
 case 0 of { 0 => e1 ; S x => e2 } ~> e1
