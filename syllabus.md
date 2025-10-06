@@ -36,22 +36,22 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/8  | |                                                                                                    |
 | M 10/13 | |                                                                                                    |
 | W 10/15 | |                                                                                                    |
-| M 10/20 | | **HW #3 due** <br/>                                                                                           |
+| M 10/20 | | **HW #3 due** <br/>                                                                                |
 | W 10/22 | |                                                                                                    |
-| M 10/27 | | midterm exam                                                                                        |
-| W 10/29 | |                                                                                                     |
+| M 10/27 | | midterm exam                                                                                       |
+| W 10/29 | |                                                                                                    |
 | M 11/3  | |                                                                                                    |
-| W 11/5  | |                                                                                                     |
-| M 11/10 | | HW #4 due                                                                                           |
+| W 11/5  | |                                                                                                    |
+| M 11/10 | | HW #4 due                                                                                          |
 | W 11/12 | |                                                                                                    |
 | M 11/17 | |                                                                                                    |
-| W 11/19 | |                                                                                                     |
-| M 11/24 | | HW #5 due                                                                                           |
-| W 11/26 | | **No Class**: Friday schedule for Thanksgiving                                                      |
+| W 11/19 | |                                                                                                    |
+| M 11/24 | | HW #5 due                                                                                          |
+| W 11/26 | | **No Class**: Friday schedule for Thanksgiving                                                     |
 | M 12/1  | |                                                                                                    |
 | W 12/3  | |                                                                                                    |
-| M 12/8  | | HW #6 due                                                                                           |
-| TBA     | | Final exam                                                                                          |
+| M 12/8  | | HW #6 due                                                                                          |
+| T 12/16 | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
 
 ## Grading and Assignments
 
