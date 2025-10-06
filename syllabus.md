@@ -9,6 +9,7 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 
 1. [HW1](homework/hw1.pdf), due Monday, September 22th at midnight
 2. [HW2](homework/hw2.pdf), due Monday, October 6th at midnight
+3. [HW3](homework/hw3.pdf), due Monday, October 20th at midnight
    
 
 ## Schedule
@@ -35,7 +36,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/8  | |                                                                                                    |
 | M 10/13 | |                                                                                                    |
 | W 10/15 | |                                                                                                    |
-| M 10/20 | | HW #3 due                                                                                           |
+| M 10/20 | | **HW #3 due** <br/>                                                                                           |
 | W 10/22 | |                                                                                                    |
 | M 10/27 | | midterm exam                                                                                        |
 | W 10/29 | |                                                                                                     |
