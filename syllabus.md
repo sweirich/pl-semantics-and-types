@@ -1,8 +1,5 @@
 # CIS 7000-01 Syllabus
 
-> [!IMPORTANT]
-> The first class will be Wednesday, September 3rd. There is no class on 8/27.
-
 ## Homework
 
 Submit via [gradescope](https://www.gradescope.com/courses/1126105)
@@ -32,13 +29,13 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 9/24  |          | Metatheory of recursive definitions                                                                 |
 | M 9/29  | Ch. 6    | Semantic soundness with recursive definitions                                                       |
 | W 10/1  |          | Step-indexed logical relations                                                                      |
-| M 10/6  | | **HW #2 due** <br/> More Step-indexed logical relations                                            |
-| W 10/8  | |                                                                                                    |
-| M 10/13 | |                                                                                                    |
+| M 10/6  |          | **HW #2 due** <br/> More step-indexed logical relations                                             |
+| W 10/8  |          | More step-indexing, Working in Rocq                                                       |
+| M 10/13 | Ch. 7    | Type-and-effect systems (nontermination)                                                  |
 | W 10/15 | |                                                                                                    |
 | M 10/20 | | **HW #3 due** <br/>                                                                                |
 | W 10/22 | |                                                                                                    |
-| M 10/27 | | midterm exam                                                                                       |
+| M 10/27 | | Midterm Exam                                                                                       |
 | W 10/29 | |                                                                                                    |
 | M 11/3  | |                                                                                                    |
 | W 11/5  | |                                                                                                    |

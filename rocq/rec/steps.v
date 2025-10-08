@@ -32,6 +32,7 @@ Import reduction.Notations.
 Require Export rec.iprop.
 Import iprop.Notations.
 
+(** * Review of step-indexed type safety *)
 
 Section Safety.
 
@@ -73,11 +74,25 @@ Proof.
     intros k.  destruct (h (S k)) as [h1 h2]. eapply h2; eauto.
 Qed.
 
+(** We can show that some terms are safe with this definition *)
+Definition loop : Tm 0 := app (rec (var var_zero)) zero.
+
+Lemma loop_is_safe : safe loop.
+unfold safe. intros e' h.
+dependent induction h.
+- is_reducible.
+- inversion H. subst. clear H.
+  asimpl in IHh.
+  eapply IHh.
+  unfold loop.
+  eauto.
+Qed.
 
 (* Because defined P with Fixpoint, we need a lemma to unfold it. *)
 Lemma P_def e k : 
   P e k = ((irreducible e -> exists v, e = ret v) /\ (forall e', e ~> e' -> next (P e') k)).
 Proof. destruct k; cbn; reflexivity. Qed.
+
 
 (** Show that well-typed terms are safe for all k. *)
 Lemma safety e τ : typing null e τ -> forall k, P e k.
@@ -102,8 +117,8 @@ Qed.
 End Safety.
 
 
-(** --------------------------------------------------- *)
-(** Axiomatization of the step-indexed logical relation *)
+(* ------------------------------------------------------ *)
+(** * Axiomatization of the step-indexed logical relation *)
 
 Module Type LogicalRelation.
 
@@ -141,12 +156,14 @@ End LogicalRelation.
 Module Core (LR : LogicalRelation).
 
 Import LR.
-Create HintDb LR. 
 
+(** Tactic to automatically rewrite with the axioms *)
+Create HintDb LR. 
 #[export] Hint Rewrite C_def V_Void V_Nat V_Arr V_Prod V_Sum V_Mu : LR.
 Ltac lrsimpl := autorewrite with LR.
+Tactic Notation "lrsimpl" "in" hyp(H) := autorewrite with LR in H.
 
-(* Proof that C implies type safety *)
+(** Proof that C implies type safety *)
 Lemma C_safety e tau : 
   (forall k, C tau e k) -> safe e.
 Proof. 
@@ -157,11 +174,13 @@ Proof.
   - eapply IHRED.
     intros k. 
     specialize (h (S k)). 
-    rewrite C_def in h. 
+    lrsimpl in h.
     destruct h as [_ h2]. 
     specialize (h2 _ H). cbn in h2.
     auto.
 Qed.
+
+(** * Semantic typing definition *)
 
 Definition Env n := fin n -> Val 0.
 
@@ -200,8 +219,8 @@ Proof.
   unfold semantic_subst; auto_case.
 Qed.
 
-(** --------------------------------------------------- *)
-(** Proof that the Logical relation is downward closed  *)
+(** ----------------------------------------------------- *)
+(** * Proof that the Logical relation is downward closed  *)
 
 Ltac prep_ih j LE := 
   inversion LE; subst;[done| destruct j;[ done| cbn in *]].
@@ -258,6 +277,7 @@ Proof. constructor. intros. intros ρ. eapply dclosed; eauto. Qed.
 
 (** -------------------------------------------------------- *)
 
+(** * Logical relation is closed under evaluation *)
 
 Ltac extract_value v Vv EQ := 
    match goal with 
@@ -295,6 +315,8 @@ Proof.
 Qed. 
 
 
+(** * Values in value set are also in comp set *)
+
 Lemma C_val τ v k : 
   V τ v k -> C τ (ret v) k.
 Proof.
@@ -316,6 +338,8 @@ Qed.
 
 
 (** -------------------------------------------------------- *)
+
+(** * Semantic typing rules *)
 
 Section Semtyping.
 Context {n : nat} (Γ : Ctx n).
@@ -352,8 +376,6 @@ Proof.
   done.
 Qed.
 
-
-
 Lemma ST_abs τ1 τ2 e k : 
   (τ1 .: Γ) ⊨ e  ∈ τ2 @ k ->
   (* --------------------------------- *)
@@ -362,7 +384,7 @@ Proof.
   intros SV ρ i LEi hρ. cbn.
   rewrite V_Arr.
   right.
-  exists e[up_Val ρ]. split; auto.
+  exists e[⇑ρ]. split; auto.
   intros v1.
   asimpl.
   intros j LEj. next j.
@@ -457,6 +479,8 @@ Proof.
 End Semtyping. 
 
 Import rec.typing.Notations.
+
+(** * Semantic soundness theorem *)
 
 Fixpoint soundness_tm {n} (Γ : Ctx n) e τ :
   Γ |-e e ∈ τ -> forall k, Γ ⊨ e ∈ τ @ k

@@ -1,3 +1,5 @@
+(** * Imports *)
+
 From Stdlib Require Export ssreflect.
 From Stdlib Require Export Program.Equality.
 Require Export common.core.
@@ -7,16 +9,39 @@ Require Export common.fin_util.
 Require Export common.relations.
 Require Export common.renaming.
 
-
 (** The syntax file defines notations for printing. However, this syntax can 
-    sometimes be confusing so we will disable it here. *)
+    sometimes be confusing so we disable it here. *)
 Require Export rec.syntax.
 Disable Notation "↑__Val" (all).
 Disable Notation "↑__Tm" (all).
 Disable Notation "'__Val'" (all).
 Disable Notation "var" (all).
 
-Import fintype.ScopedNotations.
+(** Define a notation scope specific to this language. *)
+Declare Scope rec_scope.
+
+Module SyntaxNotations.
+Export ScopedNotations.
+Notation "'prj1'" := (prj true) (at level 70) : rec_scope.
+Notation "'prj2'" := (prj false) (at level 70) : rec_scope.
+Notation "'inj1'" := (inj true) (at level 70) : rec_scope.
+Notation "'inj2'" := (inj false) (at level 70) : rec_scope.
+Notation "⇑" := (up_Val_Val) : rec_scope.
+End SyntaxNotations.
+
+Export SyntaxNotations.
+
+(** * Syntax properties *)
+
+(** Decide whether a value is a natural number value *)
+Fixpoint is_nat (v : Val 0) : bool := 
+  match v with 
+  | zero => true
+  | succ v1 => is_nat v1 
+  | _ => false
+  end.
+
+(** * Notes about using Autosubst *)
 
 Section AutosubstNotes.
 
@@ -114,9 +139,11 @@ Qed.
 
 End AutosubstNotes.
 
-(*** ----------------- *)
+(** * Small step semantics *)
 
-(* We'll use more automation in these proofs. Th *)
+(** We want to use automation in these proofs. This line creates a
+    database of constructors and lemmas that we can instruct Rocq 
+    to automatically apply. *)
 Create HintDb rec.
 
 Module Small. 
@@ -172,33 +199,21 @@ Inductive step : Tm 0 -> Tm 0 -> Prop :=
 
 End Small.
 
+(** Add all of the constructors to the hint database, so that 
+    the command 'eauto with rec' can automatically apply them 
+    to construct derivations *)
 #[export] Hint Constructors Small.step : rec.
 
-Declare Scope rec_scope.
-
 Module Notations.
-Export ScopedNotations.
-Notation "'prj1'" := (prj true) (at level 70) : rec_scope.
-Notation "'prj2'" := (prj false) (at level 70) : rec_scope.
-Notation "'inj1'" := (inj true) (at level 70) : rec_scope.
-Notation "'inj2'" := (inj false) (at level 70) : rec_scope.
+Export SyntaxNotations.
 Notation "e ~> e'" := (Small.step e e') (at level 70) : rec_scope.
 Notation "e ~>* e'" := (multi Small.step e e') (at level 70) : rec_scope.
-Notation "⇑" := (up_Val_Val) : rec_scope.
 End Notations.
 
 Open Scope rec_scope.
 Import Notations.
 
-
-(** Decide whether a value is a natural number value *)
-Fixpoint is_nat (v : Val 0) : bool := 
-  match v with 
-  | zero => true
-  | succ v1 => is_nat v1 
-  | _ => false
-  end.
-
+(** * Properties of small-step reduction *)
 
 (** multistep congruence for let *)
 Lemma ms_let_cong e1 e1' e2 : 
@@ -208,11 +223,6 @@ Proof.
   eapply ms_trans; eauto.
   econstructor; eauto.
 Qed.
-
-(** ret is a terminal state *)
-Lemma ret_steps_to_itself v e :
-  ret v ~>* e -> e = ret v.
-Proof. intro h. inversion h. done. inversion H. Qed.
 
 (** The small step relation is deterministic *)
 Lemma deterministic e e1 e2 : 
@@ -229,9 +239,10 @@ Proof.
   - apply IHh in H2. f_equal. auto.
 Qed.
 
-
-(** ----------------------------------------------- *)
-(** Result about small-step semantics               *)
+(** ret is a terminal state *)
+Lemma ret_steps_to_itself v e :
+  ret v ~>* e -> e = ret v.
+Proof. intro h. inversion h. done. inversion H. Qed.
 
 (** An irreducible term is one that cannot step. It is either a value or a stuck term. *)
 Definition irreducible (e:Tm 0) := forall e', not (Small.step e e').
@@ -250,7 +261,7 @@ all: try (destruct v; try destruct n; try destruct b;
   all: right; intros ? h; inversion h; subst; eapply I1; eauto.
 Qed.
 
-(** This is a tactic that automatically solve goals of the form "irreducible e ->" when e reduces *)
+(** This tactic identifies a contraction: we assume "irreducible e" but we can easily show that e reduces *)
 Ltac is_reducible := 
   match goal with 
   | [ h : ?e ~> _  |- irreducible ?e -> _ ] => 

@@ -2,6 +2,7 @@ From Stdlib Require Import Psatz.
 From Stdlib Require Import Arith.
 From Stdlib Require Import ssreflect.
 
+(** * Well-founded induction on natural numbers in Rocq *)
 
 (* Well-founded induction is part of Rocq's standard 
    library. We only need it for the natural numbers though
@@ -16,15 +17,12 @@ Lemma strong_ind (P : nat -> Prop) :
   (forall m, (forall k : nat, k < m -> P k) -> P m) -> forall n, P n.
 Proof. intro h. induction n as [ n IHn ] using (well_founded_induction lt_wf). eauto. Qed.
 
+(** * Indexed propositions *)
 
 (** We want to work with a class of propositions that 
     are indexed by steps and downward closed *)
 
 Definition iProp := nat -> Prop.
-Declare Scope iProp_scope.
-Delimit Scope iProp_scope with I.
-Bind Scope iProp_scope with iProp.
-Open Scope iProp_scope.
 
 Class IProp (ϕ : iProp) := 
   { dclosed : forall k, ϕ k -> forall j, j <= k -> ϕ j }.
@@ -80,19 +78,29 @@ Qed.
 
 (* -------------------------------------------- *)
 
+(** * IProp Notations *)
+
+Declare Scope iProp_scope.
+Delimit Scope iProp_scope with I.
+Bind Scope iProp_scope with iProp.
+Open Scope iProp_scope.
+
 Module Notations.
 Infix "⇒" := (iImp) (right associativity, at level 70) : iProp_scope.
 Notation "▷ ϕ" := (iLater ϕ) (at level 10) : iProp_scope.
 End Notations.
 Import Notations.
 
+(** * IProp reasoning principles *)
 
-
+(* A tactic to advance the clock (i.e. go to a smaller step-index) *)
 Ltac next i := destruct i; cbn; first done.
 
+(* Things that are true now are true later. *)
 Lemma later {ϕ} `{IProp ϕ} : forall k, ϕ k -> ▷ ϕ k.
 intros k. destruct k; cbn. done. intro h. eapply dclosed; eauto. Qed.
-Lemma lift {ϕ ψ} : (forall k, ϕ k -> ψ k) -> forall k, ▷ ϕ k -> ▷ ψ k.
+
+Lemma lift {ϕ ψ} : (forall k, ϕ k -> ψ k) -> (forall k, ▷ ϕ k -> ▷ ψ k).
 Proof. intros h k m. next k. eauto. Qed.
 
 Lemma loeb_induction ϕ : (forall k, ▷ ϕ k -> ϕ k) -> forall k, ϕ k.
