@@ -1,0 +1,280 @@
+\chapter{Type and Effect systems}
+
+The \rec\ language introduced the idea of a computational effect:
+\emph{nontermination}.
+
+However, this effect is invisible to the type system.  As a result, we had to
+take a pessimistic view of well-typed \rec terms: any of them could diverge at
+any time.
+
+In this chapter, we will refine our type system so that its static analysis
+can tell us more about a program than just the form of its resulting value (if
+any). In particular, we will annotate our typing judgent with an effect
+modality $[[eff]]$ that describes the potential \emph{effects} of computation
+(if any). When tracking non-termination, the effect annotation can either be
+$[[bot]]$ (indicating that we know the code terminates) or $[[top]]$,
+indicating that it may diverge. However, the structure of the type-and-effect
+system that we present is more general than that, and could be extended to
+track other forms of effects.
+
+\section{Core system}
+
+For concreteness, we continue to work with fine-grained CBV \rec language,
+reusing its syntax of terms and values and its small-step operational
+semantics.  The key updates are all in the type system: we slightly modify the
+syntax of types and we present a completely new pair of typing judgements for
+values and computations.
+
+This subsection starts with the design of the core system, ignoring (for now) 
+features that introduce potential nontermination. In section~\ref{sec:recursion}
+we extend this discussion to include recursive values and recursive types.
+These rules are an example of a \emph{type-and-effect} system and
+they are, in fact, general about the specific effects that are tracked by the
+type system. We discuss what that means in section~\ref{sec:general-effects}.
+
+
+\begin{definition}[Effect-annotated types]
+\[
+\begin{array}{llcl}
+\mbox{effect flags} & [[eff]] &::=& [[bot]]\ |\ [[top]] \\
+\\
+\mbox{types} & [[tau]] &::=& [[Void]]\ |\ [[Nat]]\ |\ [[tau1 -> eff tau2]]
+          |\ [[tau1 * eff tau2]]\ |\ [[tau1 + tau2]] \\
+\end{array}
+\]
+\end{definition}
+
+In this type-and-effect system, the type syntax includes effect annotations. 
+These annotations $[[eff]]$ occur on the types of values
+that can be recursive (i.e. function types and product types).  
+
+Non-recursive products \textbf{can} use $[[bot]]$ for their annotation,
+indicating projection has no effect. However \text{some} non-recursive
+functions must use $[[top]]$ if they could diverge when applied, for example,
+if their body contains an infinite loop. We say that the flags on this type
+describe the \emph{latent} effect of the function: these effects happen not
+when the function is created but could occur when the function is used.
+
+\begin{definition}[\link{div/eff.v}{typing}{Type system}]\ \\
+\drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
+{zero,succ,var,abs-eff,pair-eff,injOne,injTwo}
+\drules[tee]{$[[G ||- e : tau @ eff]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$ with effect $[[eff]]$}
+{ret,let,app,ifz,prjOne,prjTwo,case,sub-eff}
+\end{definition}
+
+Values do not have effects, so we do not need to change their typing rules,
+execpt for the introduction form for functions and products. In these rules,
+we allow the recorded effect in the type to be greater than the actual effect.
+\footnote{This language does not have subtyping, so this flexibility increases
+  the expressiveness of the system.}
+
+In the effect annotated computation rules, the judgment form 
+$[[G ||- e : tau @ eff]]$ uses $[[eff]]$ to indicate whether the computation $[[e]]$ is
+pure (i.e. terminates) or may diverge.  Returned values must be pure, so
+\rref{tee-ret} uses $[[bot]]$ for this annotation. However, a let binding
+sequences the evaluation of two computations $[[e1]]$ and $[[e2]]$. Therefore,
+the effect of the whole computation can be computed from the effect of these
+two subterms, using the operation $[[eff1 + eff2]]$. For nontermination, this
+computation returns $[[top]]$ if either effect is $[[top]]$ and bottom
+otherwise.
+
+In the application rule, the effect of the computation is completely
+determined by the latent effect of the function. If the function could diverge, for example if it is
+$[[\x. loop]]$ or $[[\x. case x of { 0 => loop ; S y => y } ]]$,
+then its type will include the $[[top]]$ effect.
+On the other hand, if the function terminates on \emph{all} arguments, then 
+the type uses the $[[bot]]$ effect.   
+If the function is higher-order, i.e. if it takes another function as an argument, then the 
+effect on the type of that argument determines the effect on the whole function. For example, 
+we can give the function $[[\f. f (f 3)]]$ the type $[[ (Nat -> bot Nat) -> bot Nat ]]$ or 
+the type $[[ (Nat -> top Nat) -> top Nat]]$. 
+
+The two projections $[[prj1 v]]$ and $[[prj2 v]]$ use the effects from the product types. Because this 
+language includes recursive values, it is possible for projection to cause divergence. For example, 
+the computation 
+\[ [[ prj1 (rec x . (x,x)) ]] [[~>]] [[prj1 (rec x. (x,x), rec x. (x,x))]] [[~>]] \ldots \]
+does not terminate.
+
+The two pattern-matching elimination forms require that the effects for both
+branches be the same (just as the types of the both branches must be the
+same). During type-checking time, if the scrutinee is a variable, we don't
+know which branch will execute. So the effects of the computation could either
+be the effects of the first branch or the effects of the second.
+
+What if these two branches don't have the same effect, such as
+$[[case x of { 0 => loop ; S y => y } ]]$ from above? In this case, we include
+a \emph{subsumption rule},\rref{tee-sub-eff} which allows the type system to
+weaken its analysis. Every effect system has a (pre)-order on effects. For
+nontermination, we have $[[bot <: top]]$, meaning that if we know that a
+system always terminates, then it is sound to weaken that analysis to say that
+it might diverge.
+
+With this subeffecting rule, this type system becomes our first example of a
+system that is not syntax directed. In every other system that we have
+encountered so far, we have had a 1-1 correspondence between typing rules and
+syntax forms. This gives us strong inversion properties: If we have a
+derivation, we know exactly what order the rules must be applied for the
+system to type check.\footnote{Remember that even though a type system is
+syntax-directed, it does not need to have unique types. All of our type
+systems allow programs to be given multiple distinct types for some
+functions.}
+
+\section{Recursive values and types}
+\label{sec:recursion}
+
+The $[[top]]$ effect is explicitly introduced to the type system through the
+typing rules for recursive values and types.  A recursively-defined function
+or product \textbf{must} use $[[top]]$ in its type to indicate that it may
+diverge.  This restriction is governed by the $[[tau ok]]$ judgement.
+
+\begin{definition}
+\drules[ok]{$[[tau ok]]$}{Values of type $[[tau]]$ can be recursive}
+{fun-eff,prod-eff}
+\end{definition}
+
+\begin{definition}[\link{div/eff.v}{typing}{Type system}]\ \\
+\drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
+{rec,fold}
+\drules[tee]{$[[G ||- e : tau @ eff]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$ with effect $[[eff]]$}
+{unfold}
+\end{definition}
+
+Recall that the introduction rule for recursive values has a precondition that
+states what types of values can be recursive. To make sure that the infinite
+loops that these values can create is accurately accounted for, we require
+function and product types to be marked with $[[top]]$ when they are assigned
+to recursive definitions. This annotation is used when these values are
+eliminated: the application and project rules need to know whether the value
+could loop when it is in the active position.
+
+Similarly, unfolding a value with a recursive type also triggers the $[[top]]$
+effect. (We pessimistically assume that all values with recursive types could
+cause nontermination, so there is no need to mark this in the recursive type
+itself.)
+
+\section{Syntactic metatheory: Preservation and progress}
+
+Because this typing rules for computations are not syntax directed, we cannot
+easily use inversion. If we have a derivation $[[G ||- e : tau @ eff]]$, the
+\rref{sub-eff} rule could always have been used, so it is difficult to say
+more about specific derivations. For example, the following lemma was
+trivially true in the \rec type system. In this system, we must prove it by
+induction.
+
+\begin{lemma}[\link{rocq/div/eff.v}{ret_inversion}{Ret inversion}]
+If $[[ G ||- v : tau @ eff]]$ then $[[G ||- v : tau]]$.
+\end{lemma}
+\begin{proof}
+We prove this by induction on the typing derivation. There are only two possible 
+cases: \rref{tv-ret} and \rref{tv-sub}. In the first case, the result is immediate. 
+In the second case, we must appeal to the induction hypothesis.
+\end{proof}
+
+In our type safety proof, the place where we commonly use inversion in in the
+progress lemma: we need to know the form of a value given its type. Sometime
+we explicitly state these inversions as canonical forms lemmas. In this setting, 
+only the computation typing rule includes a non-syntax directed rule. In our 
+value typing rule, there is exactly one rule for each syntactic form of value.
+
+
+\section{Effect soundness}
+
+To know whether the effect annotations in our type system are meaningful, we
+need to prove more than type safety --- we need to argue that if a term has
+type $[[ ||- e : tau @ bot ]]$ then it must terminate. As before, we can prove
+this result using a logical relation.
+
+As we are only concerned with terminating programs, we don't need to use a step 
+indexed logical relation. Instead, we can take advantage of the simpler definition 
+by structural recursion on the type structure. In the case of recursive types, 
+we use the empty set because our type system does not allow values with recursive
+types to be used in computations marked $[[bot]]$.
+
+The key difference in this definition is that the computation set is also indexed 
+by the effect. 
+\[ 
+\begin{array}{lcl} 
+[[ C tau bot ]] &=& [[ { e | e ~>* v and v elem V tau } ]]   \\
+[[ C tau top ]] &=& \textit{all terms}  \\
+\\
+\\
+[[ V Void ]] &=& \emptyset \\
+[[ V Nat ]] &=& [[nats]] \\
+[[ V tau1 -> eff tau2 ]] &=& 
+   \{\ v\ |\ \forall [[v1]],\ [[v1 elem V tau1]]\ \mathit{implies}\ [[ v v1 elem C tau2 eff]]\  \}  \\
+[[ V tau1 * eff tau2 ]] &=&
+   [[ { v | prj1 v elem C tau1 eff and prj2 v elem C tau2 eff } ]] \\
+[[ V mu alpha.tau ]] &=& \emptyset \\
+\end{array}
+\]
+
+Note that the computation set is compatible with the effect ordering. This property is important to reason about our subeffecting rule. As this rule 
+is not syntax directed, we need to make sure that the set for the larger effect contains all of the same terms.
+\begin{lemma}
+If $[[eff1 <: eff2]]$ then $[[C tau eff1]] \subseteq [[C tau eff2]]$
+\end{lemma}
+
+As usual, we can prove the fundamental property of this logical relation by
+validating each of the semantic typing rules. This lemma says that the
+relation contains all well typed values and terms. (For brevity, we don't list those 
+lemmas here.)
+
+\begin{lemma}[\link{rocq/eff/eff.v}{}{Fundamental lemma}]
+If $[[G ||- e : tau @ eff ]]$ then $[[ G |= e : tau @ eff ]]$.
+If $[[G ||- v : tau ]]$ then $[[ G |= v : tau ]]$.
+\end{lemma}
+
+Using the fundamental lemma above, and the definition of $[[C tau bot]]$, we
+can show that the termination effect implies termination. 
+
+\begin{lemma}[\link{rocq/eff/eff.v}{Effect soundness}]
+If $[[ ||- e : tau @ bot ]]$, then there exists some v, such that $[[ e ~>* v ]]$.
+\end{lemma}
+
+Note that our definition of $[[C tau top]]$ does not tell us \emph{anything}
+about terms with the $[[top]]$ effect. We could strengthen this result, by
+combining it with the step-indexed semantic soundness property of the previous
+chapter. But, observe that we are able to prove termination for the $[[bot]]$ 
+fragment without doing so.
+
+\section{Generalizing effects}
+\label{sec:general-effects}
+
+This type system is specialized to tracking non-termination. However, if we
+view these rules more abstractly if we consider effects to be an abstract
+structure.
+
+Looking at the rules, we need the following operations from our abstract
+structure:
+
+\begin{tabular}{ll}
+$[[eff]]$ & some type of effect annotation \\
+$[[bot]]$ & annotation for ``pure'' code \\
+$[[eff1 + eff2]]$ & combination of effects \\
+$[[eff1 <: eff2]]$ & ordering of effects \\
+\end{tabular}
+
+It will turn out, that to show that our type-and-effect system has the rules that we want, we will also want to assume some properties about this structure. 
+In particular, we will want to make sure that this structure is a \emph{pre-ordered monoid}.
+
+Our structure is a monoid if it satisfies the following three properties:
+\begin{enumerate}
+\item Left identity: $[[bot + eff = eff]]$
+\item Right identity: $[[eff + bot = eff]]$
+\item Associativity: $[[(eff1 + eff2) + eff3 = eff1 + (eff2 + eff3)]]$
+\end{enumerate}
+
+It is a preorder if $[[<:]]$ is reflexive and transitive. In other words, if we have $[[eff <: eff]]$ and $[[eff1 <: eff2]]$ and $[[eff2 <: eff3]]$ implies $[[eff1 <: eff3]]$.
+
+Finally, it is a preordered monoid if the ordering is compatible with the combining operation. In other words, we have
+$[[ eff1 <: eff1']]$ and $[[eff2 <: eff2']]$ then $[[eff1 + eff2 <: eff1' + eff2']]$.
+
+It turns out that the specific structure that we use here, with the definition 
+of $[[eff]]$ as $[[bot]]$ or $[[top]]$, the ordering $[[bot <: top]]$ and the 
+combining operation described above, satisfies these properties. This structure
+satisfies other properties as well, such as commutativity of $[[eff1 + eff2]]$, 
+but we will find that we won't need to use that property in our proofs.
+
+To modify this type system to track other forms of effects, we need to modify 
+the effect structure that we use accordingly, as long as it satisfies these laws.
+

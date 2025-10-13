@@ -13,7 +13,7 @@
     Multistep reduction
 
 - STLC: Simply Typed Lambda Calculus
-  * stlc/syntax.sig
+  * [syntax.sig](stlc/syntax.sig)
     Autosubst input
   * [stlc.syntax](stlc/syntax.v)
     Definition of the syntax (generated)
@@ -36,9 +36,9 @@
   * [rec.syntax](rec/syntax.v)
     Generate term syntax
   * [rec.typesyntax](rec/typesyntax.sig) 
-    Autosubst input for types
+    Autosubst input for REC types 
   * [rec.typesyntax](rec/typesyntax.v)
-    Generate type syntax
+    Generated type syntax
   * [rec.reduction](rec/reduction.v)
     Small-step operational semantics. Includes some notes about Autosubst and 
     various properties of the small-step relation.
@@ -54,4 +54,16 @@
     Definition of step-indexed logical relation via strong induction (requires proof irrelevance)
   * [rec.steps](rec/steps.v)
     Proof of semantic soundness for step-indexed logical relation
+  * [rec.stepsAlt](rec/stepsAlt.v)
+    Proof of semantic soundness for step-indexed logical relation, uses structural induction only, 
+    and no proof irrelevance
 
+- DIV: type-and-effect system for divergence
+  * [div.eff](div/effect.v) 
+    Effect annotations (a pre-ordered monoid)
+  * [div.typesyntax.sig](div/typesyntax.sig) 
+    Syntax of REC types with latent effects
+  * [div.typesyntax](div/typesyntax.v) 
+    Syntax of REC types with latent effects (generated)
+  * [div.div](div/div.v) 
+    Type soundness and Effect soundness

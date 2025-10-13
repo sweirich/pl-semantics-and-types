@@ -225,13 +225,14 @@ if $[[e' irreducible]]$ then $[[e']]$ is $[[ret v]]$ for some $[[v]]$.
 One way we showed type safety was to decompose this definition into steps.
 
 \begin{definition}[\link{rec/steps.v}{P}{Safe for $k$}]
-A program $[[e]]$ run safely for $[[k]]$ steps in two ways. 
-If $[[e irreducible]]$, then $[[e]]$ must be some $[[ret v]]$. Otherwise,
-if it steps $[[e ~> e']]$ and $[[0 < k]]$ then $[[e']]$ must run safely for $[[k-1]]$ steps.
+A program $[[e]]$ is safe for $[[k]]$ steps if the following conditions hold.
+If $[[e irreducible]]$, then $[[e]]$ must be some $[[ret v]]$. Otherwise, if
+it steps $[[e ~> e']]$ and if $[[0 < k]]$ then $[[e']]$ must run safely for
+$[[k-1]]$ steps.
 \end{definition}
 
 \begin{definition}[Runs safely]
-A program \emph{runs safely} if for all $k$, it runs safely for $k$ steps.
+A program \textbf{runs safely} if for all $k$, it is safe for $k$ steps.
 \end{definition}
 
 The definition of safe for $k$ is inductively defined over $k$. It holds for
@@ -252,7 +253,6 @@ $[[e1]]$ is safe, which gives us $[[e]]$ is safe. But, we have to show that
 $[[e']]$ runs safely, which follows because $[[e]]$ runs safely.
 \end{proof}
 
-
 Another way to say this is to think about sets.
 
 Let $S_k$ be the set of all programs that are safe for $k$ steps. That means that 
@@ -260,7 +260,9 @@ we have an infinite chain of decreasing sets.
 
 \[ S_0 \supseteq S_1 \supseteq S_2 \supseteq S_3 \ldots \]
 
-This sequence is \emph{downward closed}: for each $i \leq j$ we have $S_j \subseteq S_i$.
+This sequence is \emph{downward closed}: for each $i \leq j$ we have $S_j \subseteq S_i$. In other words, 
+if any program is in some set $[[S_j]]$ then that program is in all previous sets in the 
+sequence.
 
 Furthermore, the set of safe programs is the intersection of all of the sets in this sequence.
 
@@ -272,7 +274,7 @@ This is very similar to a definition of safety that uses coinduction. Another
 way to set up this definition is to consider this function from sets of terms
 to sets of terms.
 
-\[ F X = \{ [[e irreducible]] \mbox{ implies } [[e = ret v]] \mbox{ or } [[e ~> e']] \mbox{ implies } e' \in X\ \} \]
+\[ F X = \{ [[e irreducible]] \mbox{ implies } [[e = ret v]] \mbox{ and } [[e ~> e']] \mbox{ implies } e' \in X\ \} \]
 
 Say $F^i X$ is $i$ applications of $F$ to $X$. Then we have:
 
@@ -350,7 +352,7 @@ Define $[[phi]][[===>]]_k[[phi']]$ as
 \end{definition}
 
 \begin{definition}[\link{rec/iprop.v}{IProp}{Downward closed}]
-A step-indexed proposition is \emph{downward closed} when $j <= k$ we have $[[phi k implies phi j]]$.
+A step-indexed proposition is \emph{downward closed} when $j \leq k$ we have $[[phi k implies phi j]]$.
 \end{definition}
 
 Suppose $[[phi]]$ and $[[phi']]$ are both downward closed. The step-indexed proposition, 
@@ -365,7 +367,7 @@ opposition relation between $[[phi j]]$ and $[[phi k]]$.
 For any $[[phi]]$ and $[[phi']]$, $[[phi ===> phi']]$ is downward closed. 
 \end{lemma}
 \begin{proof}
-Assume that $j <= k$ and $[[phi ===>k phi']]$. We want to show that $[[phi ===>j phi']]$.
+Assume that $j \leq k$ and $[[phi ===>k phi']]$. We want to show that $[[phi ===>j phi']]$.
 Unfolding definitions, assume we have some $[[i < j]]$ and we want to show that $[[phi i implies phi' i]]$.
 But, we are done, because by transitivity, we have $[[i < k]]$, so we can use our original 
 assumption.
@@ -409,7 +411,7 @@ The way this works is through the use of the two auxiliary operations defined
 above: if $[[phi]]$ is a step-indexed set, then $[[|> phi k]]$ accesses
 $[[phi]]$ at the predecessor of $k$.  The use of this operation in
 $[[C tau e k]]$ means that after taking a step, the next term must be in some
-smaller set.
+set with a smaller index.
 
 For the case of product types, we include all pairs, where both components are
 in the previous set, and all recursive values, where the unrolling is in the
@@ -426,6 +428,95 @@ $[[C tau e]]$ and $[[V tau v]]$ are downward closed.
 \item If $j \leq k$ then $[[C tau e k implies C tau e j]]$.
 \end{enumerate}
 \end{lemma}
+\begin{proof} We will prove this by strong induction on $[[k]]$.
+Let $[[j <= k]]$ be arbitrary, and suppose .
+We want to show that for any $[[v]]$,  $[[V tau v k implies V tau v j]]$ and 
+for any $[[e]]$, $[[C tau e k implies C tau e j]]$.
+Suppose $[[V tau v k]]$. Let's consider the cases for $[[tau]]$.
+\begin{itemize}
+\item $[[tau]]$ cannot be $[[alpha]]$ because we only work with closed types.
+\item If $[[tau]]$ is $[[Void]]$, we are done as the sets are empty.
+\item If $[[tau]]$ is $[[Nat]]$, we are also done as the sets are all natural numbers.
+\item If $[[tau]]$ is $[[tau1 * tau2]]$, then we must have either
+\begin{enumerate}
+\item  $[[v]]$ as $[[(v1,v2) ]]$, and $[[|>k V tau1 v1 ]]$ and $[[|>k V tau2 v2]]$.
+  If $[[k=0]]$ then $[[j]]$ is zero, so we are done.
+  If $k > 0$ then we have $[[V tau1 v1 (k-1) ]]$ and $[[V tau2 v2 (k-1) ]]$.
+  In this case we can 
+  use our induction hypothesis, to show that $[[V tau1 v1 j]]$ and $[[V tau v2 j]]$.
+\item  $[[v]]$ as $[[rec x .v']]$ and $[[|>k V tau1 * tau2 (v'[rec x.v'/x]) ]]$.
+  If $[[k=0]]$ then $[[j]]$ is zero, so we are done.
+  If $k > 0$, then the result follows via induction, as above.
+\end{enumerate}
+\item If $[[tau]]$ is $[[tau1 -> tau2]]$, then we must have either 
+\begin{enumerate}
+\item  $[[v]]$ as $[[\x.e]]$, and for all $[[v1]]$, $[[V tau1 v1 ===>k C tau2 e[v1/x] ]]$.
+  Stepped-implication is downward closed, so we also know 
+  $[[V tau1 v1 ===>j C tau2 e[v1/x] ]]$
+\item  $[[v]]$ as $[[rec x .v']]$ and $[[|>k V tau1 -> tau2 (v'[rec x.v'/x]) ]]$.
+  If $[[k=0]]$ then $[[j]]$ is zero, so we are done.
+  If $k > 0$, then the result follows via induction, as above.
+\end{enumerate}
+\end{itemize}
+\end{proof}
+
+\paragraph{Examples} 
+
+Let's consider some example terms 
+
+\begin{tabular}{ll}
+$[[V tau v 0]]$ includes:   \\
+All values       \\
+$[[C tau e 0]]$ includes:   \\
+ All expressions, except those that are stuck, e.g. $[[0 0]]$ \\
+\\
+$[[V tau v 1]]$ includes: \\
+All values, except 
+functions with stuck bodies e.g. $[[\x. 0 0]]$ or $[[\x . 0 x]]$ \\
+And functions that use their arguments in the wrong way \emph{immediately}. \\
+e.g. $[[\x. x 0]]$ and $[[ \x. let z = x 0 in (\y.y) z]]$ are not in this set 
+when $[[tau]]$ is $[[Nat -> tau2]]$, \\
+but these terms are in this set when $[[tau]]$ is $[[ (Nat -> tau1) -> tau2]]$. \\
+Furthermore $[[\x. (\y. (x 0) 1)]]$ is in this set at any type, but it is 
+not immediately stuck.
+\\
+$[[C tau e 1]]$ includes: \\
+All $[[e = ret v]]$ where $[[v]]$ is in $[[V tau v 1]]$ \\
+plus $[[e ~> e']]$ and $[[e']]$ is not stuck. \\
+\\
+$[[V tau v 2]]$ includes: \\
+All values, except 
+functions with stuck bodies e.g. $[[\x. 0 0]]$ or $[[\x . 0 x]]$ \\
+or functions that step to stuck bodies $[[\x. (\y.0 0) 0]]$.  \\
+And functions that use their arguments in the wrong way, immediately, or \emph{after one step}. \\
+e.g. $[[\x. x 0]]$ and $[[\x. (\y. (x 0) 1)]]$ are not in this set when $[[tau]]$ is $[[Nat -> tau2]]$.
+\\
+$[[C tau e 2]]$ includes:\\
+All $[[e = ret v]]$ where $[[V tau v 2]]$ \\
+plus $[[e ~> ret v]]$ where $[[V tau v 1]]$ \\
+plus $[[e ~> e']][[~>]][[e'']]$where $[[e'']]$ is not stuck. \\
+\end{tabular}
+
+\paragraph{Computation sets include safe terms}
+
+Our goal is to show that all terms are in the computation set are safe, so
+let's prove that now.
+
+\begin{lemma}[\link{rec/steps.v}{C_safety}{Semantic safety}]
+If for any $k$, we have $[[C tau e k]]$, then $e$ is safe.
+\end{lemma}
+\begin{proof}
+We want to show that if $[[e ~>* e']]$ and $[[e' irreducible]]$ then $[[e']]$ is 
+some $[[ret v]]$. We will prove this by induction on the evaluation $[[e ~>* e']]$.
+\begin{itemize}
+\item If $[[e = e']]$, then $[[e]]$ is irreducible, so by th definition of $[[C tau e 0]]$, 
+  we know that it must be some value.
+\item If $[[e ~> e1]]$ and $[[e1 ~>* e']]$, then we can prove this result by induction, assuming 
+  that we can show that $[[forall k, C tau e1 k]]$. So let $[[k]]$, be arbitrary. 
+  By assumption, we have $[[C tau e (S k)]]$. Because $[[e ~> e1]]$, this means 
+  that $[[ |> (S k) C tau e1 ]]$, which means that $[[C tau e1 k]]$.
+\end{itemize}
+\end{proof}
 
 \subsection{Semantic typing and semantic typing lemmas}
 
@@ -497,7 +588,7 @@ here we are stuck. We know these results about $i$ but not $i'$.
 
 Now let's do the case where we were stuck before.
 
-\begin{lemma}[Semantic rec rule]
+\begin{lemma}[\link{rec/steps.v}{ST_rec_Arr}{Semantic rec rule}]
 For all $k$, if $[[G , x: tau |=k v : tau ]]$ then $[[G |=k rec x . v : tau ]]$.
 \end{lemma}
 \begin{proof}
@@ -523,8 +614,6 @@ Compared to where we got stuck before, we needed the semantic typing of the
 recursive value, but only at a smaller index, which was available via
 induction. 
 
-
-
 \begin{lemma}[\link{rec/steps.v}{semantic_app}{Semantic app rule}]
 For all $k$, if $[[ G |=k v1 : tau1 -> tau2 ]]$ and $[[ G |=k v2 : tau1 ]]$, 
 then $[[ G |=k v1 v2 : tau2 ]]$.
@@ -534,7 +623,7 @@ To prove this lemma, we can assume some $[[j<k]]$, and $[[ G sigma j ]]$.
 That gives us a goal of $[[ C tau2 v1 v2 k ]]$. We can prove this result 
 with a sub-lemma, that applies after instantiating our premises with the assumptions.
 
-\begin{lemma}[\link{rec/steps.v}{C_app}{Set app}]
+\begin{lemma}[\link{rec/steps.v}{C_app}{Computation set application}]
 For all $k$, if $[[ V tau1 -> tau2 v1 k ]]$ and $[[ V tau1 v2 k ]]$, 
 then $[[ C tau2 v1 v2 k ]]$.
 \end{lemma}
@@ -573,22 +662,33 @@ closure.
 \end{enumerate}
 \end{proof}
 
-Now let's prove the rules specific to fine-grained CBV. In particular, we have 
-isolated all sequencing to $\ottkw{let}$ terms, so here is where we will need 
-to consider how our computation set is closed under evaluation.
+Finally, let's prove a rule specific to fine-grained CBV. In particular, we
+have isolated all sequencing to $\ottkw{let}$ terms, so here is where we will
+need to consider how our computation set is closed under evaluation.
 
 \begin{lemma}[\link{rec/steps.v}{semantic_let}{Semantic let rule}]
 For all $k$, if $[[ G |=k e1 : tau1 ]]$ and $[[ G , x : tau1 |=k e2 : tau2 ]]$, 
 then $[[ G |=k let x = e1 in e2 : tau2 ]]$.
 \end{lemma}
 
-Like the application rule, we will show this result with the help of
-a sub-lemma. 
+Like the application rule, we show this result with the help of a
+sub-lemma. However, the details of this proof have been left as an exercise.
 
 \begin{lemma}
 For all $k$, if $[[C tau1 e1 k]]$ and 
 $\forall v, [[V tau1 v ===>k C tau2 let x = ret v in e2]]$ 
 then $[[C tau2 (let x = e1 in e2) k]]$.
+\end{lemma}
+
+
+Putting the above lemmas together, we can show that all well-typed terms and values 
+are semantically sound.
+
+\begin{lemma}[Semantic Soundness]
+\begin{itemize}
+\item If $[[G |- e : tau ]]$ then for all $[[k]]$, $[[ G |=k e : tau]]$
+\item If $[[G |- v : tau ]]$ then for all $[[k]]$, $[[ G |=k v : tau]]$
+\end{itemize}
 \end{lemma}
 
 
