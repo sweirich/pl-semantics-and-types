@@ -247,6 +247,8 @@ Fixpoint V (τ : Ty 0) {struct τ} : Val 0 -> Prop :=
   | Sum τ1 τ2 => 
       fun v => (exists v1, v = inj true v1 /\ V τ1 v1) \/
             (exists v2, v = inj false v2 /\ V τ2 v2)
+  | Mu τ => 
+      fun v => exists v1, v = fold v1
   | _ => fun v => False
   end.
 
@@ -301,7 +303,6 @@ Proof.
   asimpl.
   eauto.
 Qed.
-
 
 Lemma ST_abs (e : Tm (S n)) τ1 τ2 ε1 ε2 : 
   (τ1 .: Γ) ⊨ e ∈ τ2 @ ε1 -> 
@@ -390,6 +391,64 @@ Lemma ST_let e1 e2 τ1 τ2 ε1 ε2 ε:
 Proof.
 (* FILL IN HERE *) Admitted.
 
+Lemma ST_fold v τ : 
+      Γ ⊨v v ∈ τ[(Mu τ)..] -> Γ ⊨v fold v ∈ Mu τ.
+Proof.
+  intros h.
+  intros ρ hρ.
+  cbn.
+  eexists. eauto.
+Qed.
+
+Lemma ST_unfold v τ : 
+  Γ ⊨v v ∈ Mu τ -> Γ ⊨ unfold v ∈ τ[(Mu τ)..] @ ⊤.
+Proof.
+  intros h ρ hρ.
+  cbn. done.
+Qed.
+
+Lemma ST_inj b v τ1 τ2 : 
+  Γ ⊨v v ∈ (if b then τ1 else τ2)  -> 
+  Γ ⊨v inj b v ∈ Sum τ1 τ2.
+Proof.
+(* FILL IN HERE *) Admitted.
+
+
+(* The autosubst notation interferes with this proof. *)
+Lemma ST_case v e1 e2 τ τ1 τ2 ε : 
+ Γ ⊨v v ∈ Sum τ1 τ2 -> 
+ τ1 .: Γ ⊨ e1 ∈ τ @ ε -> 
+ τ2 .: Γ ⊨ e2 ∈ τ @ ε -> 
+ Γ ⊨ case v e1 e2 ∈ τ @ ε.
+Proof.
+  intros h1 h2 h3.
+  intros ρ ρh.
+  specialize (h1 ρ ρh).
+  destruct h1 as [[v1 [EQ h1]]|[v2 [EQ h1]]].
+  - cbn.
+    unfold subst1, Subst_Val in EQ.
+    destruct (subst_Val ρ v); cbn in EQ; try done.
+    destruct b; cbn in EQ; try done. 
+    inversion EQ. subst. clear EQ.
+    destruct ε; try done.
+    destruct (h2 (v1 .: ρ)) as [v' [EV hv']]. eapply semantic_subst_cons; eauto.
+    exists v'. split; eauto.
+    eapply ms_trans; eauto with rec.
+    asimpl. eauto.
+  - cbn.
+    unfold subst1, Subst_Val in EQ.
+    destruct (subst_Val ρ v); cbn in EQ; try done.
+    destruct b; cbn in EQ; try done. 
+    inversion EQ. subst. clear EQ.
+    destruct ε; try done.
+    destruct (h3 (v2 .: ρ)) as [v' [EV hv']]. eapply semantic_subst_cons; eauto.
+    exists v'. split; eauto.
+    eapply ms_trans; eauto with rec.
+    asimpl. eauto.
+Qed.
+
+
+
 End Semtyping.
 
 Fixpoint soundness_tm {n} (Γ : Ctx n) e τ ε :
@@ -397,7 +456,7 @@ Fixpoint soundness_tm {n} (Γ : Ctx n) e τ ε :
 with soundness_val {n} (Γ : Ctx n) v τ :
   Γ |-v v ∈ τ -> Γ ⊨v v ∈ τ.
 Proof. 
-  all: intros h k; inversion h; subst.
+  all: intros h ρ ρh; inversion h; subst.
   - eapply ST_ret; eauto.
   - eapply ST_let; eauto. eapply eff.refl.
   - eapply ST_app; eauto. eapply eff.refl.

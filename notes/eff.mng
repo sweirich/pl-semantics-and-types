@@ -55,7 +55,7 @@ if their body contains an infinite loop. We say that the flags on this type
 describe the \emph{latent} effect of the function: these effects happen not
 when the function is created but could occur when the function is used.
 
-\begin{definition}[\link{div/eff.v}{typing}{Type system}]\ \\
+\begin{definition}[\link{div/div.v}{typing}{Type system}]\ \\
 \drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
 {zero,succ,var,abs-eff,pair-eff,injOne,injTwo}
 \drules[tee]{$[[G ||- e : tau @ eff]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$ with effect $[[eff]]$}
@@ -75,7 +75,7 @@ pure (i.e. terminates) or may diverge.  Returned values must be pure, so
 sequences the evaluation of two computations $[[e1]]$ and $[[e2]]$. Therefore,
 the effect of the whole computation can be computed from the effect of these
 two subterms, using the operation $[[eff1 + eff2]]$. For nontermination, this
-computation returns $[[top]]$ if either effect is $[[top]]$ and bottom
+computation returns $[[top]]$ if either effect is $[[top]]$ and $[[bot]]$ 
 otherwise.
 
 In the application rule, the effect of the computation is completely
@@ -132,7 +132,7 @@ diverge.  This restriction is governed by the $[[tau ok]]$ judgement.
 {fun-eff,prod-eff}
 \end{definition}
 
-\begin{definition}[\link{div/eff.v}{typing}{Type system}]\ \\
+\begin{definition}[\link{div/div.v}{typing}{Type system}]\ \\
 \drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
 {rec,fold}
 \drules[tee]{$[[G ||- e : tau @ eff]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$ with effect $[[eff]]$}
@@ -161,8 +161,8 @@ more about specific derivations. For example, the following lemma was
 trivially true in the \rec type system. In this system, we must prove it by
 induction.
 
-\begin{lemma}[\link{rocq/div/eff.v}{ret_inversion}{Ret inversion}]
-If $[[ G ||- v : tau @ eff]]$ then $[[G ||- v : tau]]$.
+\begin{lemma}[\link{rocq/div/div.v}{ret_inversion}{Ret inversion}]
+If $[[ G ||- ret v : tau @ eff]]$ then $[[G ||- v : tau]]$.
 \end{lemma}
 \begin{proof}
 We prove this by induction on the typing derivation. There are only two possible 
@@ -204,13 +204,13 @@ by the effect.
    \{\ v\ |\ \forall [[v1]],\ [[v1 elem V tau1]]\ \mathit{implies}\ [[ v v1 elem C tau2 eff]]\  \}  \\
 [[ V tau1 * eff tau2 ]] &=&
    [[ { v | prj1 v elem C tau1 eff and prj2 v elem C tau2 eff } ]] \\
-[[ V mu alpha.tau ]] &=& \emptyset \\
+[[ V mu alpha.tau ]] &=& \{\ [[fold v]]\ |\ [[v elem vals]] \}   \\
 \end{array}
 \]
 
 Note that the computation set is compatible with the effect ordering. This property is important to reason about our subeffecting rule. As this rule 
 is not syntax directed, we need to make sure that the set for the larger effect contains all of the same terms.
-\begin{lemma}
+\begin{lemma}[\link{rocq/eff/div.v}{C\_sub}{Subeffecting}]
 If $[[eff1 <: eff2]]$ then $[[C tau eff1]] \subseteq [[C tau eff2]]$
 \end{lemma}
 
@@ -219,7 +219,7 @@ validating each of the semantic typing rules. This lemma says that the
 relation contains all well typed values and terms. (For brevity, we don't list those 
 lemmas here.)
 
-\begin{lemma}[\link{rocq/eff/eff.v}{}{Fundamental lemma}]
+\begin{lemma}[\link{rocq/eff/div.v}{}{Fundamental lemma}]
 If $[[G ||- e : tau @ eff ]]$ then $[[ G |= e : tau @ eff ]]$.
 If $[[G ||- v : tau ]]$ then $[[ G |= v : tau ]]$.
 \end{lemma}
@@ -227,7 +227,7 @@ If $[[G ||- v : tau ]]$ then $[[ G |= v : tau ]]$.
 Using the fundamental lemma above, and the definition of $[[C tau bot]]$, we
 can show that the termination effect implies termination. 
 
-\begin{lemma}[\link{rocq/eff/eff.v}{Effect soundness}]
+\begin{lemma}[\link{rocq/eff/eff.v}{}{Effect soundness}]
 If $[[ ||- e : tau @ bot ]]$, then there exists some v, such that $[[ e ~>* v ]]$.
 \end{lemma}
 
@@ -275,6 +275,7 @@ combining operation described above, satisfies these properties. This structure
 satisfies other properties as well, such as commutativity of $[[eff1 + eff2]]$, 
 but we will find that we won't need to use that property in our proofs.
 
-To modify this type system to track other forms of effects, we need to modify 
-the effect structure that we use accordingly, as long as it satisfies these laws.
+To modify this type system to track other forms of effects, we need to modify
+the effect structure that we use accordingly, and know that our type system is
+safe as long as it satisfies these laws.
 
