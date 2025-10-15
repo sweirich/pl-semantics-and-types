@@ -10,3 +10,4 @@ Prod   : Eff -> Ty -> Ty -> Ty
 Sum    : Ty -> Ty -> Ty
 Arr    : Ty -> Eff -> Ty -> Ty
 Mu     : (bind Ty in Ty) -> Ty
+

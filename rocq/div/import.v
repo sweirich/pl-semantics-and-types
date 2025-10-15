@@ -1,3 +1,3 @@
-Require Import div.eff.
-Require Import core fintype.
-Require Import Setoid Morphisms Relation_Definitions.
+Require Export div.eff.
+Require Export core fintype.
+Require Export Setoid Morphisms Relation_Definitions.

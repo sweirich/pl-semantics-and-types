@@ -1,8 +1,8 @@
 COQMAKEFILE=CoqMakefile
 LIBNAME=plst
-SYNTAX=stlc/syntax.sig rec/syntax.sig $(wildcard */typesyntax.sig)
+SYNTAX=$(wildcard */syntax.sig) $(wildcard */typesyntax.sig)
 SYNTAXV = $(SYNTAX:.sig=.v)
-LANGS=stlc rec div
+LANGS=stlc rec div 
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: rocq syntax clean fullclean

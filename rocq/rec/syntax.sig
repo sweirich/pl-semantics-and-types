@@ -22,3 +22,5 @@ case    : Val -> (bind Val in Tm) -> (bind Val in Tm) -> Tm
 app     : Val -> Val -> Tm
 unfold  : Val -> Tm
 
+box     : Val -> Tm
+bind    : Tm -> (bind Val in Tm) -> Tm

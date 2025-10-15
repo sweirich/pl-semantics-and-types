@@ -4,13 +4,11 @@ Disable Notation "↑__Ty" (all).
 Require Export rec.reduction.
 Import rec.reduction.Notations.
 
-Import div.eff.
-
 Import eff.Notations.
 
 (** Type and effect relation *)
 
-Definition allows_rec_ty (ty : Ty 0) := 
+Fixpoint allows_rec_ty (ty : Ty 0) := 
   match ty with 
   | Arr _ ⊤ _ => true
   | Prod ⊤ _ _ => true
@@ -47,10 +45,10 @@ Inductive typing_val {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop :=
     typing_val Γ v τ2 ->
     typing_val Γ (inj false v) (Sum τ1 τ2)
 
-  | t_abs e τ1 τ2 ε1 ε2 : 
-    typing (τ1 .: Γ) e τ2 ε1 ->
-    ε1 <: ε2  ->
-    typing_val Γ (abs e) (Arr τ1 ε2 τ2)
+  (* We can use t_sub to make ε anything *)
+  | t_abs e τ1 τ2 ε : 
+    typing (τ1 .: Γ) e τ2 ε ->
+    typing_val Γ (abs e) (Arr τ1 ε τ2)
 
   | t_rec v τ : 
     allows_rec_ty τ = true ->
@@ -247,6 +245,7 @@ Fixpoint V (τ : Ty 0) {struct τ} : Val 0 -> Prop :=
   | Sum τ1 τ2 => 
       fun v => (exists v1, v = inj true v1 /\ V τ1 v1) \/
             (exists v2, v = inj false v2 /\ V τ2 v2)
+
   | Mu τ => 
       fun v => exists v1, v = fold v1
   | _ => fun v => False
@@ -304,38 +303,34 @@ Proof.
   eauto.
 Qed.
 
-Lemma ST_abs (e : Tm (S n)) τ1 τ2 ε1 ε2 : 
-  (τ1 .: Γ) ⊨ e ∈ τ2 @ ε1 -> 
-  ε1 <: ε2 ->
-  Γ ⊨v (abs e) ∈ Arr τ1 ε2 τ2.
+Lemma ST_abs (e : Tm (S n)) τ1 τ2 ε : 
+  (τ1 .: Γ) ⊨ e ∈ τ2 @ ε -> 
+  Γ ⊨v (abs e) ∈ Arr τ1 ε τ2.
 Proof.
-  intros IH LE.
+  intros IH.
   intros ρ ρH.
-  cbn. destruct ε2. 
+  cbn. destruct ε. 
   - cbn. eauto.
   - intros w wIn.
     move: (IH (w .: ρ)) => CH. 
     eapply reverse_evaluation.
     eapply Small.s_beta.
     asimpl.
-    destruct ε1; try done.
     eapply CH. eapply semantic_subst_cons; eauto.
 Qed.
 
-Lemma ST_app v1 v2 τ1 ε1 ε τ2 : 
+Lemma ST_app v1 v2 τ1 ε1 τ2 : 
   Γ ⊨v v1 ∈ Arr τ1 ε1 τ2 -> 
   Γ ⊨v v2 ∈ τ1 -> 
-  ε1 <: ε ->
-  Γ ⊨ app v1 v2 ∈ τ2 @ ε .
+  Γ ⊨ app v1 v2 ∈ τ2 @ ε1 .
 Proof.
-  intros h1 h2 h3 ρ ρh.
+  intros h1 h2 ρ ρh.
   specialize (h1 ρ ρh). 
   specialize (h2 ρ ρh). 
   cbn in h1.
-  destruct ε.
+  destruct ε1.
   - cbn. done.
   - cbn.
-    destruct ε1; unfold eff.le in h3; try done.
     eapply h1; eauto.
 Qed.
 
@@ -459,6 +454,7 @@ Proof.
   all: intros h ρ ρh; inversion h; subst.
   - eapply ST_ret; eauto.
   - eapply ST_let; eauto. eapply eff.refl.
-  - eapply ST_app; eauto. eapply eff.refl.
+  - eapply ST_app; eauto. 
 (* FILL IN HERE *) Admitted.
+
 

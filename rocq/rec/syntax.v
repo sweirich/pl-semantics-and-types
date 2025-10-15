@@ -22,7 +22,9 @@ with Tm (n_Val : nat) : Type :=
   | split : Val n_Val -> Tm (S (S n_Val)) -> Tm n_Val
   | case : Val n_Val -> Tm (S n_Val) -> Tm (S n_Val) -> Tm n_Val
   | app : Val n_Val -> Val n_Val -> Tm n_Val
-  | unfold : Val n_Val -> Tm n_Val.
+  | unfold : Val n_Val -> Tm n_Val
+  | box : Val n_Val -> Tm n_Val
+  | bind : Tm n_Val -> Tm (S n_Val) -> Tm n_Val.
 
 Lemma congr_zero {m_Val : nat} : zero m_Val = zero m_Val.
 Proof.
@@ -135,6 +137,20 @@ Proof.
 exact (eq_trans eq_refl (ap (fun x => unfold m_Val x) H0)).
 Qed.
 
+Lemma congr_box {m_Val : nat} {s0 : Val m_Val} {t0 : Val m_Val}
+  (H0 : s0 = t0) : box m_Val s0 = box m_Val t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => box m_Val x) H0)).
+Qed.
+
+Lemma congr_bind {m_Val : nat} {s0 : Tm m_Val} {s1 : Tm (S m_Val)}
+  {t0 : Tm m_Val} {t1 : Tm (S m_Val)} (H0 : s0 = t0) (H1 : s1 = t1) :
+  bind m_Val s0 s1 = bind m_Val t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => bind m_Val x s1) H0))
+         (ap (fun x => bind m_Val t0 x) H1)).
+Qed.
+
 Lemma upRen_Val_Val {m : nat} {n : nat} (xi : fin m -> fin n) :
   fin (S m) -> fin (S n).
 Proof.
@@ -177,6 +193,9 @@ with ren_Tm {m_Val : nat} {n_Val : nat} (xi_Val : fin m_Val -> fin n_Val)
         (ren_Tm (upRen_Val_Val xi_Val) s2)
   | app _ s0 s1 => app n_Val (ren_Val xi_Val s0) (ren_Val xi_Val s1)
   | unfold _ s0 => unfold n_Val (ren_Val xi_Val s0)
+  | box _ s0 => box n_Val (ren_Val xi_Val s0)
+  | bind _ s0 s1 =>
+      bind n_Val (ren_Tm xi_Val s0) (ren_Tm (upRen_Val_Val xi_Val) s1)
   end.
 
 Lemma up_Val_Val {m : nat} {n_Val : nat} (sigma : fin m -> Val n_Val) :
@@ -226,6 +245,9 @@ with subst_Tm {m_Val : nat} {n_Val : nat}
   | app _ s0 s1 =>
       app n_Val (subst_Val sigma_Val s0) (subst_Val sigma_Val s1)
   | unfold _ s0 => unfold n_Val (subst_Val sigma_Val s0)
+  | box _ s0 => box n_Val (subst_Val sigma_Val s0)
+  | bind _ s0 s1 =>
+      bind n_Val (subst_Tm sigma_Val s0) (subst_Tm (up_Val_Val sigma_Val) s1)
   end.
 
 Lemma upId_Val_Val {m_Val : nat} (sigma : fin m_Val -> Val m_Val)
@@ -292,6 +314,10 @@ subst_Tm sigma_Val s = s :=
       congr_app (idSubst_Val sigma_Val Eq_Val s0)
         (idSubst_Val sigma_Val Eq_Val s1)
   | unfold _ s0 => congr_unfold (idSubst_Val sigma_Val Eq_Val s0)
+  | box _ s0 => congr_box (idSubst_Val sigma_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (idSubst_Tm sigma_Val Eq_Val s0)
+        (idSubst_Tm (up_Val_Val sigma_Val) (upId_Val_Val _ Eq_Val) s1)
   end.
 
 Lemma upExtRen_Val_Val {m : nat} {n : nat} (xi : fin m -> fin n)
@@ -369,6 +395,11 @@ ren_Tm xi_Val s = ren_Tm zeta_Val s :=
       congr_app (extRen_Val xi_Val zeta_Val Eq_Val s0)
         (extRen_Val xi_Val zeta_Val Eq_Val s1)
   | unfold _ s0 => congr_unfold (extRen_Val xi_Val zeta_Val Eq_Val s0)
+  | box _ s0 => congr_box (extRen_Val xi_Val zeta_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (extRen_Tm xi_Val zeta_Val Eq_Val s0)
+        (extRen_Tm (upRen_Val_Val xi_Val) (upRen_Val_Val zeta_Val)
+           (upExtRen_Val_Val _ _ Eq_Val) s1)
   end.
 
 Lemma upExt_Val_Val {m : nat} {n_Val : nat} (sigma : fin m -> Val n_Val)
@@ -447,6 +478,11 @@ subst_Tm sigma_Val s = subst_Tm tau_Val s :=
       congr_app (ext_Val sigma_Val tau_Val Eq_Val s0)
         (ext_Val sigma_Val tau_Val Eq_Val s1)
   | unfold _ s0 => congr_unfold (ext_Val sigma_Val tau_Val Eq_Val s0)
+  | box _ s0 => congr_box (ext_Val sigma_Val tau_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (ext_Tm sigma_Val tau_Val Eq_Val s0)
+        (ext_Tm (up_Val_Val sigma_Val) (up_Val_Val tau_Val)
+           (upExt_Val_Val _ _ Eq_Val) s1)
   end.
 
 Lemma up_ren_ren_Val_Val {k : nat} {l : nat} {m : nat} (xi : fin k -> fin l)
@@ -531,6 +567,11 @@ with compRenRen_Tm {k_Val : nat} {l_Val : nat} {m_Val : nat}
         (compRenRen_Val xi_Val zeta_Val rho_Val Eq_Val s1)
   | unfold _ s0 =>
       congr_unfold (compRenRen_Val xi_Val zeta_Val rho_Val Eq_Val s0)
+  | box _ s0 => congr_box (compRenRen_Val xi_Val zeta_Val rho_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (compRenRen_Tm xi_Val zeta_Val rho_Val Eq_Val s0)
+        (compRenRen_Tm (upRen_Val_Val xi_Val) (upRen_Val_Val zeta_Val)
+           (upRen_Val_Val rho_Val) (up_ren_ren _ _ _ Eq_Val) s1)
   end.
 
 Lemma up_ren_subst_Val_Val {k : nat} {l : nat} {m_Val : nat}
@@ -626,6 +667,12 @@ with compRenSubst_Tm {k_Val : nat} {l_Val : nat} {m_Val : nat}
         (compRenSubst_Val xi_Val tau_Val theta_Val Eq_Val s1)
   | unfold _ s0 =>
       congr_unfold (compRenSubst_Val xi_Val tau_Val theta_Val Eq_Val s0)
+  | box _ s0 =>
+      congr_box (compRenSubst_Val xi_Val tau_Val theta_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (compRenSubst_Tm xi_Val tau_Val theta_Val Eq_Val s0)
+        (compRenSubst_Tm (upRen_Val_Val xi_Val) (up_Val_Val tau_Val)
+           (up_Val_Val theta_Val) (up_ren_subst_Val_Val _ _ _ Eq_Val) s1)
   end.
 
 Lemma up_subst_ren_Val_Val {k : nat} {l_Val : nat} {m_Val : nat}
@@ -744,6 +791,12 @@ ren_Tm zeta_Val (subst_Tm sigma_Val s) = subst_Tm theta_Val s :=
         (compSubstRen_Val sigma_Val zeta_Val theta_Val Eq_Val s1)
   | unfold _ s0 =>
       congr_unfold (compSubstRen_Val sigma_Val zeta_Val theta_Val Eq_Val s0)
+  | box _ s0 =>
+      congr_box (compSubstRen_Val sigma_Val zeta_Val theta_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (compSubstRen_Tm sigma_Val zeta_Val theta_Val Eq_Val s0)
+        (compSubstRen_Tm (up_Val_Val sigma_Val) (upRen_Val_Val zeta_Val)
+           (up_Val_Val theta_Val) (up_subst_ren_Val_Val _ _ _ Eq_Val) s1)
   end.
 
 Lemma up_subst_subst_Val_Val {k : nat} {l_Val : nat} {m_Val : nat}
@@ -864,6 +917,12 @@ subst_Tm tau_Val (subst_Tm sigma_Val s) = subst_Tm theta_Val s :=
         (compSubstSubst_Val sigma_Val tau_Val theta_Val Eq_Val s1)
   | unfold _ s0 =>
       congr_unfold (compSubstSubst_Val sigma_Val tau_Val theta_Val Eq_Val s0)
+  | box _ s0 =>
+      congr_box (compSubstSubst_Val sigma_Val tau_Val theta_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (compSubstSubst_Tm sigma_Val tau_Val theta_Val Eq_Val s0)
+        (compSubstSubst_Tm (up_Val_Val sigma_Val) (up_Val_Val tau_Val)
+           (up_Val_Val theta_Val) (up_subst_subst_Val_Val _ _ _ Eq_Val) s1)
   end.
 
 Lemma renRen_Val {k_Val : nat} {l_Val : nat} {m_Val : nat}
@@ -1078,6 +1137,11 @@ with rinst_inst_Tm {m_Val : nat} {n_Val : nat}
       congr_app (rinst_inst_Val xi_Val sigma_Val Eq_Val s0)
         (rinst_inst_Val xi_Val sigma_Val Eq_Val s1)
   | unfold _ s0 => congr_unfold (rinst_inst_Val xi_Val sigma_Val Eq_Val s0)
+  | box _ s0 => congr_box (rinst_inst_Val xi_Val sigma_Val Eq_Val s0)
+  | bind _ s0 s1 =>
+      congr_bind (rinst_inst_Tm xi_Val sigma_Val Eq_Val s0)
+        (rinst_inst_Tm (upRen_Val_Val xi_Val) (up_Val_Val sigma_Val)
+           (rinstInst_up_Val_Val _ _ Eq_Val) s1)
   end.
 
 Lemma rinstInst'_Val {m_Val : nat} {n_Val : nat}
@@ -1384,6 +1448,10 @@ Module Extra.
 
 Import
 Core.
+
+Arguments bind {n_Val}.
+
+Arguments box {n_Val}.
 
 Arguments unfold {n_Val}.
 

@@ -279,3 +279,57 @@ To modify this type system to track other forms of effects, we need to modify
 the effect structure that we use accordingly, and know that our type system is
 safe as long as it satisfies these laws.
 
+\section{Variation: Syntax-directed effects}
+
+The subsumption rule makes the type-and-effect system not syntax
+directed. However, we can reformulate the system so that this rule is not
+necessary. Instead, subeffecting is worked into the other rules.
+
+\begin{definition}[\link{div/sd.v}{typing}{Syntax-directed Type system}]\ \\
+\drules[sd-tee]{$[[G !- e : tau @ eff]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$ with effect $[[eff]]$}
+{let,app,prjOne,prjTwo}
+\end{definition}
+
+By looking at the rules, we can see that sub-effecting is an \emph{admissible} rule for 
+the system. Even though we don't have a specific rule, we can always turn a derivation into 
+another with a larger effect.
+\begin{lemma}[Subeffecting for syntax-directed system]
+If $[[G !- e : tau @ eff1 ]]$ and $[[eff1 <: eff2]]$ then $[[G !- e : tau2 @ eff2]]$.
+\end{lemma}
+
+Using the subeffecting property, we can show that this type system is equivalent to our previous 
+version. We state the property as follows.
+
+\begin{lemma}[\link{div/sd.v}{Equivalence}{Equivalence between syntax-directed and core system}]
+\begin{enumerate}
+\item $[[G ||- e : tau @ eff ]]$ iff $[[G !- e : tau @ eff ]]$.
+\item $[[G ||- v : tau ]]$ iff $[[G !- v : tau ]]$.
+\end{enumerate}
+\end{lemma}
+
+When thinking about syntax-directed judgements, it is useful to assign \emph{modes} to the 
+components of the judgement. These modes correspond to whether that component is an 
+input or an output to a function that determines whether the judgement is derivable.
+In this case, we have designed the type system as if the effect is an input to the judgement: i.e. it should be larger the actual effect of the term.
+
+However, it is also possible to design a syntax directed system where the produced effect is 
+a lower bound of the derivation.
+
+\section{Is this a practical type system?}
+
+The type system shown in this chapter is rather simplistic.
+
+\emph{No effect polymorphism} We cannot capture fact that the effect of a higher-order function 
+depends on the effect of its input. For example, 
+we can give the term $[[\x.ret (\y.x y)]]$ the types $[[ (tau1 -> top tau2) -> bot (tau1 -> top tau2) ]]$
+$[[ (tau1 -> bot tau2) -> bot (tau1 -> bot tau2) ]]$. 
+However, even if we add subtyping to this sytem neither is a subtype of the other.  Effect polymorphism captures the relationship.
+
+\emph{Weak termination analysis: pattern matching} No value-dependent effects.
+In a dependent type system, we might be able to express how the 
+effect of a conditional may be determined by its scrutinee.
+
+\emph{Weak termination analysis: recursive definitions} No way to express the
+termination metric for loops.
+
+

@@ -27,6 +27,8 @@ Notation "'prj2'" := (prj false) (at level 70) : rec_scope.
 Notation "'inj1'" := (inj true) (at level 70) : rec_scope.
 Notation "'inj2'" := (inj false) (at level 70) : rec_scope.
 Notation "⇑" := (up_Val_Val) : rec_scope.
+Notation "⇑ σ" := (var var_zero .: σ >> ren_Val ↑) 
+                    (only printing, at level 0) : rec_scope.
 End SyntaxNotations.
 
 Export SyntaxNotations.
@@ -185,12 +187,6 @@ Inductive step : Tm 0 -> Tm 0 -> Prop :=
 
  | s_prj_rec b v : 
     step (prj b (rec v)) (prj b v[(rec v)..])
-
- | s_split_rec v e :
-    step (split (rec v) e) (split (v [(rec v)..]) e)
-
- | s_case_rec v e1 e2 :
-    step (case (rec v) e1 e2) (case (v [(rec v)..]) e1 e2)
 
  | s_unfold v :
      step (unfold (fold v)) (ret v)
