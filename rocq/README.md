@@ -59,7 +59,7 @@
     and no proof irrelevance
 
 - DIV: type-and-effect system for divergence
-  * [div.eff](div/effect.v) 
+  * [div.eff](div/eff.v) 
     Effect annotations (a pre-ordered monoid)
   * [div.typesyntax.sig](div/typesyntax.sig) 
     Syntax of REC types with latent effects
