@@ -63,10 +63,7 @@ when the function is created but could occur when the function is used.
 \end{definition}
 
 Values do not have effects, so we do not need to change their typing rules,
-execpt for the introduction form for functions and products. In these rules,
-we allow the recorded effect in the type to be greater than the actual effect.
-\footnote{This language does not have subtyping, so this flexibility increases
-  the expressiveness of the system.}
+except for the introduction form for functions and products. 
 
 In the effect annotated computation rules, the judgment form 
 $[[G ||- e : tau @ eff]]$ uses $[[eff]]$ to indicate whether the computation $[[e]]$ is
@@ -276,54 +273,131 @@ satisfies other properties as well, such as commutativity of $[[eff1 + eff2]]$,
 but we will find that we won't need to use that property in our proofs.
 
 To modify this type system to track other forms of effects, we need to modify
-the effect structure that we use accordingly, and know that our type system is
-safe as long as it satisfies these laws.
+the effect structure that we use accordingly. 
 
-\section{Is this a practical type system?}
+\section{Expressivity}
 
-The type system shown in this chapter is rather simplistic.
+The type system shown in this chapter is designed to show the essence of how type-and-effect systems can work. As a result, it is rather simplistic and not expressive enough for practical programmer. 
 
+\emph{Strengthening the termination analysis: recursive definitions} The type
+system that we have defined does not include a very large fragment that can be
+checked with effect $[[bot]]$. The reason is the innate pessimism of general
+recursion. There is no way to conclude that a recursive definition actually
+terminates. 
 
+One way to make the language more expressive is to include more capabilities
+for terminating recursive definitions. For example, we could add the primitive
+natural number recursion operation from Chapter~\ref{chapter:nrec}. Type
+systems that enforce termination (such as the type theories of Rocq, Agda or
+Lean, include many such recursion principles for inductive datatypes.
 
+\paragraph{Subtype polymorphism} Many languages with effect systems also support subtype polymorphism. 
+What this means in this context is the addition of two new rules that allow
+the type of a value or term to be replaced by any of its supertypes.
 
-\emph{No effect polymorphism} We cannot capture fact that the effect of a higher-order function 
-depends on the effect of its input. For example, 
-we can give the term $[[\x.ret (\y.x y)]]$ many different types of the form:
+\[ \drule{tv-sub} \qquad \drule{tee-sub-eff-ty} \]
+
+In essence, the subsumption rules weaken what we know: for example, we may forget that 
+a function will always terminate when applied.
+
+The subtyping relation is induced by the effect annotations function and
+product types. For example, a function annotated by $[[bot]]$ must always terminate, whereas
+a function annotated by $[[top]]$ may terminate or may diverge. Similarly, projection from 
+a tuple annotated by $[[bot]]$ will always terminate, but from a tuple annotated by $[[top]]$ 
+could diverge. 
+
+\begin{definition}[Subtyping]\ \\
+\drules[s]{$[[tau1 <: tau2 ]]$}{$[[tau1]]$ is a subtype of $[[tau2]]$}
+{refl,arr,prod,sum}
+\end{definition}
+
+On top of this relationship, the rules for subtyping above extend the
+primitive subtyping relationship compatibly through the structure of
+types. Following standard practice, subtyping is \emph{covariant} (i.e. in the
+same direction) in the components of pairs and sums and the result type of
+functions. It is \emph{contravariant} in the argument of functions.
+
+For example, we can show the following relationship between these two types
+\[ [[ (tau1 -> top tau2) -> bot (tau1 -> bot tau2) ]] <: [[ (tau1 -> bot tau2) -> bot (tau1 -> top tau2) ]] \]
+(Both of these types can be assigned to the higher-order function $[[\x.ret (\y.x y)]]$).
+
+\paragraph{Effect polymorphism} 
+
+Although terms of this type system do not include any type or effect
+annotations, type \emph{inference} for this type system should be
+decidable.\footnote{This is a conjecture, we don't have a proof yet.}
+
+However, although an inference algorithm exists, it is not a
+\emph{compositional} algorithm. We cannot break a program into parts and 
+type check each part individually; we need to know how definitions are  
+used to figure out what type their types should be.
+
+Most efficient type inference systems are based on the idea of \emph{principal
+types}. This means that for any term in a given context, we can assign a
+unique ``best'' type for that term, i.e., one that can be used in any typing
+derivation featuring that term.
+
+Principal typing fails for this language. To see why, note that 
+we can give the term $[[\x.ret (\y.x y)]]$ \emph{many} different types of the form:
 $[[ (tau1 -> eff1 tau2) -> eff1 (tau1 -> eff3 tau2) ]]$.
 
 There are eight possible combinations of these annotations, and six of them are 
-valid types for the term.  (Options (5) and (7) do not type check.)
-\begin{array}{lcccl}
+valid types for the term.  (Options (5) and (7) do not type check. Only configurations 
+where $[[eff1 <: eff3]]$ are allowed.)
+\[
+\begin{array}{rcccl}
     &[[eff1]] & [[eff2]] & [[eff3]] \\
+\hline
 (1) &[[bot]] & [[bot]] & [[bot]] \\
 (2) &[[bot]] &[[bot]] &[[top]] \\
 (3) &[[bot]] &[[top]] &[[bot]] \\
 (4) &[[bot]] &[[top]] &[[top]] \\
-(5) XX &[[top]] &[[bot]] &[[bot]] \\
+Doesn't type check (5) &[[top]] &[[bot]] &[[bot]] \\
 (6) &[[top]] &[[bot]] &[[top]] \\
-(7) XX &[[top]] &[[top]] &[[bot]] \\
+Doesn't type check (7)  &[[top]] &[[top]] &[[bot]] \\
 (8) &[[top]] &[[top]] &[[top]] \\
 \end{array}
+\]
 
-However, some of these types are related. For example, we have (note the contravarint subtyping in the function type)
-\[ [[ (tau1 -> top tau2) -> bot (tau1 -> bot tau2) ]] <: [[ (tau1 -> bot tau2) -> bot (tau1 -> bot tau2) ]] \]
-
+If we look at the subtyping relationships between these types, we can arrange them into the following hierarchy, where subtypes are to the left and super types are to the rigfht.
 \begin{verbatim}
-    (6) <: (2) 
-                <: (4) <: (8)
-    (1) <: (3) 
+           (2) 
+    (6) <:     <:
+           (8)    (4)
+    (1) <:     <:
+           (3) 
 \end{verbatim}
+Type (4), i.e., $[[ (tau1 -> bot tau2) -> top (tau1 -> top tau2) ]]$ is the maximum type---all other valid types are a subtype of this type.  However, there is no \emph{minimum} type. 
+Both types (1) and (6) are subtypes of the rest of the types, but they are not comparable to eachother. 
 
+The reason is that both of these types are instances of a more general pattern:
+\[ [[ (tau1 -> bot tau2) -> bot (tau1 -> bot tau2) ]] \qquad \mbox{and} \qquad [[ (tau1 -> top tau2) -> bot (tau1 -> top tau2) ]] \]
+The effect of the output function ($[[eff3]]$) depends on the effect of the input function $([[eff1]]$). We can capture this relationship using \emph{effect polymorphism}, which would 
+allow us to assign the following type to the function.
 
+\[ [[ forall epsilon. (tau1 -> epsilon tau2) -> bot (tau1 -> epsilon tau2) ]] \] 
 
-Effect polymorphism captures the relationship.
+Note that effect polymorphism is not the only reason that this type system lacks principal types. To really develop a compositional system, we also need to include \emph{type polymorphism}, as is found in ML or Haskell. Therefore, the best type of the term can be defined as:
 
-\emph{Weak termination analysis: pattern matching} No value-dependent effects.
-In a dependent type system, we might be able to express how the 
-effect of a conditional may be determined by its scrutinee.
+\[ [[ forall alpha1. forall alpha2. forall epsilon. (alpha1 -> epsilon alpha2) -> bot (alpha1 -> epsilon alpha2) ]] \] 
 
-\emph{Weak termination analysis: recursive definitions} No way to express the
-termination metric for loops.
+At the same time, the more that we add to the language, the more difficult
+type inference becomes. When we add effect and type polymorphism, we need to
+extends any hypothetical type inference algorithm to include those
+features. The former, especially with this minimal (two point) effect
+structure is not difficult to accommodate. However, for the latter, we must be
+careful and stick to restrictions such as \emph{prenex
+polymorphism}~\cite{milner:polymorphism} that are known to be well-behaved, if
+we would like to infer all types.
+
+\paragraph{Value-dependent or path-dependent effects} 
+The type-and-effect analysis approximates runtime behavior when it comes to branching. 
+The rule for case analysis \rref{tee-ifz} requires that after testing a natural number, 
+both branches produce the same type of value and have the same effect. This rule is designed this way because static type checking does not evaluate programs, but instead must explore all paths. 
+
+However, there may be some relationship between the value of natural number
+and the effects of each branch. A dependent type system, can express how the
+effect of a conditional may be determined by this value.
 
 
 \section{Variation: Syntax-directed effects}
@@ -347,7 +421,7 @@ If $[[G !- e : tau @ eff1 ]]$ and $[[eff1 <: eff2]]$ then $[[G !- e : tau2 @ eff
 Using the subeffecting property, we can show that this type system is equivalent to our previous 
 version. We state the property as follows.
 
-\begin{lemma}[\link{div/sd.v}{Equivalence}{Equivalence between syntax-directed and core system}]
+\begin{lemma}[\link{div/sd.v}{Equivalence}{Equivalence between syntax-directed and core system}]\ \\
 \begin{enumerate}
 \item $[[G ||- e : tau @ eff ]]$ iff $[[G !- e : tau @ eff ]]$.
 \item $[[G ||- v : tau ]]$ iff $[[G !- v : tau ]]$.
@@ -359,13 +433,7 @@ components of the judgement. These modes correspond to whether that component is
 input or an output to a function that determines whether the judgement is derivable.
 In this case, we have designed the type system as if the effect is an input to the judgement: i.e. it should be larger the actual effect of the term.
 
-However, it is also possible to design a syntax directed system where the produced effect is 
-a lower bound of the derivation.
-
-
-\section{Variation: Nontermination monad}
-
-
 \section{Historical notes and further reading}
 
-Type-and-effect systems~\cite{gifford:effects86,lucasson:effects88} were originally developed to track memory usage.
+Type-and-effect systems~\cite{gifford:effects86,lucassen:effects88} were
+originally developed to track memory usage.

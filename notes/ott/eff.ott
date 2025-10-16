@@ -1,4 +1,5 @@
-
+metavar epsilon {{ tex \epsilon }} ::= 
+        
 grammar
 
 tau {{ tex \tau }} :: 'ty_'  ::= 
@@ -7,6 +8,11 @@ tau {{ tex \tau }} :: 'ty_'  ::=
   | tau1 * eff  tau2 ::  :: ProdEff
   {{ tex [[tau1]] \stackrel{[[eff]]}{\times} [[tau2]] }}
   | | tau |          ::  :: Trans
+  | forall epsilon . tau ::  :: EffPoly
+  {{ tex \forall [[epsilon]].[[tau]] }}
+  | forall alpha . tau   ::  :: TyPoly
+  {{ tex \forall[[alpha]].[[tau]] }}
+    
 
 e :: 'tm_' ::= 
   |  | e |   :: M  :: Trans
@@ -22,6 +28,7 @@ eff {{ tex \varepsilon }} :: 'eff_' ::=
   | eff1 + eff2 ::   :: join
    {{ tex [[eff1]] \oplus [[eff2]] }}
   | ( eff )     :: M :: paren
+  | epsilon     ::   :: var
 
 T :: 'tms_' ::= 
   | vals        :: M :: Vals
@@ -46,7 +53,7 @@ defns
 JSub :: '' ::= 
 
 defn 
-tau1 <: tau2 ::   :: sub  :: ''
+tau1 <: tau2 ::   :: sub  :: 's_'
 by
 
 ------------------ :: refl
@@ -57,6 +64,19 @@ eff1 <: eff2
 tau1' <: tau2'
 ---------------------------------------- :: arr
 tau1 -> eff1 tau1' <: tau2 -> eff2 tau2
+
+tau1 <: tau2 
+eff1 <: eff2
+tau1' <: tau2'
+---------------------------------------- :: prod
+tau1 * eff1 tau1' <: tau2 * eff2 tau2
+
+
+tau1 <: tau2 
+tau1' <: tau2'
+---------------------------------------- :: sum
+tau1 + tau1' <: tau2 + tau2
+
 
 defns
 JREC_OK :: '' ::= 
@@ -89,6 +109,11 @@ G ||- v1 : tau1
 G ||- v2 : tau2 
 ------------------------- :: pair_eff
 G ||- ( v1 , v2 ) :  tau1 * eff tau2 
+
+G ||- v : tau1 
+tau1 <: tau2
+-------------------------------- :: sub
+G ||- v : tau2
 
 
 defns 
@@ -141,6 +166,13 @@ G ||- e : tau @ eff1
 eff1 <: eff2 
 -------------------------------------- :: sub_eff
 G ||- e : tau @ eff2
+
+
+G ||- e : tau1 @ eff1    
+eff1 <: eff2 
+tau1 <: tau2
+-------------------------------------- :: sub_eff_ty
+G ||- e : tau2 @ eff2
 
 
 %%%%%%%%%%%%%%%%% SD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

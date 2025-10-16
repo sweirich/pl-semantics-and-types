@@ -1,5 +1,6 @@
 
 \chapter{Natural number recursion}
+\label{chapter:nrec}
 
 STLC is rather \emph{simple}. It lacks the computational power of most typed
 programming languages. All STLC expressions terminate! In due time, we will
