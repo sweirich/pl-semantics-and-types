@@ -9,7 +9,7 @@
     Additional properties of fin type
   * [common.renaming](common/renaming.v)
     Language independent lemmas about renamings
-  * [common.relations](common/relations.v)x
+  * [common.relations](common/relations.v)
     Multistep reduction
 
 - STLC: Simply Typed Lambda Calculus
@@ -34,7 +34,7 @@
   * [syntax.sig](rec/syntax.sig)
     Autosubst input for terms
   * [rec.syntax](rec/syntax.v)
-    Generate term syntax
+    Generated term syntax
   * [rec.typesyntax](rec/typesyntax.sig) 
     Autosubst input for REC types 
   * [rec.typesyntax](rec/typesyntax.v)
@@ -66,4 +66,4 @@
   * [div.typesyntax](div/typesyntax.v) 
     Syntax of REC types with latent effects (generated)
   * [div.div](div/div.v) 
-    Type soundness and Effect soundness
+    Type and Effect soundness
