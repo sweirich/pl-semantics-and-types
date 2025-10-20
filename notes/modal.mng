@@ -66,7 +66,7 @@ Here are some examples of terms in this calculus:
 \[ [[ ||- (fun_ f x. f x) 3 : [] Nat ]] \]
 
 \item A terminating term
-\[ [[ ||- let y = (fun_ f x. f x) 3 in 4 : Nat ]] \]
+\[ [[ ||- let y = ((fun_ f x. f x) 2) in 4 : Nat ]] \]
 
 \item A nonterminating term
 \[ [[ ||- y <- (fun_ f x . f x) 3 ; pure 4 : [] Nat ]] \]
