@@ -2,7 +2,7 @@ COQMAKEFILE=CoqMakefile
 LIBNAME=plst
 SYNTAX=$(wildcard */syntax.sig) $(wildcard */typesyntax.sig)
 SYNTAXV = $(SYNTAX:.sig=.v)
-LANGS=stlc rec div 
+LANGS=stlc rec div modal
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: rocq syntax clean fullclean

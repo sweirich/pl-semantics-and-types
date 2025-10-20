@@ -1,0 +1,167 @@
+\chapter{ Nontermination monad}
+
+In this chapter we contrast the effect system from the previous chapter with a
+\emph{monadic} treatment of effects. In particular, we develop a
+non-termination monad which encapsulates potentially nonterminating code and
+isolates it from the rest of the language. 
+
+For comparison with the previous languages, we continue to work with a 
+variant of a fine-grained call-by-value language. Compared to \rec, we 
+have removed a few constructs to the language. For simplicity, we do not 
+consider sums, products, or recursive types. 
+
+The key idea of this language is that the type system separates the 
+terminating part of the language from programs that have the potential to diverge. 
+As in the previous chapter, we call the terminating part of the language \emph{pure}
+because it lacks the nontermination effect.
+
+However, unlike \eff, we track nontermination only through the type system. To mark
+divergence, we introduce the monadic type $[[ [] tau ]]$. 
+
+\section{Language definition}
+
+\begin{definition}[\link{rocq/modal/syntax.sig}{}{\mon: Syntax}]
+\[
+\begin{array}{lcll}
+[[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] |\ [[ [] tau]]\ & \mbox{types} \\
+
+[[v]] &::=& [[x]]\                  & \mbox{Variables} \\
+      & | & [[zero]]\               & \mbox{zero} \\
+      & | & [[S v]]\                & \mbox{successor} \\
+      & | & [[\x. e]]\              & \mbox{Functions} \\
+      & | & [[fun_ f x. e]]\         & \mbox{Recursive functions} \\
+      & | & [[pure v]]\             & \mbox{monadic pure}\\
+\\
+[[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
+      & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
+      & | & [[ret v]]                 & \mbox{value} \\
+      & | & [[let x = e1 in e2]]      & \mbox{sequencing} \\
+      & | & [[ x <- e1 ; e2 ]]        & \mbox{monadic bind} \\
+\end{array}
+\]
+\end{definition}
+
+\begin{definition}[\link{modal/modal.v}{step}{Small-step rules}]
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
+{beta,case-zero,case-succ,let,let-cong,app-fun,bind,bind-cong}
+\end{definition}
+
+\begin{definition}[\link{modal/modal.v}{typing}{Type system}]\ \\
+\drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
+{zero,succ,var,abs,pure,rfun}
+\drules[te]{$[[G ||- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{ret,let,app,ifz,bind}
+\end{definition}
+
+\section{Examples}
+
+Here are some examples of terms in this calculus:
+
+\begin{enumerate}
+\item A function that loops forever when applied. 
+
+\[ [[ ||- fun_ f x. f x : Nat -> [] Nat ]]  \]
+
+\item A nonterminating term 
+\[ [[ ||- (fun_ f x. f x) 3 : [] Nat ]] \]
+
+\item A terminating term
+\[ [[ ||- let y = (fun_ f x. f x) 3 in 4 : Nat ]] \]
+
+\item A nonterminating term
+\[ [[ ||- y <- (fun_ f x . f x) 3 ; pure 4 : [] Nat ]] \]
+
+\item An addition function
+
+\[ [[ ||- \x. ret (fun_ f y. case y of { 0 => ret (pure x) ; S z => x1 <- f y ; ret (pure (succ x1)) })  : Nat -> Nat -> [] Nat ]] \]
+
+\end{enumerate}
+
+\section{The translation}
+
+The key idea of the translation is that we are going to map all terms in \mon
+to pure terms in \eff. But what about nontermination? We will do that by
+suspending monadic computations in ``thunks'' (i.e. functions that take a
+trivial argument) and recording their potentially effect in the latent effect
+of the function type. For example, we have:
+
+\[  [[ [] Nat ]] = [[ Nat -> top Nat ]] \]
+
+This translation depends on the ability to defer effects in the 
+target language.
+
+\begin{definition}[Deferred binary function ]
+\[ [[ eta v ]] = [[ \x. ret (\y. v x y) ]] \]
+\end{definition}
+
+\begin{lemma}
+If $[[ G ||- v : tau1 -> eff1 (tau2 -> eff2 tau3) ]]$ then 
+$[[ G ||- eta v : tau1 -> bot tau2 -> (eff1 + eff2) tau3]]$ 
+\end{lemma}
+
+Note that deferring a function can change its behavior, as
+evidenced by the change in the effects. Consider the function:
+
+\[ v = [[ rec f. f ]] : [[ (Nat -> bot Nat) -> top (Nat -> bot Nat)]] \]
+
+This function diverges if you apply it to any argument. 
+
+Now, if it is deferred, we get a function that terminates on a 
+single application.
+
+\[ 
+  [[eta v]] = [[\x. ret (\y. (rec f. f) x y)]] : 
+   [[ (Nat -> bot Nat) -> bot (Nat -> top Nat) ]] \]
+
+Here is the translation in full:
+
+\[
+\begin{array}{lcl}
+[[ |Nat| ]] &=& [[ Nat ]] \\
+[[ |tau1 -> tau2| ]] &=& [[ |tau1| -> bot |tau2| ]] \\
+[[ |[] tau| ]] &=& [[ Nat -> top |tau| ]] \\
+\\
+[[ |x| ]] &=& [[x]] \\
+[[ |\x. e| ]] &=& [[\x.|e| ]] \\
+[[ |k| ]] &=& [[k]] \\
+[[ |pure v| ]] &=& [[ \x. ret |v| ]] \\
+[[ |fun_ f x . e| ]] &=& 
+     [[ eta (rec f . \ x . |e| [ eta f / f ] ) ]] \\
+\\
+[[ |v1 v1| ]] &=& [[ |v1| |v2| ]] \\
+[[ |ret v| ]] &=& [[ ret |v| ]] \\
+[[ |case v of { 0 => e0 ; S x => e1 }| ]] &=& 
+  [[ case v of { 0 => |e0| ; S x => |e1| } ]] \\
+[[ |let x = e1 in e2| ]] &=& [[ let x = |e1| in |e2| ]] \\
+[[ | x <- e1 ; e2 | ]] &=& [[ ret (\y. let x = |e1| 0 in |e1| 0) ]] \\
+\end{array}
+\]
+
+\begin{lemma}[Type preservation]\ \\
+If a term or value typechecks in \mon, then its translation type checks in 
+\eff and has the pure effect.
+\begin{enumerate}
+\item If $[[ G ||- e : tau ]]$ then $[[ |G| ||- |e| : |tau| @ bot ]]$ 
+\item If $[[ G ||- v : tau ]]$ then $[[ |G| ||- |v| : |tau| ]]$ 
+\end{enumerate}
+\end{lemma}
+
+
+You may wonder whether this transformation changes the operational semantics
+of the language, given that we are suspending all potentially divergent
+computations, and differing recursive definitions.
+
+This is a valid worry.
+
+For example, in the source language, we have:
+
+\[ [[loop]] = [[ (fun_ f x . f x) 3 ]] : [[ [] Nat ]] \]
+
+But after the translation, this turns into the suspension:
+
+\[ [[ ret (\z. (\x1.\x2.(rec f. \x. (\x1.\x2.f x1 x2) x) x1 x2) 3) ]] : [[ Nat -> top Nat ]] \]
+
+What this means is that we will have to be careful about how we state the 
+soundness theorem for our language when it comes to the operational semantics.
+
+

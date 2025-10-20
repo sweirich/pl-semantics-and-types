@@ -7,18 +7,11 @@ tau {{ tex \tau }} :: 'ty_'  ::=
   {{ tex [[tau1]] \stackrel{[[eff]]}{[[->]]} [[tau2]] }}
   | tau1 * eff  tau2 ::  :: ProdEff
   {{ tex [[tau1]] \stackrel{[[eff]]}{\times} [[tau2]] }}
-  | | tau |          ::  :: Trans
   | forall epsilon . tau ::  :: EffPoly
   {{ tex \forall [[epsilon]].[[tau]] }}
   | forall alpha . tau   ::  :: TyPoly
   {{ tex \forall[[alpha]].[[tau]] }}
     
-
-e :: 'tm_' ::= 
-  |  | e |   :: M  :: Trans
-
-G :: 'ctx_' ::= 
-  | | G | :: M :: Trans
 
 eff {{ tex \varepsilon }} :: 'eff_' ::= 
   | bot         ::   :: Bot
@@ -63,19 +56,19 @@ tau2 <: tau1
 eff1 <: eff2
 tau1' <: tau2'
 ---------------------------------------- :: arr
-tau1 -> eff1 tau1' <: tau2 -> eff2 tau2
+tau1 -> eff1 tau1' <: tau2 -> eff2 tau2'
 
 tau1 <: tau2 
 eff1 <: eff2
 tau1' <: tau2'
 ---------------------------------------- :: prod
-tau1 * eff1 tau1' <: tau2 * eff2 tau2
+tau1 * eff1 tau1' <: tau2 * eff2 tau2'
 
 
 tau1 <: tau2 
 tau1' <: tau2'
 ---------------------------------------- :: sum
-tau1 + tau1' <: tau2 + tau2
+tau1 + tau1' <: tau2 + tau2'
 
 
 defns

@@ -352,9 +352,9 @@ where $[[eff1 <: eff3]]$ are allowed.)
 (2) &[[bot]] &[[bot]] &[[top]] \\
 (3) &[[bot]] &[[top]] &[[bot]] \\
 (4) &[[bot]] &[[top]] &[[top]] \\
-Doesn't type check (5) &[[top]] &[[bot]] &[[bot]] \\
+\textit{Doesn't type check}\ (5) &[[top]] &[[bot]] &[[bot]] \\
 (6) &[[top]] &[[bot]] &[[top]] \\
-Doesn't type check (7)  &[[top]] &[[top]] &[[bot]] \\
+\textit{Doesn't type check}\ (7) &[[top]] &[[top]] &[[bot]] \\
 (8) &[[top]] &[[top]] &[[top]] \\
 \end{array}
 \]

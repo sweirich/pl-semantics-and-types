@@ -33,7 +33,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/8  |          | More step-indexing, Working in Rocq                                                       |
 | M 10/13 | Ch. 7    | Type-and-effect systems (nontermination)                                                  |
 | W 10/15 |          | Syntax directed systems, Nontermination Monad                                             |
-| M 10/20 | | **HW #3 due** <br/>                                                                                |
+| M 10/20 | Ch. 8    | **HW #3 due** <br/> Nontermination monad                                                  |
 | W 10/22 | |                                                                                                    |
 | M 10/27 | | Midterm Exam                                                                                       |
 | W 10/29 | |                                                                                                    |
