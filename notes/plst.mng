@@ -76,6 +76,8 @@
 \input{semsound}
 \input{rec}
 \input{steps}
+\input{eff}
+\input{modal}
 
 \backmatter
 

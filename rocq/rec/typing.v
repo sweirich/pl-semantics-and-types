@@ -8,7 +8,7 @@ Disable Notation "s ⟨ xi_Val ⟩" (all).
 Require Export rec.reduction.
 Import rec.reduction.Notations.
 
-(** Typing relation *)
+(** * Typing relation *)
 
 Definition allows_rec_ty (ty : Ty 0) := 
   match ty with 
@@ -18,6 +18,7 @@ Definition allows_rec_ty (ty : Ty 0) :=
   end.
 
 Definition Ctx (n : nat) := fin n -> Ty 0.
+
 Inductive typing_val {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop := 
   | t_var x : 
     typing_val Γ (var x) (Γ x)
@@ -28,7 +29,6 @@ Inductive typing_val {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop :=
   | t_succ k :
     typing_val Γ k Nat -> 
     typing_val Γ (succ k) Nat
-
 
   | t_prod v1 v2 τ1 τ2 : 
     typing_val Γ v1 τ1 ->
@@ -116,6 +116,8 @@ End Notations.
 Open Scope rec_scope.
 Import Notations.
 
+(** * Basic properties of the typing relation *)
+
 (** Renaming lemma *)
 
 Fixpoint renaming_val {n} (Γ : Ctx n) v τ {m} (Δ:Ctx m) δ : 
@@ -182,7 +184,7 @@ Qed.
 
 #[export] Hint Resolve substitution_val substitution_tm : rec.
 
-(** Type safety *)
+(** * Type safety *)
 
 Lemma preservation e e' τ :
   null |-e e ∈ τ -> e ~> e' -> null |-e e' ∈ τ.
@@ -198,7 +200,7 @@ Proof.
     eauto with renaming rec.
 Qed.
 
-(** This tactic solves the case when the value is a varible. 
+(** This tactic solves the case when the value is a variable. 
     Because the context is closed, we know that this case
     can't occur. *)
 Ltac impossible_var := 

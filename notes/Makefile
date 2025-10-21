@@ -1,6 +1,6 @@
 ## Makefile for paper
 
-OTT_SOURCE = stlc rec
+OTT_SOURCE = stlc rec eff modal
 BIBFILES = weirich.bib
 
 OTTFILES  = $(foreach i, $(OTT_SOURCE), ott/$(i).ott)

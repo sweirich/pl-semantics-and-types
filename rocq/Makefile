@@ -1,8 +1,8 @@
 COQMAKEFILE=CoqMakefile
 LIBNAME=plst
-SYNTAX=stlc/syntax.sig rec/syntax.sig rec/typesyntax.sig
+SYNTAX=$(wildcard */syntax.sig) $(wildcard */typesyntax.sig)
 SYNTAXV = $(SYNTAX:.sig=.v)
-LANGS=stlc rec 
+LANGS=stlc rec div modal
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: rocq syntax clean fullclean
@@ -22,10 +22,15 @@ clean:
 
 syntax:	$(SYNTAXV)
 
+%/typesyntax.v: %/typesyntax.sig %/import.v Makefile
+	autosubst $< -o $@ -f -p $*/import.v -no-static -s rocq
+
 # Generate the syntax.v files with Autosubst 2 and add imports
 # This will run Autosubst 2 
 %syntax.v: %syntax.sig Makefile
-	autosubst $< -o $@ -f  -no-static -s rocq
+	autosubst $< -o $@ -f -no-static -s rocq
+
+
 
 # Generate syntax files and compile all .v files
 # This will run Autosubst 2 
