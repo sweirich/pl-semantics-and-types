@@ -1,0 +1,199 @@
+metavar epsilon {{ tex \epsilon }} ::= 
+        
+grammar
+
+tau {{ tex \tau }} :: 'ty_'  ::= 
+  | tau1 -> eff tau2 ::  :: ArrEff
+  {{ tex [[tau1]] \stackrel{[[eff]]}{[[->]]} [[tau2]] }}
+  | tau1 * eff  tau2 ::  :: ProdEff
+  {{ tex [[tau1]] \stackrel{[[eff]]}{\times} [[tau2]] }}
+  | forall epsilon . tau ::  :: EffPoly
+  {{ tex \forall [[epsilon]].[[tau]] }}
+  | forall alpha . tau   ::  :: TyPoly
+  {{ tex \forall[[alpha]].[[tau]] }}
+    
+
+eff {{ tex \varepsilon }} :: 'eff_' ::= 
+  | bot         ::   :: Bot
+   {{ tex \bot }}
+  | top         ::   :: Top 
+   {{ tex \mathsf{DIV} }}
+  | eff1 + eff2 ::   :: join
+   {{ tex [[eff1]] \oplus [[eff2]] }}
+  | ( eff )     :: M :: paren
+  | epsilon     ::   :: var
+
+T :: 'tms_' ::= 
+  | vals        :: M :: Vals
+  {{ tex \textit{all values} }}
+  | C tau eff   :: M :: LRCE
+  {{ tex \mathcal{C}[\![ [[tau]] ]\!]^{[[eff]]} }}
+
+terminals :: '' ::=
+  | <:          ::   :: sub
+  | (+)         ::   :: oplus
+     {{ tex \oplus }}
+
+formula :: 'formula_' ::= 
+  | eff1 <: eff2 ::   :: eff_le
+  | eff1 = eff2  ::   :: eff_equal
+  | G |= e : tau  @ eff  ::   :: sem_typing_eff
+  {{ tex [[G]] [[|=]] [[e]] \stackrel{[[eff]]}{\in} [[tau]] }} 
+  | G !- v : tau ::   :: typing_val_sd
+  {{ tex [[G]] \vdash_{SD} [[v]] \in [[tau]] }}
+
+defns 
+JSub :: '' ::= 
+
+defn 
+tau1 <: tau2 ::   :: sub  :: 's_'
+by
+
+------------------ :: refl
+tau <: tau
+
+tau2 <: tau1 
+eff1 <: eff2
+tau1' <: tau2'
+---------------------------------------- :: arr
+tau1 -> eff1 tau1' <: tau2 -> eff2 tau2'
+
+tau1 <: tau2 
+eff1 <: eff2
+tau1' <: tau2'
+---------------------------------------- :: prod
+tau1 * eff1 tau1' <: tau2 * eff2 tau2'
+
+
+tau1 <: tau2 
+tau1' <: tau2'
+---------------------------------------- :: sum
+tau1 + tau1' <: tau2 + tau2'
+
+
+defns
+JREC_OK :: '' ::= 
+
+defn 
+tau ok ::  :: rec_ok :: ''
+by
+
+
+------------------ :: ok_fun_eff
+(tau1 -> top tau2) ok
+
+------------------ :: ok_prod_eff
+(tau1 * top tau2) ok
+
+
+defns 
+JRecTyping :: '' ::= 
+
+defn 
+G ||- v : tau ::  :: typing_val :: 'tv_' 
+{{ tex [[G]] \vdash [[v]] \in [[tau]] }}
+by
+
+G, x:tau1 ||- e : tau2 @ eff
+------------------------  ::  abs_eff
+G ||- \x.e : tau1 -> eff tau2
+
+G ||- v1 : tau1
+G ||- v2 : tau2 
+------------------------- :: pair_eff
+G ||- ( v1 , v2 ) :  tau1 * eff tau2 
+
+G ||- v : tau1 
+tau1 <: tau2
+-------------------------------- :: sub
+G ||- v : tau2
+
+
+defns 
+JEffTyping :: '' ::= 
+
+defn 
+G ||- e : tau @ eff  ::  :: typing_eff_tm :: 'tee_'
+{{ tex [[G]] \vdash [[e]] \stackrel{[[eff]]}{\in} [[tau]] }}
+by
+
+G ||- v : tau 
+------------------------ :: ret
+G ||- ret v : tau @ bot
+
+G ||- e1 : tau1 @ eff1
+G, x : tau1 ||- e2 : tau @ eff2 
+-------------------------------------- :: let
+G ||- let x = e1 in e2 : tau @ eff1 + eff2
+
+G ||- v1 : tau1 -> eff tau2  
+G ||- v2 : tau1 
+--------------------- :: app
+G ||- v1 v2 : tau2 @ eff
+
+G ||- v : tau1 * eff tau2
+------------------------- :: prj1
+G ||- prj1 v : tau1 @ eff
+
+G ||- v : tau1 * eff tau2
+------------------------- :: prj2
+G ||- prj2 v : tau2 @ eff
+
+G ||- v : tau1 + tau2
+G , x1 : tau1 ||- e1 : tau @ eff
+G , x2 : tau2 ||- e2 : tau @ eff
+----------------------------------------------- :: case
+G ||- case v of { inj1 x1 => e1 ; inj2 x2 => e2 } : tau @ eff
+
+G ||- v : Nat
+G ||- e1 : tau @ eff
+G , x2 : Nat ||- e2 : tau @ eff
+----------------------------------------------- :: ifz
+G ||- case v of { 0 => e1 ; S x2 => e2 } : tau @ eff
+
+G ||- v : mu alpha . tau  
+------------------------------------- :: unfold
+G ||- unfold v : tau [mu alpha.tau/alpha] @ top
+
+G ||- e : tau @ eff1    
+eff1 <: eff2 
+-------------------------------------- :: sub_eff
+G ||- e : tau @ eff2
+
+
+G ||- e : tau1 @ eff1    
+eff1 <: eff2 
+tau1 <: tau2
+-------------------------------------- :: sub_eff_ty
+G ||- e : tau2 @ eff2
+
+
+%%%%%%%%%%%%%%%%% SD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+defn 
+G !- e : tau @ eff  ::  :: typing_sd_eff_tm :: 'sd_tee_' 
+{{ tex [[G]] \vdash_{\mathcal{SD} } [[e]] \stackrel{[[eff]]}{\in} [[tau]] }}
+by
+
+G !- e1 : tau1 @ eff1
+G, x : tau1 !- e2 : tau @ eff2
+eff1 + eff2 <: eff 
+-------------------------------------- :: let
+G !- let x = e1 in e2 : tau @ eff
+
+G !- v1 : tau1 -> eff1 tau2  
+G !- v2 : tau1 
+eff1 <: eff
+--------------------- :: app
+G !- v1 v2 : tau2 @ eff
+
+G !- v : tau1 * eff1 tau2
+eff1 <: eff
+------------------------- :: prj1
+G !- prj1 v : tau1 @ eff
+
+G !- v : tau1 * eff1 tau2
+eff1 <: eff
+------------------------- :: prj2
+G !- prj2 v : tau2 @ eff

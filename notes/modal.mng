@@ -1,0 +1,300 @@
+\chapter{A Nontermination monad}
+
+In this chapter we contrast the effect system from the previous chapter with a
+\emph{monadic} treatment of effects.  The key idea is that the type system
+separates the terminating part of the language from programs that have the
+potential to diverge. To do so, we use a monadic type that encapsulates
+potentially nonterminating code and isolates it from the rest of the
+language. If a term has the type $[[ [] tau ]]$ then it could possibly
+diverge. Terms of all other types are guaranteed to terminate.  (As in the
+previous chapter, we call the terminating part of the language \emph{pure}
+because it lacks the nontermination effect.)
+
+For comparison with the previous languages, we continue to work with a 
+variant of a fine-grained call-by-value language. However, for simplicitym we 
+have removed a few constructs to the language (sums, products, and recursive types). 
+
+\section{Language definition}
+
+This monadic language starts with a pure core, a fine-grained CBV language
+with natural numbers and nonrecursive functions. On top of this core, we add
+the monadic type $[[ [] tau ]]$ and its operations: return and bind, written $[[box v]]$
+and $[[x <- e1; e2]]$, and recursive function values $[[fun_ f x. e]]$. The 
+two value forms $[[box v]]$ and $[[fun_ f x . e]]$, introduce the monadic type. 
+The bind operation sequences potentially nonterminating computations.
+
+\begin{definition}[\link{rocq/modal/syntax.sig}{}{\mon: Syntax}]
+\[
+\begin{array}{lcll}
+[[tau]] &::=& [[Nat]]\ |\ [[tau1 -> tau2]] |\ [[ [] tau]]\ & \mbox{types} \\
+
+[[v]] &::=& [[x]]\                  & \mbox{Variables} \\
+      & | & [[zero]]\               & \mbox{zero} \\
+      & | & [[S v]]\                & \mbox{successor} \\
+      & | & [[\x. e]]\              & \mbox{Functions} \\
+      & | & [[fun_ f x. e]]\         & \mbox{Recursive functions} \\
+      & | & [[box v]]\             & \mbox{monadic pure}\\
+\\
+[[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
+      & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
+      & | & [[ret v]]                 & \mbox{value} \\
+      & | & [[let x = e1 in e2]]      & \mbox{pure sequencing} \\
+      & | & [[ x <- e1 ; e2 ]]        & \mbox{monadic bind} \\
+\end{array}
+\]
+\end{definition}
+
+We show the the new rules in the definitions below. The core rules (for nats
+and nonrecursive functions) are the same as in the \rec\ language, so we omit
+them from the definition.
+
+First, we include three new small-step rules in the operational semantics.
+When recursive function values are applied, they perform two substitutions:
+one for the argument and one for the recursive definition. The bind operation
+reduces its first subterm until it gets to a returned, boxed value. It then
+substitutes this value into the body and continues evaluation.
+
+\begin{definition}[\link{modal/modal.v}{step}{Small-step rules}]
+\drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
+{app-funbind,bind,bind-cong}
+\end{definition}
+
+We also include three new typing rules, and modify the existing rule for let
+terms. 
+
+The $[[box v]]$
+\begin{definition}[\link{modal/modal.v}{typing}{Type system}]\ \\
+\drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
+{pure,rfun}
+\drules[te]{$[[G ||- e : tau ]]$}{in context $[[G]]$, term $e$ has type $[[tau]]$}
+{bind,let-nb}
+\end{definition}
+
+The $[[box v]]$ term injects a (terminating) value into the monadic part of
+the language. Even though we know this value terminates, it is sound to forget
+this information. Recursive functions are type checked like nonrecursive
+functions, with two changes: they have access to recursion throught the first
+bound variable, and they must return a monadic result of $[[ [] tau ]]$.
+Finally, the typing rule for bind operation is like let, but requires that both 
+subterms have monadic types. We also modify the typing rule for let to require 
+that its first subterm \emph{not} have a monadic type, for reasons that we describe 
+below.
+
+\subsection{Examples}
+
+Here are some examples of terms in this calculus:
+
+\begin{enumerate}
+\item A function that loops forever when applied. This function is 
+itself a value, so its type doesn't have a box on the type. But 
+applying the function cause an infinite loop.
+
+\[ [[ ||- fun_ f x. f x : Nat -> [] Nat ]]  \]
+
+\item A nonterminating term. (This term always steps to itself). It has 
+a monadic type.
+
+\[ [[ ||- (fun_ f x. f x) 3 : [] Nat ]] \]
+
+\item An addition function, of type $[[ Nat -> Nat -> [] Nat ]]$. From its type, 
+any potential divergence comes after providing two arguments (but it won't diverge).
+
+\[ [[ \x. ret (fun_ f y. case y of { 0 => ret (box x) ; S z => x1 <- f y ; ret (box (succ x1)) }) ]] \]
+
+\end{enumerate}
+
+\section{Restricted typing rule for let}
+
+Consider the difference between these two expressions: 
+
+\[ [[ ||- y <- (fun_ f x . f x) 2 ; ret (box 4) : [] Nat ]] \]
+
+\[ [[ ||- let y = ((fun_ f x. f x) 2) in ret 4 : Nat ]] \]
+
+Under the operational semantics, both expressions evaluate the same way, i.e.,
+they both go into an infinite loop.  Yet, there is a problem with the second
+example: its type is $[[Nat]]$, but it doesn't terminate! 
+
+The issue with the second example is that in $[[ let x = e1 in e2 ]]$, the
+subterm $[[e2]]$ is not required to use $[[x]]$. But if $[[x]]$ is not used
+(say in some bind), then any trace in the type system of its nontermination
+effect is lost. This is in contrast with bind, which requires the type of the 
+entire expression to be the monadic type, no matter whether the body uses 
+$[[x]]$ or not. 
+
+Therefore, we have two forms of sequencing in this language. The let operation 
+sequences a pure term, in any type of computation. The bind operation 
+sequences a monadic term, but its result must be monadic.
+
+The restriction in the let rule is enough to be sure that our type system
+accurrately characterizes the effect of computation. We can use a logical
+relations proof to show that if $[[ |- e : tau ]]$ and $[[ not_box tau ]]$
+then $[[e ~> ret v]]$ for some value.
+
+\section{Translation to Dependent Type Theory}
+
+The point of a monadic type system is that it \emph{isolates} the effectful part of the 
+computation from the pure computation. What this means is that we can give this 
+language a clean denotational interpretation in a dependent type theory, as long as we 
+can find an interpretation in that type theory for the monadic type. 
+
+One option for interpreting potentially divergent terms in dependent type
+theory is to use a \emph{clock} with a timeout: i.e. a count of how many
+recursive iterations are available.
+
+The type \cd{Timed A} is a monad: it passes around the current clock and causes 
+a recursive definition to fail if there is no more time left on the clock. 
+The return of this monad ignores the current clock and returns its value directly.
+The bind for this monad supplies both subterms with the current clock value, but 
+only evaluates the second if the first succeeds.
+Finally, the loop operation defines recursive functions. It checks the clock
+and if there is time remaining, executes the function body, providing a recursive
+definition that uses the smaller clock.
+
+\begin{lstlisting}[language=Caml]
+Definition Timed (A : Type) : Type :=  nat -> option A.
+
+Definition pure {A} (v:A) : Timed A := fun (x:nat) => Some v.
+
+Definition bind {A B} (t : Timed A) (u : A -> Timed B) : Timed B := 
+  fun x => match t x with
+        | Some y => u y x
+        | None => None
+        end.
+
+Fixpoint loop {A B} 
+  (f: (A -> Timed B) -> (A -> Timed B)) : A -> Timed B := 
+  fun a x =>
+  match x with 
+  | O => None
+  | S n => f (fun b y => loop f b n) a (S n)
+  end. 
+\end{lstlisting}
+
+With these operations, we can translate well-typed values and terms to dependent type
+theory, i.e. constructive logic. 
+
+\begin{definition}[\link{rocq/modal/modal_intrinsic.v}{modal}{Translation to dependent type theory}]
+\[
+\begin{array}{lcl}
+[[ |Nat| ]] &=& [[nats]] \\
+[[ |tau1 -> tau2| ]] &=& [[ |tau1| -> |tau2| ]] \\
+[[ |[] tau| ]] &=& \texttt{Timed}\ [[ |tau| ]] \\
+\\
+[[ |x|  ]] &=& [[x]] \\
+[[ |zero|  ]] &=& [[ 0 ]] \\
+[[ |succ v|  ]] &=& S [[ |v| ]] \\
+[[ |\x.e|  ]] &=& [[\x.|e|  ]] \\
+[[ |fun_ f x . e| ]] &=& \texttt{loop}\ [[ (\ f. \ x . | e | ) ]] \\
+[[ |box v| ]] &=& \texttt{pure}\ [[ |v| ]] \\
+\\
+[[ |v1 v2| ]] &=& [[ |v1| |v2| ]] \\
+[[ |let x = e1 in e2| ]] &=& [[ (\x.|e2|) |e1| ]] \\
+[[ | x <- e1 ; e2 | ]] &=& \texttt{bind}\ [[ |e1| (\x.|e2|) ]] \\
+\end{array}
+\]
+\end{definition}
+
+\begin{lemma}[Type preservation]\ \\
+If a term or value typechecks in \mon, then its translation type checks in 
+dependent type theory. 
+\begin{enumerate}
+\item If $[[ G ||- e : tau ]]$ then $[[ |G| ||- |e| : |tau| ]]$ 
+\item If $[[ G ||- v : tau ]]$ then $[[ |G| ||- |v| : |tau| ]]$ 
+\end{enumerate}
+\end{lemma}
+
+
+\section{The translation to \eff}
+
+We can also translate our monadic language to our effect-tracking language.
+
+The key idea of the translation is that we are going to map all terms in \mon
+to pure terms in \eff. But what about nontermination? We will do that by
+suspending monadic computations in ``thunks'' (i.e. functions that take a
+trivial argument) and recording their potentially effect in the latent effect
+of the function type. For example, we have:
+
+\[  [[ [] Nat ]] = [[ Nat -> top Nat ]] \]
+
+(Note that the argument $[[Nat]]$ in the translation will always be $[[0]]$. We are
+using the function to defer computation only, not pass fuel around. 
+
+This translation depends on the ability to defer effects in the 
+target language.
+
+\begin{definition}[Deferred binary function ]
+\[ [[ eta v ]] = [[ \x. ret (\y. v x y) ]] \]
+\end{definition}
+
+\begin{lemma}
+If $[[ G ||- v : tau1 -> eff1 (tau2 -> eff2 tau3) ]]$ then 
+$[[ G ||- eta v : tau1 -> bot tau2 -> (eff1 + eff2) tau3]]$ 
+\end{lemma}
+
+Note that deferring a function can change its behavior, as
+evidenced by the change in the effects. Consider the function:
+
+\[ v = [[ rec f. f ]] : [[ (Nat -> bot Nat) -> top (Nat -> bot Nat)]] \]
+
+This function diverges if you apply it to any argument. 
+
+Now, if it is deferred, we get a function that terminates on a 
+single application.
+
+\[ 
+  [[eta v]] = [[\x. ret (\y. (rec f. f) x y)]] : 
+   [[ (Nat -> bot Nat) -> bot (Nat -> top Nat) ]] \]
+
+Here is the translation in full:
+
+\[
+\begin{array}{lcl}
+[[ |Nat| ]] &=& [[ Nat ]] \\
+[[ |tau1 -> tau2| ]] &=& [[ |tau1| -> bot |tau2| ]] \\
+[[ |[] tau| ]] &=& [[ Nat -> top |tau| ]] \\
+\\
+[[ |x| ]] &=& [[x]] \\
+[[ |\x. e| ]] &=& [[\x.|e| ]] \\
+[[ |k| ]] &=& [[k]] \\
+[[ |box v| ]] &=& [[ \x. ret |v| ]] \\
+[[ |fun_ f x . e| ]] &=& 
+     [[ eta (rec f . \ x . |e| [ eta f / f ] ) ]] \\
+\\
+[[ |v1 v1| ]] &=& [[ |v1| |v2| ]] \\
+[[ |ret v| ]] &=& [[ ret |v| ]] \\
+[[ |case v of { 0 => e0 ; S x => e1 }| ]] &=& 
+  [[ case v of { 0 => |e0| ; S x => |e1| } ]] \\
+[[ |let x = e1 in e2| ]] &=& [[ let x = |e1| in |e2| ]] \\
+[[ | x <- e1 ; e2 | ]] &=& [[ ret (\y. let x = |e1| 0 in |e1| 0) ]] \\
+\end{array}
+\]
+
+\begin{lemma}[Type preservation]\ \\
+If a term or value typechecks in \mon, then its translation type checks in 
+\eff and has the pure effect.
+\begin{enumerate}
+\item If $[[ G ||- e : tau ]]$ then $[[ |G| ||- |e| : |tau| @ bot ]]$ 
+\item If $[[ G ||- v : tau ]]$ then $[[ |G| ||- |v| : |tau| ]]$ 
+\end{enumerate}
+\end{lemma}
+
+
+You may wonder whether this transformation changes the operational semantics
+of the language, given that we are suspending all potentially divergent
+computations, and differing recursive definitions.
+
+This is a valid worry.
+
+For example, in the source language, we have:
+
+\[ [[loop]] = [[ (fun_ f x . f x) 3 ]] : [[ [] Nat ]] \]
+
+But after the translation, this turns into the suspension:
+
+\[ [[ ret (\z. (\x1.\x2.(rec f. \x. (\x1.\x2.f x1 x2) x) x1 x2) 3) ]] : [[ Nat -> top Nat ]] \]
+
+What this means is that we will have to be careful about how we state the 
+soundness theorem for our language when it comes to the operational semantics.
+
+

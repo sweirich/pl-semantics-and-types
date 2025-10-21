@@ -1,0 +1,87 @@
+        
+grammar
+
+tau {{ tex \tau }} :: 'ty_'  ::= 
+  | [] tau  ::  :: Monad 
+  | | tau | ::  :: Trans
+
+v :: 'val_' ::= 
+  | box v       ::   :: ret
+  | fun_ x y . e ::   :: fun_
+  | | v |        :: M :: Trans
+  | eta v        :: M :: Eta
+    {{ tex {[[v]]}_\eta }}
+
+e :: 'tm_' ::= 
+  | box v        ::   :: ret
+   {{ tex \ottkw{box}\ [[v]] }}
+  | fun_ x y . e  ::   :: fun_
+  | | e |        :: M :: Trans
+  | x <- e1 ; e2 ::   :: bind
+  | eta e        :: M :: Eta
+    {{ tex {[[e]]}_\eta }}
+
+G {{ tex \Gamma }} , D {{tex \Delta}} :: 'ctx_' ::= 
+  | | G |        :: M :: Trans
+
+terminals :: 'terminals_' ::=
+  | <-   ::  :: gets  {{ tex \leftarrow }}
+  | fun_ ::  :: fun_  {{ tex \ottkw{fun} }}
+
+
+formula :: 'formula_' ::=
+  | not_box tau :: M :: NotBox
+   {{ tex \mbox{ $[[tau]]$ is not a box type } }}
+
+defns 
+JRecTyping :: '' ::= 
+
+defn 
+G ||- v : tau ::  :: typing_val :: 'tv_' 
+{{ tex [[G]] \vdash [[v]] \in [[tau]] }}
+by
+
+G ||- v : tau
+---------------------------- :: pure
+G ||- box v : [] tau
+
+G , f : tau1 -> [] tau2 , x : tau1 ||- e : [] tau2 
+--------------------------------------------------- :: rfun
+G ||- fun_ f x . e : tau1 -> [] tau2
+
+defn 
+G ||- e : tau  ::  :: typing_tm :: 'te_'
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+
+G ||- e1 : tau1 
+not_box tau1
+G, x : tau1 ||- e2 : tau2
+-------------------------------- :: let_nb
+G ||- let x = e1 in e2 : tau2 
+
+
+G ||- e1 : [] tau1 
+G, x : tau1 ||- e2 : [] tau2
+-------------------------------- :: bind
+G ||- x <- e1 ; e2 : [] tau2 
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+----------------------------------------- :: app_fun
+(fun_ f x . e) v ~> e[fun_ f x . e / f, v/x]
+
+------------------------------------ :: bind
+x <- ret (box v) ; e2 ~> e2 [v/x]
+
+e1 ~> e1'
+--------------------------------- :: bind_cong
+x <- e1 ; e2 ~> x <- e1' ; e2
