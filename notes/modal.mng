@@ -56,7 +56,7 @@ substitutes this value into the body and continues evaluation.
 
 \begin{definition}[\link{modal/modal.v}{step}{Small-step rules}]
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
-{app-funbind,bind,bind-cong}
+{app-fun,bind,bind-cong}
 \end{definition}
 
 We also include three new typing rules, and modify the existing rule for let
@@ -86,8 +86,8 @@ Here are some examples of terms in this calculus:
 
 \begin{enumerate}
 \item A function that loops forever when applied. This function is 
-itself a value, so its type doesn't have a box on the type. But 
-applying the function cause an infinite loop.
+itself a value, so its type doesn't have a box at the top-level, only on
+the return type of the function.  
 
 \[ [[ ||- fun_ f x. f x : Nat -> [] Nat ]]  \]
 
@@ -124,12 +124,22 @@ $[[x]]$ or not.
 
 Therefore, we have two forms of sequencing in this language. The let operation 
 sequences a pure term, in any type of computation. The bind operation 
-sequences a monadic term, but its result must be monadic.
+sequences a monadic term, but its result must be monadic. This is also why we need 
+to have two separate terms with congruence rules; we cannot do all computation 
+with $\ottkw{let}$ only.
+
+Because this is a CBV language, the restriction in the let rule permeates through 
+the derived forms that make this look like a ``normal'' language.  For example, 
+our derived typing rule for full application includes an additional condition 
+that the \emph{argument} of the application is not a box type.
+
+          \[ \drule{te-app-nb} \]
 
 The restriction in the let rule is enough to be sure that our type system
 accurrately characterizes the effect of computation. We can use a logical
 relations proof to show that if $[[ |- e : tau ]]$ and $[[ not_box tau ]]$
 then $[[e ~> ret v]]$ for some value.
+
 
 \section{Translation to Dependent Type Theory}
 
@@ -203,7 +213,6 @@ dependent type theory.
 \item If $[[ G ||- v : tau ]]$ then $[[ |G| ||- |v| : |tau| ]]$ 
 \end{enumerate}
 \end{lemma}
-
 
 \section{The translation to \eff}
 
@@ -298,3 +307,54 @@ What this means is that we will have to be careful about how we state the
 soundness theorem for our language when it comes to the operational semantics.
 
 
+\section{What does a CBN Monadic language look like?}
+
+What if we had started with call-by-name (CBN) base language instead of our
+fine-grained CBV language? 
+
+Let's first contrast the structure of a CBN base language with our
+fine-grained CBV language. Note that CBN languages do not make a strict
+syntactic restriction between values and terms: values are merely a sublanguage 
+of terms.
+\[
+\begin{array}{lcl}
+[[e]] &::=& [[x]]\ |\ [[\x.e]]\ |\ [[e1 e2]]\ \\
+      &|  & [[zero]]\ |\ [[succ e]]\ |\ [[case e of { 0 => e0 ; S y => e1 } ]] \\
+      &|  & [[box e]]\ |\ [[x <- e1 ; e2 ]]\ |\ [[fun_ f x. e]]\ \\
+[[v]] &::=& [[\x.e]]\ |\ [[zero]]\ |\ [[succ e]]\ |\ [[box e]] \\
+\end{array}
+\] 
+
+What makes CBN languages CBN is that they $\beta$-reduce function applications
+before reducing their arguments. This is possible because substitution in CBN
+replaces variables by \emph{terms} instead of values.
+
+\[ \drule{s-app-cbn} \]
+
+Because of this change, we can also change the semantics of other operations as well.
+We can make our natural numbers nonstrict: in other words, we can treat $[[succ e]]$
+as a value.
+
+\[ \drule{s-case-succ-cbn} \]
+
+And we can make our recursive definitions more eager. We do not need to consider 
+a recursive function to be a value. It can unfold immediately.
+
+\[ \drule{s-fun-cbn} \]
+
+In the fine-grained CBV language we combined all congruence rules into one
+through the use of let expressions. Here we cannot do that. Even though we can
+add a strict let expression to this language, we cannot require eliminators to
+take values only because variables are not values. Therefore we are back to 
+adding congruence rules for all of the strict subterms in the language.
+
+\[ \drule{s-app-cong-cbn} \qquad \drule{s-case-cong-cbn} \]
+
+Finally, we also make box-terms nonstrict, delaying the evaluation of the argument 
+inside the box.
+
+\[ \drule{s-bind-cbn} \]
+
+The upshot of this design is that we don't need to include any $[[not_box tau]]$ restrictions into the type system. In a CBN language, the term
+$[[ (\x. 3) loop ]]$ terminates, so functions are free to discard the effects 
+of their arguments. 
