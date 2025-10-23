@@ -80,7 +80,7 @@ e :: 'tm_' ::=
   | sigma x          :: M :: VarSub    {{ com lookup from substitution }}
 
   | let x = e1 in e2 ::   :: Let
-    {{ tex [[let]]\ [[x]]\ = [[e1]]\ \ottkw{in}\ [[e2]] }}
+    {{ tex \ottkw{let}\, [[x]]\, =\, [[e1]]\, \ottkw{in}\, [[e2]] }}
 
   | \ x . e          ::   :: Abs       {{ com function definition }}
     {{ tex \lambda [[x]]. [[e]] }}
@@ -207,8 +207,8 @@ terminals :: 'terminals_' ::=
   | nats              ::   :: nats          {{ tex \mathbb{N} }}
   | forall            ::   :: forall        {{ tex \forall }}
   | exists            ::   :: exists        {{ tex \exists }}
-  | nrec_           ::   :: nrec_k
-   {{ tex \ottkw{nrec} }}
+  | nrec_             ::   :: nrec_k
+     {{ tex \ottkw{nrec} }}
 
 
 formula :: 'formula_' ::=

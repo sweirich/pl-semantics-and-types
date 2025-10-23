@@ -509,7 +509,7 @@ If for any $k$, we have $[[C tau e k]]$, then $e$ is safe.
 We want to show that if $[[e ~>* e']]$ and $[[e' irreducible]]$ then $[[e']]$ is 
 some $[[ret v]]$. We will prove this by induction on the evaluation $[[e ~>* e']]$.
 \begin{itemize}
-\item If $[[e = e']]$, then $[[e]]$ is irreducible, so by th definition of $[[C tau e 0]]$, 
+\item If $[[e = e']]$, then $[[e]]$ is irreducible, so by the definition of $[[C tau e 0]]$, 
   we know that it must be some value.
 \item If $[[e ~> e1]]$ and $[[e1 ~>* e']]$, then we can prove this result by induction, assuming 
   that we can show that $[[forall k, C tau e1 k]]$. So let $[[k]]$, be arbitrary. 

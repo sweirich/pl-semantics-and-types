@@ -70,7 +70,7 @@ displayed as \cd{Cons (0, <cycle>)}.
 We are limited with what we can do with the \cd{stream} type. For example, although we 
 define a mapping operation, thus:
 
-\code{../ocaml/plst/lib/recursion.ml}{map}
+\code{../ocaml/plst/lib/recursion.ml}{maps}
 
 any use of the mapping function will go into an infinite loop:
 
@@ -108,7 +108,7 @@ work for lists of size 0 or 1. Then we can use the definition of \cd{length2} be
 When given a longer list, this function fails. But, this is a pretty long definition. 
 Let's refactor it:
 
-\code{../ocaml/plst/lib/recursion.ml}{refactored}
+\code{../ocaml/plst/lib/recursion.ml}{refactored2}
 
 The refactored version is easy to see how to extend it to work with longer lists.
 
