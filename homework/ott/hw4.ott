@@ -1,0 +1,181 @@
+grammar
+
+%% Extend the grammar of effects to include step counts
+eff {{ tex \varepsilon }} :: 'eff_' ::= 
+  | k              ::   :: nat
+  | eff1 lub eff2  ::   :: lub
+   {{ tex [[eff1]] \sqcup [[eff2]] }} 
+  
+
+formula :: 'formula_' ::=
+  | FILL_IN   ::  M :: fill_in
+   {{ tex \texttt{FILL IN HERE} }}
+
+%%%%%%%%%%%%%%%%% Problem 1) Syntax-directed effect system (OUT) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns 
+JINEffTyping :: '' ::= 
+
+defn 
+G |-> e : tau @ eff  ::  :: typing_out_tm :: 'to_'
+{{ tex [[G]] \vdash_{OUT} [[e]] \stackrel{[[eff]]}{\in} [[tau]] }}
+by
+
+
+G |-> v : tau 
+----------------- :: ret
+G |-> ret v : tau @ bot
+
+G |-> e1 : tau1 @ eff1 
+G, x : tau1 |-> e2 : tau @ eff2 
+------------------------------------------------ :: let
+G |-> let x = e1 in e2 : tau @ eff1 + eff2 
+
+FILL_IN
+------------------------- :: app
+G |-> e1 e2 : tau2 @ eff
+
+FILL_IN
+--------------------------------------------------- :: ifz
+G |-> case v of { 0 => e1 ; S x => e2 } : tau @ eff 
+
+FILL_IN
+--------------------------- :: prj1
+G |-> prj1 v : tau1 @ eff
+
+FILL_IN
+--------------------------- :: prj2
+G |-> prj1 v : tau1 @ eff
+
+FILL_IN
+-------------------------------------------------------------- :: case
+G |-> case v of { inj1 x1 => e1 ; inj2 x2 => e2 } : tau @ eff
+
+
+G |-> v : mu alpha . tau 
+------------------------------------- :: unfold
+G |-> unfold v : tau [mu alpha.tau/alpha] @ top
+
+
+defn 
+G |-> v : tau  ::  :: typing_out_val :: 'vo_'
+{{ tex [[G]] \vdash [[v]] \in [[tau]] }}
+by
+
+
+ x : tau elem G
+--------------------- :: var
+ G |-> x : tau
+
+
+---------------------- :: zero
+G |-> 0 : Nat 
+
+
+G |-> v : Nat
+---------------------- :: succ
+G |-> S v : Nat 
+
+
+G |-> v1 : tau1
+G |-> v2 : tau2 
+------------------------- :: pair
+G |-> ( v1 , v2 ) :  tau1 * tau2 
+
+
+G |-> v1 : tau1
+--------------------------------- :: inj1
+G |-> inj1 v1 : tau1 + tau2
+
+G |-> v2 : tau2
+--------------------------------- :: inj2
+G |-> inj2 v2 : tau1 + tau2
+
+FILL_IN
+-------------------------------- :: abs
+G |-> \x.e : tau1 -> eff tau2
+
+tau ok
+G , x:tau |-> v : tau
+------------------------- :: rec
+G |-> rec x . v : tau
+
+G |-> v : tau [ mu alpha . tau / alpha ] 
+--------------------------------- :: fold
+G |-> fold v : mu alpha . tau
+
+
+
+%%%%%%%%%%%%%%%%% Problem 2) Time tracking system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns 
+JTimeTyping :: '' ::= 
+
+defn 
+G |-/ e : tau @ eff  ::  :: typing_time_tm :: 'tie_'
+{{ tex [[G]] \vdash_{k} [[e]] \stackrel{[[eff]]}{\in} [[tau]] }}
+by
+
+%%%%%%%%%%%%%%%% 
+%%% Modify the definitions of ret,let,app,prj1,prj2,case,ifz given here
+%%% These versions do not count steps.
+
+G |-/ v : tau 
+------------------------ :: ret
+G |-/ ret v : tau @ bot
+
+G |-/ e1 : tau1 @ eff1
+G, x : tau1 |-/ e2 : tau @ eff2 
+-------------------------------------- :: let
+G |-/ let x = e1 in e2 : tau @ eff1 + eff2
+
+G |-/ v1 : tau1 -> eff tau2  
+G |-/ v2 : tau1 
+--------------------- :: app
+G |-/ v1 v2 : tau2 @ eff
+
+G |-/ v : tau1 * eff tau2
+------------------------- :: prj1
+G |-/ prj1 v : tau1 @ eff
+
+G |-/ v : tau1 * eff tau2
+------------------------- :: prj2
+G |-/ prj2 v : tau2 @ eff
+
+G |-/ v : tau1 + tau2
+G , x1 : tau1 |-/ e1 : tau @ eff
+G , x2 : tau2 |-/ e2 : tau @ eff
+----------------------------------------------- :: case
+G |-/ case v of { inj1 x1 => e1 ; inj2 x2 => e2 } : tau @ eff
+
+G |-/ v : Nat
+G |-/ e1 : tau @ eff
+G , x2 : Nat |-/ e2 : tau @ eff
+----------------------------------------------- :: ifz
+G |-/ case v of { 0 => e1 ; S x2 => e2 } : tau @ eff
+
+G |-/ v : mu alpha . tau  
+------------------------------------- :: unfold
+G |-/ unfold v : tau [mu alpha.tau/alpha] @ top
+
+G |-/ e : tau @ eff1    
+eff1 <: eff2 
+-------------------------------------- :: sub_eff
+G |-/ e : tau @ eff2
+
+
+defn 
+G |-/ v : tau ::  :: typing_time_val :: 'tiv_' 
+{{ tex [[G]] \vdash_{k} [[v]] \in [[tau]] }}
+by
+
+G, x:tau1 |-/ e : tau2 @ eff
+------------------------  ::  abs_eff
+G |-/ \x.e : tau1 -> eff tau2
+
+
+G |-/ v1 : tau1
+G |-/ v2 : tau2 
+------------------------- :: pair_eff
+G |-/ ( v1 , v2 ) :  tau1 * eff tau2 
+

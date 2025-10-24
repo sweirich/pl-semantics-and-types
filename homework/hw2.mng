@@ -78,7 +78,7 @@ This means that you need to prove semantic typing rules equivalent
 to \rref{t-let,t-succ,t-nrec}.
 
 \begin{lemma}[Semantic let] 
-If $[[G |= e1 : tau1]]$ and $[[G , x : tau2 |= e2 : tau2]]$ 
+If $[[G |= e1 : tau1]]$ and $[[G , x : tau1 |= e2 : tau2]]$ 
 then $[[ G |= let x = e1 in e2 : tau2 ]]$.
 \end{lemma}
 
@@ -114,7 +114,7 @@ $[[v]]$, or a special error result, written $[[Stuck]]$.
 
 \[ \mathit{result}\ [[r]]\ ::=\ [[Stuck]]\ |\ [[v]] \]
 
-Our rules for the big step semantics this result when we try to apply a
+Our rules for the big step semantics produce this result when we try to apply a
 non-function (\rref{ts-app-stuck}), or when one of the subterms of an
 application produces an error (\rref{ts-app1,ts-app2}). (You do not need to
 consider $\ottkw{let}$, $\ottkw{succ}$ or $\ottkw{nrec}$ terms in this

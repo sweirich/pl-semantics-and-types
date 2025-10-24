@@ -1,0 +1,153 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=blue,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\usepackage{../notes/notes}
+
+\newcommand*\hwlink[3]{%
+  \href{\pfloc blob/main/homework/rocq/hw4/#1}{{#3}\!\!}
+}
+
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 4}
+\author{NAME: FILL IN HERE}
+
+\inputott{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Syntax-directed type-and-effect systems}
+
+In class, we defined a type-and-effect system that tracks potential
+nontermination. Actually, we defined \emph{two} different type systems: an
+\link{div/div.v}{}{initial version} containing a sub-effecting rule, and
+then a \link{div/sd.v}{}{syntax-directed version}, which we proved
+equivalent to the original version.
+
+For this problem, finish the definition of the type system shown below. In
+particular, you must update the typing
+\rref{vo-abs,to-app,to-ifz,to-prj1,to-prj2,to-case} defined in
+\link{../homework/ott/hw4.ott}{}{hw4.ott}, by adding premises and (potentially)
+modifying the conclusion of the rule.  Your type system should consider the
+effect as an ``output'' of the judgment and calculate the minimal effect that
+follows from the rules according to the effect ordering. In some rules, you
+may need to use the operator $[[eff1 lub eff2]]$, that calculates the least
+upper bound of two effects.  This operator returns $[[bot]]$ if both inputs
+are $[[bot]]$, and $[[top]]$ otherwise.
+
+\drules[to]{$[[G |-> e : tau @ eff]]$}{In context $[[G]]$, $[[e]]$ has type $[[tau]]$ and 
+  effect $[[eff]]$}
+{ret,let,app,case,prjOne,prjOne,case,unfold}
+\drules[vo]{$[[G |-> v : tau]]$}{In context $[[G]]$, $[[v]]$ has type $[[tau]]$}
+{var,zero,succ,pair,injOne,injTwo,abs,rec,fold}
+
+Your syntax-directed system should satisfy the following two lemmas,
+connecting it to the original type system. For this problem, you do not need
+to typeset these proofs, you only need to present the rules. You may wish to 
+look at the Rocq definitions and proofs in the \link{div/sd.v}{}{module} to see how to 
+use that tool to experiment with your rules.
+
+\begin{lemma}[Syntax-directed system implies original system]
+$[[G |-> e : tau @ eff ]]$ implies $[[ G ||- e : tau @ eff]]$.
+\end{lemma}
+
+\begin{lemma}[Original system implies new syntax directed system]
+If $[[ G ||- e : tau @ eff]]$ then there exists some $[[eff1]]$ such that $[[eff1 <: eff]]$ and $[[G |-> e : tau @ eff1 ]]$.
+\end{lemma}
+
+\newpage
+
+\section{Running time as an effect}
+
+Design a type-and-effect system for running time. The \hwlink{time/}{}{time folder} contains Rocq starter code for your use. 
+
+Your \hwlink{time/time.v}{typing}{type-and-effect judgment}, written $[[ G ||- e : tau @ eff ]]$, should assign every term some \hwlink{time/eff.v}{}{effect} $[[eff]]$, where 
+effect annotations should be either some natural number $[[k]]$, or $[[top]]$ to indicate potential 
+nontermination:
+
+\[ [[eff]] := [[k]]\ |\ [[top]] \]
+
+\begin{enumerate}
+
+\item \emph{Effect algebra}: what are the definitions of $[[bot]]$, $[[eff1
+    <: eff2]]$ and $[[eff1 + eff2]]$? Make sure that these definitions satisfy
+  the properties of a pre-ordered monoid. (You don't need to typeset the proofs
+  of these properties.)
+
+\[
+\begin{array}{lcl}
+[[bot]] & = & \\ \\
+[[eff1 + eff2]] &=& \\ \\
+[[eff1 <: eff2]] &=& \\ \\
+\end{array}
+\]
+
+\item \emph{Type system}: The typing rules of this language are the same as
+  that of the \link{div/div.v}{typing}{type-and-effect language} found in
+  Chapter 7 of the lecture notes, except that effect tracking must be modified
+  to count execution steps.
+
+  Write the modified versions of
+  \rref{tie-ret,tie-let,tie-app,tie-prj1,tie-prj2,tie-ifz,tie-case}.
+
+\item \emph{Example}: Your type system should \emph{not} just use $[[top]]$ as
+  the effect for everything. Show the typing derivation for a term that type
+  checks with effect $3$ that does not use the effect subsumption rule (i.e. a
+  term that takes exactly three steps to reduce to a value).
+
+\item \emph{Effect soundness}: Prove the following theorem. In your answer,
+  you do not need to typeset the entire proof. Merely, identify what induction
+  principles you use and explicitly state any helper lemmas that your proof
+  relies on. (You do not need to define a logical relation for this problem.)
+
+\begin{lemma}[\hwlink{time/time.v}{finite_step_soundness}{Finite Step Soundness}]
+  If $[[ ||- e : tau @ k ]]$ then there exists some $j \leq k$, and value $v$, 
+  such that $[[ e ~j> ret v ]]$.
+\end{lemma}
+
+\newpage
+
+\section{Soundness of monadic type system}
+
+We described a monadic type system for tracking nontermination, called
+\mon. Prove that terms with nonboxed types always terminate using a logical
+relation.  (This logical relation does not need to be step-indexed.) If you
+are working in Rocq, you can use the definitions in the
+\hwlink{modal/modal.v}{}{modal/modal.v} module.
+
+\begin{lemma}[\hwlink{modal/modal.v}{monadic_soundness}{Monadic soundness}]
+If $[[ ||- e : tau ]]$ and $[[tau]]$ is not a box type, then there exists some $v$ such that 
+$[[e ~>* ret v]]$.
+\end{lemma}
+
+For this problem, you need to typeset the definition of the logical relation
+and state and prove the semantic soundness lemmas for
+\rref{t-let,t-unbox,t-box}.
+
+\end{enumerate}
+
+\end{document}

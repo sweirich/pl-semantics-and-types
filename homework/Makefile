@@ -1,4 +1,5 @@
-OTT_SOURCE = ../notes/ott/stlc ../notes/ott/bigstep ../notes/ott/rec ott/hw1 ott/hw2 ott/hw3
+OTT_SOURCE = ../notes/ott/stlc ../notes/ott/bigstep ../notes/ott/rec ../notes/ott/eff ott/hw1 ott/hw2 ott/hw3 ott/hw4
+
 BIBFILES = 
 
 OTTFILES  = $(foreach i, $(OTT_SOURCE), $(i).ott)
@@ -9,7 +10,7 @@ PAPER_MNG = $(wildcard *.mng)
 PAPER_SOURCE = $(patsubst %.mng,%.tex,$(PAPER_MNG))
 OTT_FILTER := $(subst .mng,.mng ,$(addprefix -tex_filter ,$(join $(PAPER_MNG), $(PAPER_SOURCE))))
 
-TOP=hw3
+TOP=hw4
 
 all: $(TOP).pdf
 
@@ -26,8 +27,8 @@ $(RULESFILE): $(OTTFILES)
           -tex_wrap false \
           -tex_show_meta false
 
-$(TOP).pdf : $(TOP).tex  $(BIBFILES) $(PAPER_SOURCE) Makefile 
-	latexmk -pdflatex="texfot pdflatex" -bibtex -pdf $(TOP).tex -synctex=1 && latexmk -c
+%.pdf : %.tex  $(BIBFILES) $(PAPER_SOURCE) Makefile 
+	latexmk -pdflatex="texfot pdflatex" -bibtex -pdf $*.tex -synctex=1 && latexmk -c
 
 deps:
 	echo $(PAPER_SOURCE)

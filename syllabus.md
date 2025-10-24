@@ -7,7 +7,7 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 1. [HW1](homework/hw1.pdf), due Monday, September 22th at midnight
 2. [HW2](homework/hw2.pdf), due Monday, October 6th at midnight
 3. [HW3](homework/hw3.pdf), due Monday, October 20th at midnight
-   
+4. [HW4](homework/hw4.pdf), due Monday, November 10th at midnight   
 
 ## Schedule
 
@@ -35,7 +35,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/15 |          | Syntax directed systems, Nontermination Monad                                             |
 | M 10/20 | Ch. 8    | **HW #3 due** <br/> Nontermination monad                                                  |
 | W 10/22 |          | More nontermination monad                                                                 |
-| M 10/27 | | Midterm Exam                                                                                       |
+| M 10/27 |          | **Midterm Exam** (in class)                                                               | 
 | W 10/29 | |                                                                                                    |
 | M 11/3  | |                                                                                                    |
 | W 11/5  | |                                                                                                    |
