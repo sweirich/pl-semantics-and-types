@@ -191,7 +191,7 @@ have $[[e1[sigma] e2[sigma] => v]]$, which gives us our goal.
 \item Say $[[ G |- \x . e : tau1 -> tau ]]$ where $[[ G , x : tau1 |- e : tau ]]$.
  Given an arbitrary $[[sigma elem [ G ] ]]$, 
 we need to show that $[[(\x. e)[sigma] elem C tau ]]$. We know that 
-$[[ (\x.e)[sigma] ]] = [[ \x. e[x/x,sigma] ]]$ (assuming that $x$ is not in the domain or range of $[[sigma]]$). By our substitution lemma, we know that $[[|- (\x.e)[sigma] : tau1 -> tau2]]$.
+$[[ (\x.e)[sigma] ]] = [[ \x. e[x/x,sigma] ]]$ (assuming that $x$ is not in the domain or range of $[[sigma]]$). 
 It is a value, so it steps to itself. To show that this term is in the appropriate 
 value set, we need to assume some $[[v1 elem V tau1]]$ and show that $[[ e[x/x,sigma][v1/x] elem V tau ]]$. Substitutions compose, so this is the same as saying $[[ e [v1/x, sigma] elem V tau]]$.
 This goal follows by our induction hypothesis as long as $[[ v1/x , sigma elem [G, x : tau] ]]$. But this follows by definition because $[[ sigma elem [G] ]]$ and $[[ v1 elem V tau ]]$.

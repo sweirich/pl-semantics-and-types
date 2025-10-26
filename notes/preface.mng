@@ -22,4 +22,4 @@ the text includes hyperlinks to each corresponding part of the artifact.
 Acknowledgement: These lecture notes draw inspiration from a number of
 sources, most notably Harper's \emph{Practical Foundations for Programming
 Languages}~\cite{harper:pfpl} and Pierce's \emph{Types and Programming
-Languages}~\cite{pierce:tapl}.
+Languages}~\cite{pierce:tapl}. Thanks to Chris Henson and Jason Liu for comments and bugfixes.
