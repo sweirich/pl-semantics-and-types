@@ -14,27 +14,27 @@ from the small step relation.
 If $[[|- e : tau]]$ and $[[e => v]]$ then $[[|-v : tau]]$.
 \end{lemma}
 \begin{proof}
-Proof by induction on $[[|-e : tau]]$. 
+Proof by induction on $[[e => v]]$. 
 \begin{itemize}
-\item For the literal case, $[[e]]$ is some number $[[k]]$ that steps to itself. 
-It already has type $[[Nat]]$.
-\item For the variable case, we assume the term is closed, so this case is impossible.
-\item For the abstraction case, $[[e]]$ is some well-typed lambda expression $[[\x.e]]$
-that steps to itself. 
-\item For the application case, $[[e]]$ is $[[e1 e2]]$ where 
-  $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1]]$. By inversion on the evaluation 
-  relation, we also know that $[[e1 => \x.e1']]$ and $[[e2 => v2]]$ 
-  and $[[e1'[v2/x] => v]]$. By induction, we know that $[[|- \x.e1' : tau1 -> tau]]$ and 
+\item For the value case, we have $[[v => v]]$, so the result type checks by assumption.
+\item For the application case, 
+  $[[e]]$ is $[[e1 e2]]$ where $[[e1 => \x.e1']]$ and $[[e2 => v2]]$ 
+  and $[[e1'[v2/x] => v]]$. We also know (by inversion of the evaluation relation) that   
+  $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1]]$. 
+  By induction, we know that $[[|- \x.e1' : tau1 -> tau]]$ and 
   $[[|- v2 : tau1]]$. By inverting the former, we also know that $[[ x: tau1 |- e1' : tau]]$. 
-  This means that we can use our substitution lemma to conclude $[[ |- e1' [v2/x] : tau]]$.
+  This means that we can use our substitution lemma to show $[[ |- e1' [v2/x] : tau]]$, 
+  and induction on the third evaluation to conclude $[[ |- v : tau]]$.
 \end{itemize}
 \end{proof}
 
-The preservation lemma goes through readily. However, by itself, it isn't a type safety 
-theorem because it does not give use any confidence that the type system rules out 
-run-time errors. The lemma is stated so that we can only make a conclusion when we already
-have a successful run to a value. But, even if a term type checks, we can't tell whether 
-it will produce anything.
+The preservation lemma goes through readily. (However, note that unlike the
+small step relation, this proof must be done by induction on the evaluation
+relation, and not the typing judgement.)  By itself, this lemma isn't a type
+safety theorem because it does not give use any confidence that the type
+system rules out run-time errors. The lemma is stated so that we can only make
+a conclusion when we already have a successful run to a value. But, even if a
+term type checks, we can't tell whether it will produce anything.
 
 The small step semantics had a progress lemma that reassured us that good things would happen 
 if a program type checks --- that program would make some incremental progress. But with this 
