@@ -78,6 +78,7 @@
 \input{steps}
 \input{eff}
 \input{modal}
+\input{control}
 
 \backmatter
 

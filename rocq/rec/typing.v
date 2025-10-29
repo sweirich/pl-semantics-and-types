@@ -56,6 +56,10 @@ Inductive typing_val {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop :=
     typing_val Γ v (τ [(Mu τ) ..]) ->
     typing_val Γ (fold v) (Mu τ)
 
+ | t_unit :
+    typing_val Γ unit Unit
+
+
 with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop := 
   | t_ret v τ :
     typing_val Γ v τ ->
@@ -94,6 +98,7 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
  | t_unfold v τ : 
     typing_val Γ v (Mu τ) ->
     typing Γ (unfold v) (τ [(Mu τ) ..]) 
+
 .
 
 (** This version of t_var is easier to work with sometimes

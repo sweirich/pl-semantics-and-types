@@ -62,6 +62,13 @@ with Tm {n} (Γ : Ctx n) : Ty  -> Type :=
     Val Γ Nat -> Tm Γ τ -> Tm (Nat .: Γ) τ -> Tm Γ τ
 .
 
+(*
+Definition sub {n}{m}(Γ: Ctx m)(Δ: Ctx n) : 
+Definition subst {n} {Γ : Ctx n} : sub Δ Γ -> Tm Γ τ -> Tm Δ τ.
+
+Inductive step {τ} : Tm null τ -> Tm null τ -> Prop :=.
+*)
+
 Arguments ret{_}{_}{_}.
 Arguments let_{_}{_}{_}{_}.
 Arguments unbox{_}{_}{_}{_}.
@@ -75,6 +82,23 @@ Arguments abs{_}{_}{_}{_}.
 Arguments fun_{_}{_}{_}{_}.
 Arguments box{_}{_}{_}.
 
+(*
+CoInductive Delay (A : Type) : Type := 
+  | Now : A -> Delay A
+  | Later : Delay A -> Delay A
+.
+
+Definition Delay_loop' {B} : 
+  (Delay B -> Delay B) -> Delay B.
+cofix loop.
+eapply (fun f => f (loop (fun x => Later _ (f x)))).
+Defined.
+
+Definition Delay_loop {A B} : 
+  ((A -> Delay B) -> (A -> Delay B)) -> 
+  (A -> Delay B).
+*)
+
 Definition Timed (A : Type) : Type :=  nat -> option A.
 
 Definition pure {A} (v:A) : Timed A := fun (x:nat) => Some v.
@@ -86,11 +110,11 @@ Definition bind {A B} (t : Timed A) (u : A -> Timed B) : Timed B :=
         end.
 
 Fixpoint loop {A B} 
-  (f: (A -> Timed B) -> (A -> Timed B)) 
-  (a : A) (x: nat) {struct x} : option B := 
+  (f: (A -> Timed B) -> (A -> Timed B)) : A -> Timed B := 
+  fun a x =>
   match x with 
   | O => None
-  | S n => f (fun b y => loop f b n) a n
+  | S n => f (fun b y => loop f b n) a (S n)
   end. 
 
 Definition plus : nat -> nat -> Timed nat := 
@@ -124,14 +148,14 @@ Fixpoint denot {n}{Γ : Ctx n}{τ}
 with 
 denot_val {n}{Γ : Ctx n}{τ} 
     (v : Val Γ τ) : Env Γ -> denot_Ty τ.
+Proof.
 - dependent destruction e.
 all: intros X.
 + exact
   (denot_val _ _ _ v X). 
 + (* let case *)
   move: (denot _ Γ τ1 e1 X) => d1.
-  eapply (denot _ (τ1 .: Γ) τ2 e2).
-  eapply cons_Env; eauto.
+  eapply (denot _ (τ1 .: Γ) τ2 e2 (cons_Env d1 X)).
 + (* unbox case, must use bind *)
   move: (denot _ _ _ e1 X) => d1. 
   eapply bind. eapply d1. intro x.
@@ -159,12 +183,26 @@ all: intros X.
     exact (pure (denot_val _ _ _ v0 X)).
 Defined.
 
-Print denot.
 
+(*
+Lemma compositionality : 
+  (σ : sub Δ Γ)
+  X = denot_sub σ
+  denot e (σ X) = denot (e σ) X.
+
+
+Lemma compositionality : 
+  denot e (cons_Env (denot_val v X) X) = denot (e [v..]) X.
+
+Lemma soundness τ : forall (e1 e2 : Tm null τ), 
+    step e1 e2 -> denot e1 empty_Env = denot e2 empty_Env.
+Abort.
+*)
 
 Import FinValues.
 
-Example lit3 {n}{Γ : Ctx n} : Val Γ Nat := (succ (succ (succ zero))).
+Example lit3 {n}{Γ : Ctx n} : Val Γ Nat := 
+  (succ (succ (succ zero))).
 
 Eval cbv in (denot_val lit3  empty_Env).
 
@@ -175,13 +213,14 @@ Example id3 : Tm null Nat :=
 Eval cbn in (denot id3 empty_Env).
 
 
-(* let f = fun f x . ret (box x) in 
+(* let f = ret (fun f x . ret (box x)) in 
    y <- f 3 ;; ret (box y) *)
+
 Example triv : Tm null (Box Nat) := 
   let_ (ret (fun_ (ret (box (var f0))))) 
     (unbox (app (var f0) lit3) (ret (box (var f0)))).
 
-Eval cbv in (denot triv empty_Env 20).
+Eval cbv in (denot triv empty_Env 1).
 
 (* \x. ret (fun f y . case y of { 0 => ret (box x); S z => w <- f s ; ret (box (succ w)) *)
 Example plus : Val null (Arr Nat (Arr Nat (Box Nat))) := 
@@ -199,7 +238,11 @@ Eval cbv in (denot_val plus empty_Env 20).
 
 Eval cbv in (denot (app plus lit3) empty_Env 20).
 
-Eval cbv in (denot (let_ (app plus lit3) (app (var f0) lit3)) empty_Env 20).
+Definition e := (let_ (app plus lit3) (app (var f0) lit3)).
+
+Check e.
+
+Eval cbv in (denot e empty_Env 20).
 
 
 Example loop {n}{Γ : Ctx n} {τ} : Val Γ (Arr Nat (Box τ)) := 
@@ -208,7 +251,11 @@ Example loop {n}{Γ : Ctx n} {τ} : Val Γ (Arr Nat (Box τ)) :=
 Example omega {n}{Γ : Ctx n}  : Tm Γ (Box Nat) := 
   app loop zero.
 
-Eval cbv in (denot omega empty_Env 20).
+Eval cbv in (denot omega empty_Env 20000).
+
+Definition g : Tm null _ := (let_ omega (ret lit3)).
+
+Check g. 
 
 Eval cbv in (denot (let_ omega (ret lit3)) empty_Env).
 

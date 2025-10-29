@@ -36,7 +36,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | M 10/20 | Ch. 8    | **HW #3 due** <br/> Nontermination monad                                                  |
 | W 10/22 |          | More nontermination monad                                                                 |
 | M 10/27 |          | **Midterm Exam** (in class)                                                               | 
-| W 10/29 | |                                                                                                    |
+| W 10/29 | Ch. 9    | Explicit control stacks                                                                   |
 | M 11/3  | |                                                                                                    |
 | W 11/5  | |                                                                                                    |
 | M 11/10 | | HW #4 due                                                                                          |

@@ -25,7 +25,7 @@ Open Scope subst_scope.
 Open Scope modal_scope.
 Create HintDb modal.
 
-(** Small step, substitution-based reduction *)
+(** * Small step, substitution-based reduction *)
 
 Inductive step : Tm 0 -> Tm 0 -> Prop := 
  | s_beta e v : 
@@ -49,6 +49,7 @@ Inductive step : Tm 0 -> Tm 0 -> Prop :=
     step (unbox e1 e2) (unbox e1' e2)
 .
 
+(** * Typing rules *)
 
 #[export] Hint Constructors step : modal.
 
@@ -114,14 +115,13 @@ Module Notations.
 Export SyntaxNotations.
 Notation "e ~> e'" := (step e e') (at level 70) : modal_scope.
 Notation "e ~>* e'" := (multi step e e') (at level 70) : modal_scope.
-Notation "Γ |-v v ∈ τ" := (typing_val Γ v τ) (at level 70) : rec_scope.
-Notation "Γ |-e e ∈ τ" := (typing Γ e τ) (at level 70) : rec_scope.
+Notation "Γ |-v v ∈ τ" := (typing_val Γ v τ) (at level 70) : modal_scope.
+Notation "Γ |-e e ∈ τ" := (typing Γ e τ) (at level 70) : modal_scope.
 End Notations.
 
 Import Notations.
 
-
-(** multistep congruence for let *)
+(** * multistep congruence for let *)
 Lemma ms_unbox_cong e1 e1' e2 : 
   e1 ~>* e1' -> unbox e1 e2 ~>* unbox e1' e2.
 Proof.
@@ -141,7 +141,7 @@ Qed.
 Ltac impossible_var := 
   match goal with | [ x : (fin 0) |- _ ] => destruct x end.
 
-Open Scope rec_scope.
+Open Scope modal_scope.
 Import Notations.
 
 
@@ -192,7 +192,6 @@ Proof.
   intros h. auto_case; eauto with renaming modal. 
 Qed.
 
-
 Lemma typing_subst_lift2 {n} (Δ : Ctx n) {m} (σ : fin m -> Val n)
   (Γ : Ctx m) τ1 τ2  : 
   typing_subst Δ σ Γ -> typing_subst (τ1 .: (τ2 .: Δ)) (⇑(⇑ σ)) (τ1 .: (τ2 .: Γ)).
@@ -241,7 +240,18 @@ Proof.
   dependent induction h.
 (* FILL IN HERE *) Admitted.
 
-(** Translation to effect system. *)
+(** * Termination for pure terms  *)
+
+(* A logical relation shows that adding the restriction to let is enough to
+   prove that all non-monadic terms terminate. *)
+
+
+Lemma monadic_soundness e τ : 
+  null |-e e ∈ τ -> not_box τ -> exists v, e ~>* ret v.
+Proof.
+(* FILL IN HERE *) Admitted.
+
+(** * Translation to effect system. *)
 
 Require div.div.
 Import FinValues.
@@ -374,6 +384,7 @@ Notation "| e |"    := (trans_val e) (only printing).
 
 Notation "e ~> e'"  := (reduction.Small.step e e') (at level 70, only printing).
 Notation "e ~>* e'" := (multi reduction.Small.step e e') (at level 70, only printing).
+
 
 
 End MOD_DIV.    

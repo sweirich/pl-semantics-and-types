@@ -1,6 +1,7 @@
 -- Types
 Ty     : Type
 Void   : Ty
+Unit   : Ty
 Nat    : Ty
 Prod   : Ty -> Ty -> Ty
 Sum    : Ty -> Ty -> Ty

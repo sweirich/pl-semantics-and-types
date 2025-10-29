@@ -8,7 +8,7 @@ Import eff.Notations.
 
 (** Type and effect relation *)
 
-Fixpoint allows_rec_ty (ty : Ty 0) := 
+Definition allows_rec_ty (ty : Ty 0) := 
   match ty with 
   | Arr _ ⊤ _ => true
   | Prod ⊤ _ _ => true

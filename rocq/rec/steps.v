@@ -130,6 +130,7 @@ Axiom C_def : forall τ e k,
              (forall e', e ~> e' -> ▷ (C τ e') k)).
 
 Axiom V_Void : forall v k, V Void v k = False .
+Axiom V_Unit : forall v k, V Unit v k = match v with unit => True | _ => False end.
 Axiom V_Nat  : forall v k, V Nat v k = (is_nat v = true).
 Axiom V_Arr  : forall τ1 τ2 v k, 
     V (Arr τ1 τ2) v k = 
@@ -159,7 +160,7 @@ Import LR.
 
 (** Tactic to automatically rewrite with the axioms *)
 Create HintDb LR. 
-#[export] Hint Rewrite C_def V_Void V_Nat V_Arr V_Prod V_Sum V_Mu : LR.
+#[export] Hint Rewrite C_def V_Void V_Nat V_Arr V_Prod V_Sum V_Mu V_Unit : LR.
 Ltac lrsimpl := autorewrite with LR.
 Tactic Notation "lrsimpl" "in" hyp(H) := autorewrite with LR in H.
 
@@ -233,6 +234,7 @@ intros Vk j LE.
 destruct t; autorewrite with LR in Vk; autorewrite with LR.
 - destruct f.
 - done.
+- destruct v; try done.
 - done.
 - destruct Vk as [[v2 [EQ h]]|[v1 [v2 [EQ [h1 h2]]]]].
   left. exists v2. split. auto.

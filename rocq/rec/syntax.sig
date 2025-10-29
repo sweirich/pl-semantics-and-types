@@ -1,26 +1,39 @@
 bool : Type
+list : Functor
 
 Val(var) : Type
 Tm       : Type
+Frame    : Type
 
--- Values
-zero   : Val
-succ   : Val -> Val
-prod   : Val -> Val -> Val
-inj    : bool -> Val -> Val
-abs    : (bind Val in Tm) -> Val
-rec    : (bind Val in Val) -> Val
-fold   : Val -> Val
-
--- Terms / Computations
+-- core
 ret     : Val -> Tm
 let_    : Tm -> (bind Val in Tm) -> Tm
-ifz     : Val -> Tm -> (bind Val in Tm) -> Tm
-prj     : bool -> Val -> Tm
-split   : Val -> (bind Val,Val in Tm) -> Tm
-case    : Val -> (bind Val in Tm) -> (bind Val in Tm) -> Tm
+
+-- unit
+unit    : Val
+
+-- functions
+abs     : (bind Val in Tm) -> Val
 app     : Val -> Val -> Tm
+
+-- nats
+zero    : Val
+succ    : Val -> Val
+ifz     : Val -> Tm -> (bind Val in Tm) -> Tm
+
+-- products
+prod    : Val -> Val -> Val
+prj     : bool -> Val -> Tm
+
+-- sums
+inj     : bool -> Val -> Val
+case    : Val -> (bind Val in Tm) -> (bind Val in Tm) -> Tm
+
+-- recursive definitions / types
+rec     : (bind Val in Val) -> Val
+fold    : Val -> Val
 unfold  : Val -> Tm
 
-box     : Val -> Tm
-bind    : Tm -> (bind Val in Tm) -> Tm
+-- Frames
+f_let   : (bind Val in Tm) -> Frame
+

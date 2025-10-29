@@ -1,0 +1,144 @@
+
+
+grammar 
+
+e :: 'e_' ::= 
+   | try e1 handle x => e2 ::  :: try
+   | raise v               ::  :: raise
+   | s { e }               ::  :: unravel
+   | v1 + v2               ::  :: plus
+
+
+frame  :: 'f_' ::= 
+   | let x = _ in e2      ::   :: let 
+   {{ tex \ottkw{let}\, [[x]]\, =\, [[_]]\ \ottkw{in}\, [[e2]] }}
+   | try _ handle x => e2 ::   :: try 
+   | ( frame ) ::  :: frame_paren
+
+stack, s :: 's_'  ::= 
+   | nil      ::    :: nil
+   | frame : s    ::    :: cons
+   | ( s ) ::    :: stack_paren
+
+machine, m :: '' ::= 
+   | < s , e > ::   :: config
+
+formula :: 'formula_' ::= 
+   | m |->* m' ::   :: multi_stack
+
+terminals :: 'terminals_' ::=
+   | ~>>   ::   :: prim       {{ tex \twoheadrightarrow }}
+   | |->   ::   :: mapsto     {{ tex \mapsto }}
+   | |->*  ::   :: mapstostar {{ tex \mapsto^{\ast} }}
+   | |=>   ::   :: bigstack   {{ tex \downdownarrows }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns 
+
+JPrim :: '' ::= 
+
+defn
+e ~>> e' ::   :: primitive :: 'prim_' 
+by 
+
+
+----------------------------------  :: beta
+(\x. e) v ~>> e [ v / x]
+
+------------------------------------- :: app_rec
+(rec x. v1) v2 ~>> v1 [rec x. v1/x] v2
+
+----------------------------------------  :: case_zero
+case 0 of { 0 => e1 ; S x => e2 } ~>> e1
+
+---------------------------------------------------------  :: case_succ
+case (succ k) of { 0 => e1 ; S x => e2 } ~>> e2 [ k / x ] 
+
+--------------------------------- :: prj1
+prj1 (v1,v2) ~>> ret v1
+
+--------------------------------- :: prj2
+prj2 (v1,v2) ~>> ret v2
+
+
+------------------------------------- :: prj1_rec
+prj1 (rec x .v) ~>> prj1 v[rec x.v/x] 
+
+------------------------------------- :: prj2_rec
+prj2 (rec x .v) ~>> prj2 v[rec x.v/x] 
+
+-----------------------------------------------------------  :: case_inj1
+case (inj1 v) of { inj1 x => e1 ; inj2 x => e2 } ~>> e1 [v/x]
+
+-----------------------------------------------------------  :: case_inj2
+case (inj2 v) of { inj1 x => e1 ; inj2 x => e2 } ~>> e2 [v/x]
+
+------------------------- :: unfold
+unfold (fold v) ~>> ret v
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_' 
+by 
+
+e ~>> e' 
+---------- :: prim
+e ~> e'
+
+
+defns
+JBig :: '' ::=
+
+defn
+e => v ::   :: big :: 'bs_'
+{{ com big-step semantics }}
+by
+
+e1 ~>> e2
+e2 => v
+------------ :: prim
+e1 => v
+
+defns 
+JStackSmall :: '' ::= 
+
+defn 
+m |-> m' ::  :: small_step :: 'ssm_' 
+by
+
+e ~>> e' 
+------------------------ :: prim
+< s , e > |-> < s , e' >
+
+------------------------------------------------------------ :: push
+< s , let x = e1 in e2 > |-> < let x = _ in e2 : s , e1 > 
+
+------------------------------------------------------------ :: pop
+< let x = _ in e2 : s , ret v > |-> < s, e2 [ v / x ] > 
+
+defns
+JStackBig :: '' ::=
+
+defn 
+m |=> v ::     :: big_step :: 'bsm_'
+by
+
+----------------------- :: final
+< nil, ret v > |=> v
+
+e ~>> e'
+< s, e' > |=> v
+------------------------ :: prim
+< s , e > |=> v
+
+< let x = _ in e2 : s , e1 > |=> v
+---------------------------------- :: push
+< s , let x = e1 in e2 > |=> v
+
+< s , e2 [ v1 / x ] > |=> v
+------------------------------------------- :: pop
+< let x = _ in e2 : s , ret v1 > |=> v

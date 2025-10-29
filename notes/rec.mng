@@ -1,4 +1,5 @@
 \chapter{\rec: Recursive definitions}
+\label{ch:rec}
 
 In this chapter, we introduce our first \emph{effectful} programming language:
 a fine-grained call-by-value language with recursive definitions, called

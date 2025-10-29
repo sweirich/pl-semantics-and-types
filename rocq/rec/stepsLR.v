@@ -120,6 +120,9 @@ Fixpoint V' (t : Ty 0) (v : Val 0) k (ACC : Acc lt k) {struct ACC} :=
     | Mu τ => 
          (exists v2, v = fold v2 /\
              (later (V' (τ [(Mu τ)..]) v2)) k ACC)
+    | Unit => 
+        match v with unit => True | _ => False end
+
     | _ => False
 end.
     
@@ -138,6 +141,10 @@ unfold V. cbn. done. Qed.
 
 Lemma V_Nat v k : V Nat v k = (is_nat v = true).
 unfold V. cbn. done. Qed.
+
+Lemma V_Unit v k : V Unit v k = match v with unit => True | _ => False end.
+unfold V. cbn. done. Qed.
+                     
 
 Lemma V_Arr  : forall τ1 τ2 v k, 
     V (Arr τ1 τ2) v k = 

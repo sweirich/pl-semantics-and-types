@@ -48,6 +48,8 @@ Fixpoint V (t : Ty 0) (v : Val 0) k {struct k} :=
     | Mu τ => 
          (exists v2, v = fold v2 /\
              ▷  (V (τ [(Mu τ)..]) v2) k)
+    | Unit => 
+        match v with unit => True | _ => False end
     | _ => False
 end.
 
@@ -63,6 +65,10 @@ Proof.
   intros. destruct k. cbn. done.
   unfold C. unfold C'. done.
 Qed.
+
+Lemma V_Unit v k : 
+  V Unit v k <-> match v with unit => True | _ => False end.
+Proof. destruct k; destruct v; done. Qed.
 
 Lemma V_Nat v k :
   V Nat v k <-> is_nat v = true.
@@ -130,6 +136,7 @@ induction k.
     all : cbn in Vsk.
     * done.
     * done.
+    * destruct j. cbn. done. cbn. done.
     * destruct j. cbn. done. cbn. done.
     * destruct Vsk as [h|h].
       destruct h as [v2 [EQ h]]. 

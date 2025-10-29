@@ -8,6 +8,7 @@ Module Core.
 Inductive Ty (n_Ty : nat) : Type :=
   | var_Ty : fin n_Ty -> Ty n_Ty
   | Void : Ty n_Ty
+  | Unit : Ty n_Ty
   | Nat : Ty n_Ty
   | Prod : Ty n_Ty -> Ty n_Ty -> Ty n_Ty
   | Sum : Ty n_Ty -> Ty n_Ty -> Ty n_Ty
@@ -15,6 +16,11 @@ Inductive Ty (n_Ty : nat) : Type :=
   | Mu : Ty (S n_Ty) -> Ty n_Ty.
 
 Lemma congr_Void {m_Ty : nat} : Void m_Ty = Void m_Ty.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_Unit {m_Ty : nat} : Unit m_Ty = Unit m_Ty.
 Proof.
 exact (eq_refl).
 Qed.
@@ -71,6 +77,7 @@ Fixpoint ren_Ty {m_Ty : nat} {n_Ty : nat} (xi_Ty : fin m_Ty -> fin n_Ty)
   match s with
   | var_Ty _ s0 => var_Ty n_Ty (xi_Ty s0)
   | Void _ => Void n_Ty
+  | Unit _ => Unit n_Ty
   | Nat _ => Nat n_Ty
   | Prod _ s0 s1 => Prod n_Ty (ren_Ty xi_Ty s0) (ren_Ty xi_Ty s1)
   | Sum _ s0 s1 => Sum n_Ty (ren_Ty xi_Ty s0) (ren_Ty xi_Ty s1)
@@ -96,6 +103,7 @@ Fixpoint subst_Ty {m_Ty : nat} {n_Ty : nat} (sigma_Ty : fin m_Ty -> Ty n_Ty)
   match s with
   | var_Ty _ s0 => sigma_Ty s0
   | Void _ => Void n_Ty
+  | Unit _ => Unit n_Ty
   | Nat _ => Nat n_Ty
   | Prod _ s0 s1 => Prod n_Ty (subst_Ty sigma_Ty s0) (subst_Ty sigma_Ty s1)
   | Sum _ s0 s1 => Sum n_Ty (subst_Ty sigma_Ty s0) (subst_Ty sigma_Ty s1)
@@ -129,6 +137,7 @@ subst_Ty sigma_Ty s = s :=
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (idSubst_Ty sigma_Ty Eq_Ty s0)
@@ -166,6 +175,7 @@ Fixpoint extRen_Ty {m_Ty : nat} {n_Ty : nat} (xi_Ty : fin m_Ty -> fin n_Ty)
   match s with
   | var_Ty _ s0 => ap (var_Ty n_Ty) (Eq_Ty s0)
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (extRen_Ty xi_Ty zeta_Ty Eq_Ty s0)
@@ -209,6 +219,7 @@ Fixpoint ext_Ty {m_Ty : nat} {n_Ty : nat} (sigma_Ty : fin m_Ty -> Ty n_Ty)
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (ext_Ty sigma_Ty tau_Ty Eq_Ty s0)
@@ -252,6 +263,7 @@ ren_Ty zeta_Ty (ren_Ty xi_Ty s) = ren_Ty rho_Ty s :=
   match s with
   | var_Ty _ s0 => ap (var_Ty l_Ty) (Eq_Ty s0)
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (compRenRen_Ty xi_Ty zeta_Ty rho_Ty Eq_Ty s0)
@@ -304,6 +316,7 @@ subst_Ty tau_Ty (ren_Ty xi_Ty s) = subst_Ty theta_Ty s :=
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (compRenSubst_Ty xi_Ty tau_Ty theta_Ty Eq_Ty s0)
@@ -377,6 +390,7 @@ ren_Ty zeta_Ty (subst_Ty sigma_Ty s) = subst_Ty theta_Ty s :=
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (compSubstRen_Ty sigma_Ty zeta_Ty theta_Ty Eq_Ty s0)
@@ -451,6 +465,7 @@ subst_Ty tau_Ty (subst_Ty sigma_Ty s) = subst_Ty theta_Ty s :=
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (compSubstSubst_Ty sigma_Ty tau_Ty theta_Ty Eq_Ty s0)
@@ -564,6 +579,7 @@ Fixpoint rinst_inst_Ty {m_Ty : nat} {n_Ty : nat}
   match s with
   | var_Ty _ s0 => Eq_Ty s0
   | Void _ => congr_Void
+  | Unit _ => congr_Unit
   | Nat _ => congr_Nat
   | Prod _ s0 s1 =>
       congr_Prod (rinst_inst_Ty xi_Ty sigma_Ty Eq_Ty s0)
@@ -780,6 +796,8 @@ Arguments Sum {n_Ty}.
 Arguments Prod {n_Ty}.
 
 Arguments Nat {n_Ty}.
+
+Arguments Unit {n_Ty}.
 
 Arguments Void {n_Ty}.
 

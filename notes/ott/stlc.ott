@@ -23,6 +23,7 @@ nat , i, j, k :: 'k_' ::=
   | 3               ::   :: Three
   | 4               ::   :: Four  
   | 5               ::   :: Five
+  | 6               ::   :: Six
   | k1 + k2         ::   :: Plus
   | k1 - k2         ::   :: Minus
   | ( k )           :: S :: Paren
@@ -209,6 +210,7 @@ terminals :: 'terminals_' ::=
   | exists            ::   :: exists        {{ tex \exists }}
   | nrec_             ::   :: nrec_k
      {{ tex \ottkw{nrec} }}
+  | in                ::   :: in            {{ tex \ottkw{in} }}
 
 
 formula :: 'formula_' ::=

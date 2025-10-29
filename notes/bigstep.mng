@@ -1,4 +1,5 @@
 \chapter[Big-step semantics]{Big-Step Operational Semantics}
+\label{ch:bigstep}
 
 So far, we have only considered small-step operational semantics for STLC.
 This semantics is useful because it provides a substitution-based,

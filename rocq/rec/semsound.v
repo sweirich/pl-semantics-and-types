@@ -30,6 +30,8 @@ Fixpoint V (τ : Ty 0) {struct τ} : Val 0 -> Prop :=
       fun v => (exists v1, v = inj true v1 /\ V τ1 v1) \/
             (exists v2, v = inj false v2 /\ V τ2 v2)
       (* NOTE: is there a version with case? *)
+  | Unit => 
+      fun v => match v with unit => True | _ => False end
 (*
   (* NOTE: THIS IS NOT WELL FOUNDED *)
   | Mu τ => 

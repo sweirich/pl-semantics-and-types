@@ -57,8 +57,12 @@
   * [rec.stepsAlt](rec/stepsAlt.v)
     Proof of semantic soundness for step-indexed logical relation, uses structural induction only, 
     and no proof irrelevance
+  * [rec.prim](rec/prim.v)
+    Primitive reductions in a separate judgement.
+  * [rec.stack](rec/stack.v)
+    Operational semantics with an explicit stack.
 
-- DIV: type-and-effect system for divergence
+- DIV: type-and-effect system for nontermination
   * [div.eff](div/effect.v) 
     Effect annotations (a pre-ordered monoid)
   * [div.typesyntax.sig](div/typesyntax.sig) 
@@ -67,3 +71,12 @@
     Syntax of REC types with latent effects (generated)
   * [div.div](div/div.v) 
     Type soundness and Effect soundness
+    
+- MODAL: monadic type system for nontermination
+  * [modal.syntax](modal/syntax.v)
+  * [modal.modal](modal/modal.v) Call-by-value language
+    with monadic encapsulation of nontermination
+  * [modal.modal_intrinsic](modal/modal_intrinsic.v)
+    Interpretation of annotated version of the modal type system
+    in type theory (i.e. Rocq's Gallina language). Requires an 
+    intrinistically-typed version of the syntax.
