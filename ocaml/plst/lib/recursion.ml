@@ -115,7 +115,7 @@ let rec append : int list -> stream -> stream =
     | [] -> s 
     | h :: t -> Cons (h, append t s) 
 
-let example : stream = append [1;2;3;4;5] zeros
+(* let example : stream = append [1;2;3;4;5] zeros *)
 
 (* begin streamex *)
 let rec take : nat -> stream -> int list * stream = fun n s -> 
@@ -125,7 +125,7 @@ let rec take : nat -> stream -> int list * stream = fun n s ->
            | Cons (x, s') -> 
               let (tl, s'') = take m s' in (x :: tl, s'')
 
-let (example,_)  = take n5 zeros
+(* let (example,_)  = take n5 zeros *)
 (* end streamex *)
 
 (* begin takeomega *)
