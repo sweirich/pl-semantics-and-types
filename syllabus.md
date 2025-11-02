@@ -21,7 +21,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 8/27  |          | | **No Class**: Instructor travel                                                                     |
 | M 9/1   |          | | **No Class**: Labor day                                                                             |
 | W 9/3   | Ch. 1    | | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> What is Type Safety? |
-| M 9/8   |          | Preservation and substitution                                                                         |
+| M 9/8   |          | stlc    | Preservation and substitution                                                                         |
 | W 9/10  | Chs. 1-2 | stlc    | Progress <br/> Natural number recursion                                                     |
 | M 9/15  | Ch. 3    | stlc    | Big step semantics                                                                          |
 | W 9/17  | Ch. 4    | stlc    | Semantic soundness                                                                          |
