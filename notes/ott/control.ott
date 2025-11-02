@@ -1,0 +1,216 @@
+grammar 
+
+tau :: 't_' ::= 
+   | Cont tau         ::    :: Cont
+   | DeCont tau1 tau2 ::    :: DeCont
+   | Eff tau          ::    :: Eff
+   | Phi n            :: M  :: Phi
+    {{ tex \Phi([[n]]) }}
+
+e :: 'e_' ::= 
+   | try e1 with exn x => e2    ::  :: try
+   | raise v                ::  :: raise
+   | letcc x in e           ::  :: letcc
+   {{ tex \ottkw{letcc}\, [[x]]\, \ottkw{in}\, [[e]] }}
+   | cont s                 ::  :: cont
+   | throw v1 v2            ::  :: throw
+   | perform v              ::  :: perform
+   | continue v1 v2         ::  :: continue
+   | try e1 with x => e2 ; eff n y => e2' ::  :: handle
+   {{ tex \ottkw{try}\, [[e1]]\ \ottkw{with}\, [[x]]\, [[=>]]\, [[e2]]\, ; \ottkw{eff}_[[n]]\, [[y]]\, [[=>]]\, [[e2']] }}
+
+   | effect n               ::  :: effect
+
+v :: 'v_' ::= 
+   | cont s                 ::  :: cont
+   | effect n               ::  :: effect
+
+frame  :: 'f_' ::= 
+   | try _ with exn x => e2 ::   :: try 
+   | try _ with x => e2 ; eff n y => e2' ::  :: handle
+   {{ tex \ottkw{try}\, [[_]]\ \ottkw{with}\, [[x]]\, [[=>]]\, [[e2]]\, ; \ottkw{eff}_[[n]]\, [[y]]\, [[=>]]\, [[e2']] }}
+
+stack , s :: 's_' ::= 
+   | s1 ++ s2               ::  :: append
+   | rev s                  ::  :: s
+  
+
+machine , m :: '' ::= 
+   | find_exn s v    ::   :: find_exn
+   | find_eff s n s' ::   :: find_eff
+
+terminals :: 'terminals_' ::= 
+   | ++              ::   :: append
+   {{ tex +\!\!+ }}
+
+formula :: 'formula_' ::= 
+   | find_exn s v ::   :: find_exn
+   | find_eff s v ::   :: find_eff
+   | m |->* m'    ::   :: m_step_star
+
+
+
+defns 
+JRecTyping :: '' ::= 
+
+defn 
+G ||- e : tau  ::  :: typing_tm :: 'te_'
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+%%% Exceptions
+
+G ||- v : Nat
+--------------------- :: raise
+G ||- raise v : tau 
+
+
+G ||- e1 : tau 
+G , x : Nat ||- e2 : tau
+--------------------------------------- :: try
+G ||- try e1 with exn x => e2 : tau
+
+%%% Control operators
+
+G , x : Cont tau ||- e : tau 
+------------------------------ :: letcc
+G ||- letcc x in e : tau 
+
+
+G ||- v1 : Cont tau' 
+G ||- v2 : tau'
+---------------------------------- :: throw
+G ||- throw v1 v2 : tau
+
+%%% Effect handlers
+
+G ||- v : Eff tau
+--------------------- :: perform
+G ||- perform v : tau 
+
+G ||- e1 : tau1
+G, x : tau1 ||- e2 : tau
+G, y : DeCont (Phi n) tau ||- e2' : tau
+----------------------------------------------- :: handle
+G ||- try e1 with x => e2 ; eff n y => e2' : tau
+
+G ||- v1 : DeCont tau1 tau
+G ||- v2 : tau1
+--------------------------- :: continue
+G ||- continue v1 v2 : tau
+
+defn 
+G ||- v : tau ::  :: typing_val :: 'tv_' 
+{{ tex [[G]] \vdash [[v]] \in [[tau]] }}
+by
+
+||- s : tau
+---------------------------- :: cont
+G ||- cont s : Cont tau
+
+
+||- s : tau1 ~> tau2
+-------------------------------- :: decont 
+G ||- cont s : DeCont tau1 tau2
+
+
+--------------------------- :: eff
+G ||- effect n : Eff (Phi n)
+
+defn 
+||- s : tau ::  :: typing_stack_simple :: 'tss_' 
+{{ tex \vdash [[s]] \in [[tau]] }}
+by
+
+--------------- :: nil
+||- nil : tau
+
+
+||- frame : tau1 ~> tau2
+||- s : tau2
+----------------------- :: cons 
+||- (frame : s) : tau1
+
+
+defn 
+||- s : tau1 ~> tau2 ::  :: typing_stack :: 'ts_' 
+{{ tex \vdash [[s]] \in [[tau1]] [[~>]] [[tau2]] }}
+by
+
+--------------- :: nil
+||- nil : tau ~> tau
+
+
+||- frame : tau1 ~> tau2
+||- s : tau2 ~> tau3
+------------------ :: cons 
+||- (frame : s) : tau1 ~> tau3
+
+
+defn 
+||- frame : tau1 ~> tau2 ::  :: typing_frame :: 'tf_' 
+{{ tex \vdash [[frame]] \in [[tau1]] [[~>]] [[tau2]] }}
+by
+
+x : tau1 ||- e2 : tau2
+------------------------------------ :: let
+||- let x = _ in e2 : tau1 ~> tau2
+
+
+x : Nat ||- e2 : tau
+------------------------------------------ :: try
+||- try _ with exn x => e2 : tau ~> tau
+
+x : tau1 ||- e2 : tau
+y : DeCont (Phi n) tau  ||- e2' : tau
+------------------------------------------ :: handle
+||- try _ with x => e2 ; eff n y => e2' : tau1 ~> tau
+
+
+defn
+||- m ok ::   :: machine_ok :: 'm_' 
+by 
+
+||- s : tau1 ~> tau2
+||- e : tau1
+----------------- :: ok
+||- < s , e > ok
+
+
+defns 
+JStackSmall :: '' ::= 
+
+defn 
+m |-> m' ::  :: small_step :: 'ssm_' 
+by
+
+------------------------------------------ :: raise
+< frame : s , raise v > |-> find_exn (frame:s) v
+
+
+--------------------------------------------------------------------- :: try
+< s , try e1 with exn x => e2 > |-> < try _ with exn x => e2 : s , e1 > 
+
+
+----------------------------------------------------- :: discard
+< try _ with exn x => e2 : s , ret v > |-> < s , ret v > 
+
+
+---------------------------------------------------------  :: letcc
+< s , letcc x in e > |-> < s , e [ cont s / x ] >
+
+---------------------------------------------------------  :: throw
+< s , throw (cont s') v > |-> < s' , ret v >
+
+--------------------------------------------------------------------- :: handle
+< s , try e1 with x => e2 ; eff n y => e2' > |-> < try _ with x => e2 ; eff n y => e2' : s , e1 > 
+
+--------------------------------------------------------------------- :: handle_ret
+< try _ with x => e2 ; eff n y => e2' : s , ret v >  |-> <s, e2 [ v / x ]>
+
+
+------------------------------------------------------------ :: perform
+< frame : s , perform (effect n) > |-> find_eff (frame:s) n nil
+
+------------------------------------------------------------ :: continue
+< s1, continue (cont s2) v > |-> <s2 ++ s1 , ret v>

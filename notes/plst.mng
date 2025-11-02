@@ -78,7 +78,9 @@
 \input{steps}
 \input{eff}
 \input{modal}
+\input{stack}
 \input{control}
+
 
 \backmatter
 

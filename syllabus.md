@@ -16,39 +16,39 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 > [!WARNING]
 > This schedule is tentative and may be revised.
 
-| Date    | Chapter(s) | Topic |
-|---------|----------| ------------------------------------------------------------------------------------------|
-| W 8/27  |          | **No Class**: Instructor travel                                                                     |
-| M 9/1   |          | **No Class**: Labor day                                                                             |
-| W 9/3   | Ch. 1    | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> What is Type Safety? |
-| M 9/8   |          | Preservation and substitution                                                                       |
-| W 9/10  | Chs. 1-2 | Progress <br/> Natural number recursion                                                             |
-| M 9/15  | Ch. 3    | Big step semantics                                                                                  |
-| W 9/17  | Ch. 4    | Semantic soundness                                                                                  |
-| M 9/22  | Ch. 5    | **HW #1 due** <br/> Recursive definitions                                                           |
-| W 9/24  |          | Metatheory of recursive definitions                                                                 |
-| M 9/29  | Ch. 6    | Semantic soundness with recursive definitions                                                       |
-| W 10/1  |          | Step-indexed logical relations                                                                      |
-| M 10/6  |          | **HW #2 due** <br/> More step-indexed logical relations                                             |
-| W 10/8  |          | More step-indexing, Working in Rocq                                                       |
-| M 10/13 | Ch. 7    | Type-and-effect systems (nontermination)                                                  |
-| W 10/15 |          | Syntax directed systems, Nontermination Monad                                             |
-| M 10/20 | Ch. 8    | **HW #3 due** <br/> Nontermination monad                                                  |
-| W 10/22 |          | More nontermination monad                                                                 |
-| M 10/27 |          | **Midterm Exam** (in class)                                                               | 
-| W 10/29 | Ch. 9    | Explicit control stacks                                                                   |
-| M 11/3  | |                                                                                                    |
-| W 11/5  | |                                                                                                    |
-| M 11/10 | | HW #4 due                                                                                          |
-| W 11/12 | |                                                                                                    |
-| M 11/17 | |                                                                                                    |
-| W 11/19 | |                                                                                                    |
-| M 11/24 | | HW #5 due                                                                                          |
-| W 11/26 | | **No Class**: Friday schedule for Thanksgiving                                                     |
-| M 12/1  | |                                                                                                    |
-| W 12/3  | |                                                                                                    |
-| M 12/8  | | HW #6 due                                                                                          |
-| T 12/16 | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
+| Date    | Chapter(s) | Lang | Topic |
+|---------|----------|--------|-----------------------------------------------------------------------------------|
+| W 8/27  |          | | **No Class**: Instructor travel                                                                     |
+| M 9/1   |          | | **No Class**: Labor day                                                                             |
+| W 9/3   | Ch. 1    | | [Introduction: Why study Semantics and Types?](notes/01-introduction.md) <br/> What is Type Safety? |
+| M 9/8   |          | Preservation and substitution                                                                         |
+| W 9/10  | Chs. 1-2 | stlc    | Progress <br/> Natural number recursion                                                     |
+| M 9/15  | Ch. 3    | stlc    | Big step semantics                                                                          |
+| W 9/17  | Ch. 4    | stlc    | Semantic soundness                                                                          |
+| M 9/22  | Ch. 5    | rec     | **HW #1 due** <br/> Recursive definitions                                                   |
+| W 9/24  |          | rec     | Metatheory of recursive definitions                                                         |
+| M 9/29  | Ch. 6    | rec     | Semantic soundness with recursive definitions                                               |
+| W 10/1  |          | rec     | Step-indexed logical relations                                                              |
+| M 10/6  |          | rec     | **HW #2 due** <br/> More step-indexed logical relations                                     |
+| W 10/8  |          | rec     | More step-indexing, Working in Rocq                                                         |
+| M 10/13 | Ch. 7    | eff     | Type-and-effect systems (nontermination)                                                    |
+| W 10/15 |          | eff     | Syntax directed systems, Nontermination Monad                                               |
+| M 10/20 | Ch. 8    | modal   | **HW #3 due** <br/> Nontermination monad                                                    |
+| W 10/22 |          | modal   | More nontermination monad                                                                   |
+| M 10/27 |          |         | **Midterm Exam** (in class)                                                                 | 
+| W 10/29 | Ch. 9    | rec     | Explicit control stacks                                                                     |
+| M 11/3  | Ch. 10   | control | Exceptions                                                                                  |
+| W 11/5  | | |                                                                                                   |
+| M 11/10 | | | HW #4 due                                                                                          |
+| W 11/12 | | |                                                                                                   |
+| M 11/17 | | |                                                                                                   |
+| W 11/19 | | |                                                                                                   |
+| M 11/24 | | | HW #5 due                                                                                          |
+| W 11/26 | | | **No Class**: Friday schedule for Thanksgiving                                                     |
+| M 12/1  | | |                                                                                                   |
+| W 12/3  | | |                                                                                                   |
+| M 12/8  | | | HW #6 due                                                                                          |
+| T 12/16 | | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
 
 ## Grading and Assignments
 

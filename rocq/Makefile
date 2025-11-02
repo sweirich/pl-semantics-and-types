@@ -1,8 +1,8 @@
-COQMAKEFILE=CoqMakefile
+COQMAKEFILE=rocq makefile
 LIBNAME=plst
 SYNTAX=$(wildcard */syntax.sig) $(wildcard */typesyntax.sig)
 SYNTAXV = $(SYNTAX:.sig=.v)
-LANGS=stlc rec div modal 
+LANGS=stlc rec div modal control
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: rocq syntax clean fullclean
@@ -14,7 +14,7 @@ rocq: CoqSrc.mk $(SOURCEV)
 	make -f CoqSrc.mk
 
 CoqSrc.mk: _CoqProject
-	 coq_makefile -arg '-w -variable-collision,-meta-collision,-require-in-module,-notation-overridden' -f _CoqProject -o CoqSrc.mk
+	 $(COQMAKEFILE) -arg '-w -variable-collision,-meta-collision,-require-in-module,-notation-overridden' -f _CoqProject -o CoqSrc.mk
 
 # Remove compiled files
 clean:

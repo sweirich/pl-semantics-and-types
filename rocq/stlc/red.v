@@ -61,11 +61,12 @@ End Big.
 
 
 
+
 Module RedNotations.  
-Infix "⤳"  := Small.step (at level 70).
-Infix "⤳*" := (multi Small.step) (at level 70).
+Infix "~>"  := Small.step (at level 70).
+Infix "~>*" := (multi Small.step) (at level 70).
 Notation "e ⟱ v" := 
-  (e ⤳* v /\ is_value (v : Tm 0) = true) (at level 70).
+  (e ~>* v /\ is_value (v : Tm 0) = true) (at level 70).
 Infix "⇓"   := Big.step   (at level 70).
 End RedNotations.
 

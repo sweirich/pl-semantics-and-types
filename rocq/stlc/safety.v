@@ -158,7 +158,7 @@ Qed.
 (*** Preservation *)
 
 Lemma preservation : forall e e', 
-    e ⤳ e' -> forall τ, null |- e ∈ τ -> null |- e' ∈ τ.
+    e ~> e' -> forall τ, null |- e ∈ τ -> null |- e' ∈ τ.
 Proof.
   intros e e' hS.
   induction hS.
@@ -208,7 +208,7 @@ Proof.
 Qed.
 
 Lemma progress : forall e τ, 
-    null |- e ∈ τ -> is_value e = true \/ exists e', e ⤳ e'.
+    null |- e ∈ τ -> is_value e = true \/ exists e', e ~> e'.
 Proof.
   intros e τ hT.
   dependent induction hT.
@@ -234,10 +234,10 @@ Proof.
 
 (** No stuck terms *)
 
-Definition not_stuck (e : Tm 0) := is_value e = true \/ exists e',  e ⤳ e'.
+Definition not_stuck (e : Tm 0) := is_value e = true \/ exists e',  e ~> e'.
 
 Theorem type_safety_not_stuck : 
-  forall e τ, null |- e ∈ τ -> forall e', e ⤳* e' -> not_stuck e'.
+  forall e τ, null |- e ∈ τ -> forall e', e ~>* e' -> not_stuck e'.
 Proof.
   intros.
   induction H0.

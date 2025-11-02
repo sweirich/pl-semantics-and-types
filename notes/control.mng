@@ -1,399 +1,393 @@
-\chapter{Explicit control stacks}
-\label{ch:control-stacks}
+\chapter{Control Effects}
+\label{ch:control}
 
-In this chapter, we look at what happens if we make the \emph{control stack}
-explicit in the semantics of a programming language. The control stack records
-where we are during the execution of a program. In both the small-step and the
-big-step semantics, this record is stored directly (but implicitly) in the
-term as it evaluates. 
+Many languages include features for throwing and catching exceptions.
+Exceptions provide a way for programs to signal errors or break out of loops
+early.
 
-We have two primary motivations for making the control stack explicit:
+Fewer languages provide explicit stack manipulation through control 
+operators. Scheme (and its modern-day variant Racket), includes 
+\texttt{call-with-current-continuation}, or \texttt{call-cc}, that 
+gives users the ability to access the control stack directly. This feature
+acts a little like exceptions --- by passing a captured continuation, users 
+can go back to earlier parts of the stack --- but it is much more powerful. 
+Captured continuations are first class. They can be saved in data structures and 
+stored in function closures. That means that invoking a continuation may take your 
+program to a stack that is very different than the current one.
 
-First, if we want to give a semantics to some programming language features
-that interact with the control stack, such as exceptions or continuations, we
-need to have access to this structure.
+Effect handlers are newer still, and have only recently been implemented in OCaml.
 
-Second, if we want to define what it means for two programs to be ``the same''
-then we want to think about all of the ways that a program can interact with
-its enviroment. A control stack is a way to ``use'' a closed program and gives
-us a definition of equivalence based on both programs always producing the
-same result on any stack that we might run them on.
+In this chapter we will consider how to extend the semantics of our stack
+based language with new forms of control operations. 
 
-\section{Stack-based semantics}
+\section{Exceptions}
 
-Let's first get comfortable with stack based semantics. We've already seen two
-different ways of defining the operational semantics of a programming
-language: \emph{small-step} and \emph{big-step} semantics. In this section, we
-will think about variants of those semantics that use an explicit control
-stack.
+Most languages include an extensible variant type for exceptions. For
+convenience, this type \texttt{exn} or \texttt{Exception} can be extended with
+new options corresponding various forms of errors (\texttt{Failure} or
+\texttt{NullPointerException}) and signals (\texttt{Not\_found} or
+\texttt{NoSuchElementException}).  For simplicity in our formalism, we will
+use the type $[[Nat]]$ as our exception type, using different natural numbers to 
+distinguish between different exception values. 
 
-We continue to work with $\rec$, a fine-grained CBV language, in this
-chapter. To recap, this language explicitly separates values and
-terms. Furthermore, most constructs in the term language do only one step at a
-time. The only exception is $[[let x = e1 in e2]]$, which sequences one
-computation after another.
-
-\[
-\begin{array}{lcll}
-[[tau]] &::=& [[Unit]]\ [[Void]]\ |\ [[Nat]]\ |\ [[tau1 -> tau2]]
-          |\ [[tau1 * tau2]]\ |\ [[tau1 + tau2]] & \mbox{types} \\
-
-[[v]] &::=& [[x]]\                    & \mbox{variables} \\
-      & | & [[unit]]\                 & \mbox{unit} \\
-      & | & [[0]]\                    & \mbox{zero} \\
-      & | & [[S v]]                   & \mbox{successor} \\ 
-      & | & [[\x. e]]\                & \mbox{functions} \\
-      & | & [[(v1,v2)]]\              & \mbox{pairs} \\
-      & | & [[inj1 v]]\ |\ [[inj2 v]] & \mbox{sums} \\ 
-      & | & [[rec x. v]]\             & \mbox{recursive value} \\
-      & | & [[fold v]]\               & \mbox{recursive type} \\
-     
-\\
-[[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
-      & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
-      & | & [[prj1 v]]\ |\ [[prj2 v]]\ & \mbox{projection} \\
-      & | & [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] & \mbox{case} \\
-      & | & [[unfold v]]              & \mbox{unfold recursive value} \\
-      & | & [[ret v]]                 & \mbox{value} \\
-      & | & [[let x = e1 in e2]]      & \mbox{sequencing} \\
-\end{array}
-\]
-
-
-\subsection{Primitive vs. control reductions}
-
-Before we introduce explicit stacks, will will first refactor our existing
-small step and big-step reduction relations to first isolate \emph{primitive}
-reductions as a separate judgement. That structure will allow us to focus only 
-on the reductions that affect the control stack. Notice that all of these 
-rules are \emph{axioms}, they do not have any premises.
-
-\begin{definition}[Primitive reductions]
-\drules[prim]{$[[e ~>> e']]$}{$[[e]]$ primitive reduces to $[[e']]$}
-       {beta,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo,unfold,app-rec,prjOne-rec,prjTwo-rec}
-\end{definition}
-
-Our revised version of the small-step semantics for \rec includes all
-primitive reductions, plus the two rules that work with let expressions. This
-semantics is trivially equivalent to the version presented in
-Chapter~\ref{ch:rec}.  (You should convince yourself of this fact.)  As
-before, the only rule of the semantics with a premise is \rref{s-let-cong}.
-
-\begin{definition}[Small-step semantics]
-\drules[s]{$[[e ~> e']]$}{$[[e]]$ small-steps to $[[e']]$ }
-{prim,let-ret,let-cong}
-\end{definition}
-
-Now let's design a big-step semantics for the \rec language. We can use
-primitive reductions to do so using only three rules.
-
-\begin{definition}[Big-step semantics]
-\drules[bs]{$[[e => v]]$}{$[[e]]$ big-steps to $[[v]]$ } {prim,val,let}
-\end{definition}
-
-Both of these semantics are deterministic. Furthermore, we can 
-show that they are also equivalent to eachother, using the same technique that 
-we used in Chapter~\ref{ch:bigstep}.
-
-\begin{theorem}[Equivalence of semantics] 
-For closed expressions $e$, we have $[[e ~>* ret v]]$ if and only if $[[e => v]]$.
-\end{theorem}
-The proofs of both directions of these theorems is by straightforward
-induction on the derivations, with the assistance of the following two easy
-lemmas.
-
-As in Chapter~\ref{ch:bigstep}, we needed a step-expansion lemma to show the
-forward direction of the lemma. 
-\begin{lemma}[step-expansion]
-If $[[e1 ~> e2]]$ and $[[e2 => v]]$ then $[[e1 => v]]$.
-\end{lemma}
-
-As in Chapter~\ref{ch:bigstep}, to prove the reverse direction of this lemma,
-we need to show that we can multistep let expressions.
-\begin{lemma}[ms-let-cong]
-If $[[e1 ~>* e1']]$ then $[[let x = e1 in e2 ~>* let x = e1' in e2]]$
-\end{lemma}
-
-
-\section{Stack-based semantics}
-
-Now let's make the stack explicit in our operational semantics. What is the
-point of the control stack?
-
-In the stack-based semantics, each step describe the reduction of an abstract
-\emph{machine}.  A machine $[[<s,e>]]$ is a pair of some control \emph{stack}
-and some term $[[e]]$ executing on that stack.
+Our extension with exceptions includes two new terms in the language: a way to
+\emph{raise} or trigger an exception, and a way to install an exception
+handler with \texttt{try}.
 
 \[
 \begin{array}{llcl}
-\textit{frame}   & [[f]] &::=& [[ let x = _ in e ]] \\
-\textit{stack}   & [[s]] &::=& [[f]]:[[s]]\ |\ [[nil]] \\
-\textit{machine} & [[m]] &::=& [[ < s , e > ]] \\
+\mathit{term} & [[e]] &::=& [[try e1 with exn x => e2]]\ |\ [[raise v]] \\
+\mathit{frame}& [[f]] &::=& [[try _  with exn x => e2]] \\
 \end{array}
 \]
 
-A control stack is a \emph{list} of \emph{frame}s which record ``what we need
-to do next'' after evaluating the current term $[[e]]$. As we accumulate more
-computational work, we \emph{push} a new frame on the stack. Once we have
-evaluated the current term to a value, we \emph{pop} the current frame from
-the stack (if any) to get the next step in our evaluation. If the stack is
-empty, we have reached the end of the computation.
+There are three new small-step rules that work with exceptions. 
+The \rref{ssm-try} pushes an exception handler frame onto the stack 
+and continues executing the body of the ``try''. The \rref{ssm-discard}
+pops this exception handler off the stack when the body returns a value. 
+Finally, the \rref{ssm-raise} uses an auxiliary function (shown below) 
+to scan the stack for a current exception handler when an exception is 
+raised.
 
-In the fine-grained \rec language, we only have one form of term that
-sequences computation: $[[let x = e1 in e2]]$. That means that we only need
-one kind of frame, written $[[let x = _ in e2]]$. This frame gets pushed on
-the stack when we are evaluating the right-hand-side of a let definition. Once
-this result has been calculates, the frame remembers what we should do with
-the value of $[[x]]$ in $[[e2]]$ the body of the term.
-
-\subsection{Stack-based small-step semantics}
-
-Using this framework, we can say how (abstract) machines evaluate,
-step-by-step. There are only three rules: either the term does a primitive
-reduction, the term is a $\ottkw{let}$ so we push a frame on the stack, or the
-term is a returned value, and there is a $\ottkw{let}$-frame waiting on the
-stack, so we pop it to access the next step.
-
-\begin{definition}[Stack based small-steps]\
-
-\drules{$[[m |-> m']]$}{$[[m]]$ small-steps to $[[m']]$ }
-{ssm-prim,ssm-push,ssm-pop}
-\end{definition}
-
-We also think about the reflexive, transitive closure of this relation,
-written $[[m |->* m']]$. A complete evaluation is one where $[[m']]$ is some
-\emph{terminal} machine state.
-
-\begin{definition}[Terminal machine state]
-A machine has finished evaluation when the stack is empty and 
-the term is a returned value. In other words, when it is of the form:
-$[[ < nil , ret v > ]]$
-\end{definition}
-
-The key property of this stack-based semantics is that it \emph{linearizes}
-computation. None of the rules are inductive. Instead, we have replaced the
-congruence rule for $\ottkw{let}$ with pushing and popping on the stack. That
-means that a computation may need more steps of evaluation to produce the
-final value. However, each individual step is simpler as we don't need to look
-deep within the term to find a reduction; it is always apparant from the
-top-level configuration of the machine.
-
-\subsection{Example: small-step semantics without and with stacks}
-
-Consider the small step evaluation of this term:
-
+\drules{$[[m |-> m']]$}{Stack-based small-step rules}
+{ssm-try,ssm-discard,ssm-raise}
 \[
 \begin{array}{ll}
- & [[let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox{ function application (primitive) } \\
- & [[let x = (let y = (ret 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox { inline y } \\
- & [[let x = 1 + 0 in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox { addition (primitive) } \\
- & [[let x = ret 1 in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox { inline x } \\
- & [[let z = (let y = (2 + 1) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox { addition (primitive) } \\
- & [[let z = (let y = (ret 3) in ret y) in (3 + z)]]  \\
- & [[~>]] \mbox { inline y } \\
- & [[let z = (ret 3) in (3 + z)]]  \\
- & [[~>]] \mbox { inline z } \\
- & [[(3 + 3)]]  \\
- & [[~>]] \mbox { addition (primitive) } \\
- & [[ret 6]] \\
+[[find_exn (try _ with exn x => e2 : s) v]] &= [[<s, e2[v/x]>]]\\
+[[find_exn (frame : s) v]] &= [[find_exn s v]] \\
+[[find_exn nil v]] & = [[< nil , raise v >]] \\
 \end{array}
 \]
 
-During this evaluation, to figure out how to step this term, we needed to find
-the innermost reduction $[[(\x.ret x) 0]]$ hiding inside the nested let
-expression. Then, we had to search of the next additions to do, still hiding inside nested lets.
+When $[[find_exn s v]]$ successfully finds an exception handler frame on the
+stack (see first line of the definition) then the machine switches to the
+stack immediately below the handler and the code in the handler. The value
+$[[v]]$ is the thrown exception value (a natural number in this case) and is
+subsituted for $[[x]]$ in the handler code.  If the $[[find_exn s v]]$ reaches
+the end of the stack without finding an exception handler, the machine stops
+with an empty stack and an uncaught exception (signified by the $[[raise v]]$ term).
+This term cannot step because the \rref{ssm-rule} applies only when the stack is not
+empty.
 
-In a stack based semantics, we will consider the evaluation of a stack $[[s]]$
-paired with a term $[[e]]$.  When the term is a let expression, we will push
-the congruent part of the let expression on the stack and then focus on the
-right hand side. 
+\subsection{Type Safety in the presence of exceptions}
 
-This takes a few extra steps on our example to do the pushing.
+The typing rule for the two new terms are shown below:
 
-\[
-\begin{array}{ll}
- & [[<nil, let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z) >]]  \\
- & [[~>]] \mbox{ push let x} \\
- & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, let y = ((\x.ret x) 0) in 1 + y  >]]  \\
- & [[~>]] \mbox{ push let y} \\
- & [[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, (\x.ret x) 0 >]]  \\
- & [[~>]] \mbox{ function application (primitive) } \\
- & [[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, ret 0 >]]  \\
- & [[~>]] \mbox{ pop (subst for y) } \\
- & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 + 0 >]]  \\
- & [[~>]]\mbox { addition (primitive) } \\
- & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 >]]  \\
- & [[~>]]\mbox { pop (subst for x) } \\
- & [[<nil, let z = (let y = (2 + 1) in ret y) in (3 + z)>]]  \\
- & [[~>]]\mbox{ push let z} \\
- & [[<let z =  _ in (3 + z) : nil, (let y = (2 + 1) in ret y) >]]  \\
- & [[~>]]\mbox{ push let y } \\
- & [[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 2 + 1 >]]  \\
- & [[~>]]\mbox { addition (primitive) } \\
- & [[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 3 >]]  \\
- & [[~>]]\mbox { pop (subst for y) } \\
- & [[<let z =  _ in (3 + z) : nil, ret 3 >]]  \\
- & [[~>]]\mbox { pop (subst for z) } \\
- & [[<nil, 3 + 3 >]]  \\
- & [[~>]] \mbox { addition (primitive) } \\
- & [[<nil, ret 6>]] \\
-\end{array}
-\]
+\drules[te]{$[[G ||- e : tau]]$}{Typing rules}
+{raise,try}
 
+The term $[[raise v]]$ expects its argument to be an exception value, i.e. a
+natural number. Note that this term could have any type, including $[[Void]]$.
+The $[[raise v]]$ term never produces a value---it just jumps to some other
+part of the program. So it is safe to pretend that this term produces any type
+of value that we want.
 
-\subsection{Stack-based big-step semantics}
+The term $[[try e1 with exn x => e2]]$ requires both the body of the try
+block $[[e1]]$ and the exception handler $[[e2]]$ to have the same type. This
+expression will either terminate normally, or it will trigger the handler. We
+can't tell which will happen statically, so the type system requires them to
+be the same, just as in pattern matching expressions. The variable $[[x]]$ is
+a name for the exception value that was thrown; we are using $[[Nat]]$s as
+exception values in this language.
 
-Now let's design a big-step version of the semantics that uses an explicit stack. 
-Note that in this version of the big-step semantics, each rule has at most one 
-premise. Where derivations in the original bigstep semantics could be wide (due to the 
-$\ottkw{let}$ rule) in this version they are always very tall.
-This version of the semantics also linearizes the computation.
+We can prove type safety for our stack-based language, but we need to extend
+our type system to be able to talk about stacks, frames, and machines. All
+three of these judgements are for runtime constructs, so we only care about
+type checking them with the empty context.
 
-\drules[bsm]{$[[<s, e> |=> v]]$}{$[[e]]$ small-steps to $[[e']]$ }
-{final,prim,push,pop}
+\begin{definition}[Frame, Stack and Machine typing]
+\drules[tf]{$[[||- frame : tau1 ~> tau2 ]]$}{Frame $[[frame]]$ takes values of type $[[tau1]]$ to stacks of type $[[tau2]]$}
+{let,try}
+\drules[tss]{$[[||- s : tau1]]$}{Stack $s$ accepts terms of type $[[tau1]]$}
+{nil,cons}
+\drules[m]{$[[||- m ok]]$}{Machine $m$ is well-typed}{ok}
+\end{definition}
 
-\subsection{Example: big-step semantics with stacks}
-Here's the same example as above, expressed with our 
-big-step semantics. This derivation is the ``vertical'' version of 
-the small-step derivation. Note that every step of the machine is the same---the only 
-difference is that we have a single tall derivation instead of a long sequence of steps.
+We expect our machines to stop executing when the stack is empty and the term
+has returned a value, or when the stack is empty and the term has raised an
+exception (which is uncaught).
+\begin{definition}[Terminal machines]
+A machine is in a terminal state if it is of the form $[[<nil, ret v>]]$ or $[[<nil, raise v>]]$. 
+\end{definition}
 
-\[
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-\inferrule{
-}{
-[[<nil, ret 6> |=> 6]]
-}
-}{
-[[<nil, 3 + 3 > |=> 6]]
-}
-}{
-[[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 3 > |=> 6]]
-}
-}{
-[[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 2 + 1 > |=> 6]]
-}
-}{
-[[<let z =  _ in (3 + z) : nil, (let y = (2 + 1) in ret y) > |=> 6]]
-}
-}{
-[[<nil, let z = (let y = (2 + 1) in ret y) in (3 + z)> |=> 6]]
-}
-}{
-[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 > |=> 6]]
-}
-}{
-[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 + 0 > |=> 6]] 
-}
-}{
-[[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, ret 0 > |=> 6]] 
-}
-}{
-[[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, (\x.ret x) 0 > |=> 6]]
-}
-}{
-[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, let y = ((\x.ret x) 0) in 1 + y  > |=> 6]]
-}
-}{
-[[<nil, let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z) > |=> 6]]
-}
-\]
-
-\section{Equivalence between these semantics}
-
-\begin{theorem}[\link{rec/stack.v}{}{Stack machine correctness}]
-The following are equivalent:
-\begin{enumerate}
-\item $[[ e ~>* ret v ]]$ 
-\item $[[ < nil, e > |->* < nil, ret v > ]]$ 
-\item $[[ e => v ]]$ 
-\item $[[ < nil, e > |=> v ]]$
-\end{enumerate}
+We can use the definition of terminal machine to talk about what it means for computation to not get stuck. 
+\begin{theorem}[Type Safety]
+If $[[||- m ok]]$ and $[[ m |->* m' ]]$ then either $[[m']]$ is a terminal machine or there exists some $[[m'']]$ such that $[[ m' |-> m'']]$.
 \end{theorem}
+The proof of this property is via the preservation and progress
+theorems. There are a few observations to make about this proof.
 
-From above, already have the equivalence between the original small and big step semantics, i.e. (1) iff (3). 
-In this section, we will complete the relationships between these judgements.
-
-\subsection{Stack completeness}
-
-The original big-step and small-step semantics can be simulated by the
-stack-based small-step semantics. It turns out that it is simplest to first
-show the connection between the big-step semantics and the stack based
-semantics, i.e. that (3) implies (2). This also gives us (1) implies (2).
-
-\begin{lemma}[Stack completeness (big-step)]
-If $[[ e => v ]]$ then $[[ < s , e > |->* < s , ret v > ]]$, for any $[[s]]$.
+First, note that the \rref{ssm-raise} case of the preservation theorem
+requires showing that looking for an exception handler produces an well-typed
+machine. It doesn't matter what type of stack we have when we raise the
+exception; if its well-formed, then any exception handler that we find on the
+stack will produce a well-formed machine.
+\begin{lemma}[Ok try]
+If $[[||- v : Nat]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
 \end{lemma}
-This proof is by induction on the big-step semantics. 
 
-\begin{lemma}[Stack completeness (small-step)]
-If $[[ e ~>* ret v ]]$ then $[[ < nil, e > |->* < nil, ret v > ]]$
+Second, notice more generally that we don't (need to) track the machine type in the 
+$[[||- m ok]]$ judgement. This means that our preservation theorem doesn't necessarily 
+``preserve'' the type of the machine, it just preserves the fact that the machine is 
+well-formed as it steps.
+\begin{lemma}[Preservation]
+If $[[||- m ok]]$ and $[[m |-> m']]$ then $[[ ||- m ok ]]$.
 \end{lemma}
-This follows from the big-step completeness and the equivalence between big
-and small step semantics.
 
-\subsection{Soundness}
+Third, note our type safety theorem does not rule out uncaught exceptions. The
+machine configuration $[[ <nil, raise v>]]$ results from throwing an exception
+when there is no handler on the stack, and is considered a well-formed
+terminal machine.
 
-It is more difficult to prove the soundness lemma: the fact that all
-executions on the machine semantics can be simulated by the original
-semantics.
+It would be difficult for our type system to do better. If we want to be sure
+that all exceptions are caught by appropriate handlers, i.e. that our language
+is \emph{exception safe} in addition to \emph{type safe}, we might use some
+sort of type-and-effect system that tracks which exceptions are thrown and
+removes those effects when a try-block is in play. The Java Language includes
+this capability with its mechanism for checked exceptions. However, this
+feature has turned out to not be very useful to developers.
 
-\begin{definition}[Unravel]
-Define $[[s { e } ]]$ by recursion on the stack:
-\begin{itemize}
-\item $[[ nil { e } ]] = [[e]]$
-\item $[[ (let x = _ in e2 : s){ e } ]] = [[ s { let x = e in e2 } ]]$
-\end{itemize}
+Without exception safety, type safety is a weaker theorem. Instead of saying
+that a well-typed program either diverges or returns a value, we say now that
+a well-typed program either diverges, returns a value, or throws an
+exception. More things could happen. What this means is that if we have a
+language that is not type-safe because it gets stuck, we can trivially make it
+type-safe by changing the semantics to throw an exception in all places where
+it would get stuck. (This is a bit better than changing the semantics to go
+into an infinite loop in all places where it would get stuck, an option that
+was already available to us.) Our type safety theorem is meaningful, but we
+have to realize that its utility depends on the language semantics (as
+always). We need to make sure that there are enough reduction rules to
+actually compute the answers that we need. A trivial language that always and
+immediately raises an exception would also be type safe.
+
+\section{Continuations}
+
+Control operations, such as \texttt{call/cc}, reify the control stack 
+as a data structure. This provides a more expressive way to ``jump'' to 
+new computation contexts. 
+
+
+\begin{definition}[Control operations]
+\[
+\begin{array}{llcl}
+\mathit{types}& [[tau]] &::=& [[Cont tau]] \\
+\mathit{value}& [[v]] &::=& [[cont s]] \\
+\mathit{term} & [[e]] &::=& [[letcc x in e]]\ |\ [[throw v1 v2]] \\
+\end{array}
+\]
 \end{definition}
 
-\begin{lemma}[Stack congruence]
-If $[[e ~> e']]$ then $[[ s { e } ~> s { e' } ]]$ 
+Let's add a $[[letcc x in e]]$ operation to the \rec\ language. This term
+captures the current stack as a new continuation value $[[cont s]]$, bound to
+the variable $[[x]]$. In the scope of $[[x]]$, the $[[throw v1 v2]]$ operation
+changes whatever the current execution stack is to this saved stack, which
+also receives the value $[[v2]]$.
+
+\begin{definition}[Small-step stack based semantics for control] \ \\
+\drules{$[[m |-> m']]$}{Stack-based small-step rules}
+{ssm-letcc,ssm-throw}
+\end{definition}
+
+Because we have added a new form of value to the language, we also add a new
+type, called $[[Cont tau]]$. The $[[cont s]]$ expression introduces a new
+continuation value, formed from a stack of type $[[tau]]$. In a $[[letcc x in e]]$
+term, $[[x]]$ has a continuation type that must be the same as the type of the 
+whole term; this is the point of the computation that we will come back to when the 
+continuation is invoked.  The $\ottkw{throw}$ term takes any continuation and 
+any value
+
+\drules[tv]{$[[G ||- v : tau]]$}{Value typing}
+{cont}
+\drules[te]{$[[G ||- e : tau]]$}{Term typing}
+{letcc,throw}
+
+\section{Effect handlers}
+
+The control operator $\ottkw{letcc}$ demonstrates how to \emph{reify} the
+stack as a first class value.  However, in some ways this feature is both too
+powerful and too inflexible.
+
+On one hand, $\ottkw{letcc}$ can be inefficient to implement because saved
+continuations can be used multiple times. This means that the programming
+language's runtime needs to allocate memory for the saved stack and keep this
+memory around until the stack reference goes out of scope and can be garbage
+collected.  A more efficient version is \emph{one shot} continuations: saved
+stacks that can be jumped to at most once.
+
+At the same time, these continuations are not \emph{composeable}. The issue is
+that $\ottkw{letcc}$ captures the \emph{entire} stack. But in some situations
+it may be useful to only capture \emph{part} of the stack and compose that
+part with the current stack in a new context.
+
+OCaml 5's new feature, called \emph{effect handlers}, are based on
+\emph{one-shot delimited continuations}. In this section, we will work through 
+their support for \emph{delimited} continuations. However, for simplicity, we 
+won't model the fact that they are single use here.
+
+\subsection{Grammar and stack-based semantics}
+
+Below, we introduce the grammar for this extension. Just like we used
+$[[Nat]]$ as the type of exceptions (which means that we could tell what
+exception was raised by looking at that number), we also represent effects
+using natural numbers. When a user \emph{performs} an effect with
+$[[perform v]]$, $[[v]]$ must be the number corresponding to an effect. Then
+an effect handler is a frame on the stack that executes some code if that
+particular effect has been performed.
+
+The term $[[try e1 with x => e2 ; eff n y => e2']]$ installs an effect handler
+during the excution of $[[e1]]$. If $[[e1]]$ returns a value, then the first 
+branch $[[e2]]$ is taken, where $[[x]]$ is bound to that value. However, 
+if $[[e1]]$ performs the effect $[[n]]$, then the second branch $[[e2']]$ is 
+selected, and $[[y]]$ is bound to the continuation of the effect. This 
+is the part of the stack that occurs between where the effect was performed 
+up-to and including the effect handler itself. 
+
+\begin{definition}[Grammar for effect handlers]
+\[
+\begin{array}{llcl}
+\mathit{types}& [[tau]] &::=& [[DeCont tau1 tau2]]\ |\ [[Eff tau]] \\
+\mathit{value}& [[v]] &::=& [[cont s]]\ |\ [[effect n]]\ \\
+\mathit{term} & [[e]] &::=& [[perform v]]\ |\ [[try e1 with x => e2 ; eff n y => e2']]\ | \ [[continue v1 v2]] \\
+\mathit{frame} & [[frame]] &::=& [[try _ with x => e2 ; eff n y => e2']] \\
+\end{array}
+\]
+\end{definition}
+
+\begin{definition}[Effect handler operational semantics] \ \\
+\drules{$[[m |-> m']]$}{Stack-based small-step rules}
+{ssm-handle,ssm-handle-ret,ssm-perform,ssm-continue}
+\end{definition}
+
+The \rref{ssm-handle} merely installs the effect handler by pushing the relevant 
+information on the stack. This handler is popped in \rref{ssm-handle-ret}, where
+ the returned value is passed to the first branch of the handler. 
+
+As before, the value $[[cont s]]$ embeds a list of frames as value---what is
+different this time is that when we perform an effect, we need to search the
+current stack to find the handler for that effect, along the way saving all of
+the stack frames that we encounter while searching for the effect.
+
+The metaoperation $[[find_eff s n s']]$ searches stack $[[s]]$, looking for a handler 
+for effect $[[n]]$, and accumulating frames in argument $[[s']]$. The \rref{ssm-perform}
+calls this operation with an initial accumulator of the empty stack. 
+
+\[
+\begin{array}{l}
+[[find_eff (frame : s) n s' ]] \\
+\qquad = [[<s, e2'[cont (rev (frame : s'))/y]>]]\\
+\qquad \texttt{when }[[frame]] = [[try _ with x => e2 ; eff n y => e2']] \\
+\qquad = [[find_eff s n (frame:s')]] \\
+\qquad \texttt{otherwise} \\
+[[find_eff nil n s']] = [[< nil , perform (effect n) >]] \\
+\end{array}
+\]
+
+When a maching frame is found, then the next machine stack is the one  
+where the handler was installed $[[s]]$. The next machine term is the 
+branch for that effect ($[[e2']]$). Furthermore, the variable $[[y]]$ is 
+replaced with a continuation composed of the accumulated stack frames along with 
+the handler. (By keeping the current handler, this semantics implements so 
+called \emph{deep} effect handlers. Alternative semantics discard this frame.)
+Because the accumulator is constructed while recurring down the stack, we 
+must reverse the frames when constructing the continuation.
+
+If the frame is not a handler for the current effect, then the operation calls
+itself recursively, adding that frame to the accumulator. Finally, if there is
+no handler for the effect, then the machine steps to a configuration with a
+unhandled effect.
+
+This saved continuation, which is available in the effect handler can be
+invoked with the $[[continue v1 v2]]$ term. The operation of
+$\ottkw{continue}$ is a little like that of $\ottkw{throw}$. However, instead
+of discarding the current stack, this rule appends the saved stack to the
+current stack with the notation $[[s1 ++ s2]]$. Stacks are represented as
+lists, so this is merely a list append operation.
+
+\subsection{Typing rules and type safety}
+
+To typecheck programs that involve effect handlers, we need a more informative
+type for our saved continuations. Our original typing judgement for stacks
+only tracked the type of the term that was compatible with the frame at the
+top of the stack. It did not say anything about the type of value that would
+eventually be returned by the machine.  This is a feature of exceptions and
+our previous control operators: we can prove type safety for this type system
+without statically tracking this information. This makes sense because the
+only thing that is done with the final returned value is to return it. No more
+computation can happen because the stack is empty. 
+
+In this setting, though, we need to know the bottom of the partial stack that
+is reified by the effect handler because it will be composed with another
+stack. We need to know that this composition will work out. If this type
+information is not necessary (such as in checking a machine, or in the typing
+rule for a non-delimited continuation) we can merely ignore the second type.
+
+\begin{definition}[Delimited stack typing and values]
+\drules[ts]{$[[||- s : tau1 ~> tau2]]$}{Stack typing}
+{nil,cons}
+\drules[tv]{$[[G ||- v : tau]]$}{Value typing}
+{decont,eff}
+\end{definition}
+
+Therefore, our revised stack typing rule includes two types. These two types
+are recorded in $[[DeCont tau1 tau2]]$, the type of a delimited continuation.
+
+We also need to be careful about the typing of effect values. We assume that our 
+type system is parameterized by some map $\Phi$, which maps effect numbers to 
+their types. 
+
+\begin{definition}[Typing rules for effect handlers]\ \\
+\drules[te]{$[[G ||- e : tau]]$}{Term typing}
+{perform,continue,handle}
+\drules[tf]{$[[||- f : tau1 ~> tau2]]$}{Frame typing}
+{handle}
+\end{definition}
+
+When we perform an effect, the type of the effect must match the context where
+we perform that effect. The reason is that when we capture the continuation,
+its type includes the context of the perform: the $[[tau1]]$ of
+$[[DeCont tau1 tau2]]$ says that the sort of value expected by the captured
+stack is $[[tau1]]$ --- i.e. the sort of value that we can put in this spot.
+When we $\ottkw{continue}$ with this continuation, we must give it a value of 
+the appropriate type. We also must only $\ottkw{continue}$ in a context 
+that matches the bottom of the saved stack, as this stack will be composed with 
+the one at this point in the execution. 
+
+In \rref{te-handle}, the two branches must have the same type $[[tau]]$. In
+the first case, the term acts like a $\ottkw{let}$, and continues with
+$[[e2]]$ with $[[x]]$ as the result of $[[e1]]$. In the second case, the code
+$[[e2']]$ executes in response to $[[e1]]$ performing an effect of type
+$[[Eff (Phi n)]]$. That means that the saved delimited continuation will
+accept a value of type $[[Phi n]]$, and produce a value of type
+$[[tau]]$. Therefore $[[y]]$, which is bound to this saved continuation, must
+have type $[[DeCont (Phi n) tau]]$.
+
+The typing rule for the frame (i.e. effect handler on the stack) mirrors that
+of the term. It records that it should be paired with an expression of type
+$[[e1]]$ and produces a value of type $[[tau]]$.
+
+Most of the preservation and progress proof from the previous section carries over. The most difficult part of setting this proof up is getting the definitions right. If we say, tried to use type $[[Cont tau]]$ instead of $[[DeCont tau1 tau2]]$ for the type of the saved stacks, we would not be able to show our results.
+
+The key part of the preservation lemma is showing that we perform an effect, then the 
+next machine state is well-formed.
+\begin{lemma}[Effect finding]
+If $[[ ||- s : tau1 ~> tau]]$ and $[[||- rev s1 : Phi n ~> tau1]]$ (for any $[[s1]]$), 
+then $[[ ||- find_eff s n s1 ok ]]$
 \end{lemma}
+The proof of this lemma is by induction on the stack typing for $[[s]]$. Our accumulation stack, $[[s1]]$, needs to accept a term compatible with effect $[[n]]$ and produce a value 
+that is compatible with the top of the stack $[[s]]$. 
 
-\begin{lemma}[Unravel step]
-If $[[<s, e> |-> <s', e'>]]$ then $[[s{e} ~>* s'{e'}]]$.
-\end{lemma}
+When we perform an effect, the top of the stack must have type $[[Phi n]]$,
+according to \rref{t-perform}. The accumulator starts empty, so its bottom
+type must also be $[[Phi n]]$. The lemma ensures that starting from these
+initial conditions, no matter where we find the effect handler we will have a
+good machine state.
 
-\begin{lemma}[Unravel multistep]
-If $[[<s, e> |->* <s', ret v>]]$ then $[[s{e} ~>* s'{ret v}]]$.
-\end{lemma}
 
-The soundness lemma is a corollary of the multistep lemma above.
-\begin{corollary}[Soundness]
-If $[[<nil, e> |->* <nil, ret v>]]$ then $[[ e ~>* ret v ]]$.
-\end{corollary}
+\section{Further reading}
 
-\subsection{Small-step and big-step stack equivalence}
-
-Because the small-step and big-step stack semantics are so similar
-it is not difficult to show the equivalence of (2) and (4).
-Both of the directions follow by straightforward induction 
-on the derivations.
-
-\begin{lemma}
-If $[[ <s,e> |->* <nil, v> ]]$ then $[[<s,e> |=> v]]$.
-\end{lemma}
-
-\begin{lemma}
-If $[[<s,e> |=> v]]$ then $[[ <s,e> |->* <nil, v> ]]$.
-\end{lemma}
-
-\section{References and Further reading}
-This chapter is adapted from Chapter 28 of PFPL, translating to a fine-grained CBV language and adding a big-step version of the machine semantics. 
+See Xavier Leroy's slides from his course on on Control
+Structures~\url{https://xavierleroy.org/CdF/2023-2024/}.  (The slides are in
+English, even though the lecture videos are only available in French.)
 
 

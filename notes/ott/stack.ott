@@ -3,20 +3,19 @@
 grammar 
 
 e :: 'e_' ::= 
-   | try e1 handle x => e2 ::  :: try
-   | raise v               ::  :: raise
    | s { e }               ::  :: unravel
+    {{ tex [[s]] \{ [[e]] \} }} 
    | v1 + v2               ::  :: plus
 
 
-frame  :: 'f_' ::= 
+frame, f  :: 'f_' ::= 
    | let x = _ in e2      ::   :: let 
    {{ tex \ottkw{let}\, [[x]]\, =\, [[_]]\ \ottkw{in}\, [[e2]] }}
-   | try _ handle x => e2 ::   :: try 
-   | ( frame ) ::  :: frame_paren
+   | ( frame )            ::   :: frame_paren
 
 stack, s :: 's_'  ::= 
-   | nil      ::    :: nil
+   | nil          ::    :: nil
+    {{ tex [] }}
    | frame : s    ::    :: cons
    | ( s ) ::    :: stack_paren
 

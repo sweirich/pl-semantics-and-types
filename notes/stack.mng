@@ -1,0 +1,399 @@
+\chapter{Explicit control stacks}
+\label{ch:control-stacks}
+
+In this chapter, we look at what happens if we make the \emph{control stack}
+explicit in the semantics of a programming language. The control stack records
+where we are during the execution of a program. In both the small-step and the
+big-step semantics, this record is stored directly (but implicitly) in the
+term as it evaluates. 
+
+We have two primary motivations for making the control stack explicit:
+
+First, if we want to give a semantics to some programming language features
+that interact with the control stack, such as exceptions or continuations, we
+need to have access to this structure.
+
+Second, if we want to define what it means for two programs to be ``the same''
+then we want to think about all of the ways that a program can interact with
+its enviroment. A control stack is a way to ``use'' a closed program and gives
+us a definition of equivalence based on both programs always producing the
+same result on any stack that we might run them on.
+
+\section{Stack-based semantics}
+
+Let's first get comfortable with stack based semantics. We've already seen two
+different ways of defining the operational semantics of a programming
+language: \emph{small-step} and \emph{big-step} semantics. In this section, we
+will think about variants of those semantics that use an explicit control
+stack.
+
+We continue to work with $\rec$, a fine-grained CBV language, in this
+chapter. To recap, this language explicitly separates values and
+terms. Furthermore, most constructs in the term language do only one step at a
+time. The only exception is $[[let x = e1 in e2]]$, which sequences one
+computation after another.
+
+\[
+\begin{array}{lcll}
+[[tau]] &::=& [[Unit]]\ [[Void]]\ |\ [[Nat]]\ |\ [[tau1 -> tau2]]
+          |\ [[tau1 * tau2]]\ |\ [[tau1 + tau2]] & \mbox{types} \\
+
+[[v]] &::=& [[x]]\                    & \mbox{variables} \\
+      & | & [[unit]]\                 & \mbox{unit} \\
+      & | & [[0]]\                    & \mbox{zero} \\
+      & | & [[S v]]                   & \mbox{successor} \\ 
+      & | & [[\x. e]]\                & \mbox{functions} \\
+      & | & [[(v1,v2)]]\              & \mbox{pairs} \\
+      & | & [[inj1 v]]\ |\ [[inj2 v]] & \mbox{sums} \\ 
+      & | & [[rec x. v]]\             & \mbox{recursive value} \\
+      & | & [[fold v]]\               & \mbox{recursive type} \\
+     
+\\
+[[e]] &::=& [[v1 v2]]                 & \mbox{application} \\
+      & | & [[case v of { 0 => e1 ; S x => e2 } ]]         & \mbox{test for zero} \\
+      & | & [[prj1 v]]\ |\ [[prj2 v]]\ & \mbox{projection} \\
+      & | & [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] & \mbox{case} \\
+      & | & [[unfold v]]              & \mbox{unfold recursive value} \\
+      & | & [[ret v]]                 & \mbox{value} \\
+      & | & [[let x = e1 in e2]]      & \mbox{sequencing} \\
+\end{array}
+\]
+
+
+\subsection{Primitive vs. control reductions}
+
+Before we introduce explicit stacks, will will first refactor our existing
+small step and big-step reduction relations to first isolate \emph{primitive}
+reductions as a separate judgement. That structure will allow us to focus only 
+on the reductions that affect the control stack. Notice that all of these 
+rules are \emph{axioms}, they do not have any premises.
+
+\begin{definition}[Primitive reductions]
+\drules[prim]{$[[e ~>> e']]$}{$[[e]]$ primitive reduces to $[[e']]$}
+       {beta,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo,unfold,app-rec,prjOne-rec,prjTwo-rec}
+\end{definition}
+
+Our revised version of the small-step semantics for \rec includes all
+primitive reductions, plus the two rules that work with let expressions. This
+semantics is trivially equivalent to the version presented in
+Chapter~\ref{ch:rec}.  (You should convince yourself of this fact.)  As
+before, the only rule of the semantics with a premise is \rref{s-let-cong}.
+
+\begin{definition}[Small-step semantics]
+\drules[s]{$[[e ~> e']]$}{$[[e]]$ small-steps to $[[e']]$ }
+{prim,let-ret,let-cong}
+\end{definition}
+
+Now let's design a big-step semantics for the \rec language. We can use
+primitive reductions to do so using only three rules.
+
+\begin{definition}[Big-step semantics]
+\drules[bs]{$[[e => v]]$}{$[[e]]$ big-steps to $[[v]]$ } {prim,val,let}
+\end{definition}
+
+Both of these semantics are deterministic. Furthermore, we can 
+show that they are also equivalent to eachother, using the same technique that 
+we used in Chapter~\ref{ch:bigstep}.
+
+\begin{theorem}[Equivalence of semantics] 
+For closed expressions $e$, we have $[[e ~>* ret v]]$ if and only if $[[e => v]]$.
+\end{theorem}
+The proofs of both directions of these theorems is by straightforward
+induction on the derivations, with the assistance of the following two easy
+lemmas.
+
+As in Chapter~\ref{ch:bigstep}, we needed a step-expansion lemma to show the
+forward direction of the lemma. 
+\begin{lemma}[step-expansion]
+If $[[e1 ~> e2]]$ and $[[e2 => v]]$ then $[[e1 => v]]$.
+\end{lemma}
+
+As in Chapter~\ref{ch:bigstep}, to prove the reverse direction of this lemma,
+we need to show that we can multistep let expressions.
+\begin{lemma}[ms-let-cong]
+If $[[e1 ~>* e1']]$ then $[[let x = e1 in e2 ~>* let x = e1' in e2]]$
+\end{lemma}
+
+
+\section{Stack-based semantics}
+
+Now let's make the stack explicit in our operational semantics. What is the
+point of the control stack?
+
+In the stack-based semantics, each step describe the reduction of an abstract
+\emph{machine}.  A machine $[[<s,e>]]$ is a pair of some control \emph{stack}
+and some term $[[e]]$ executing on that stack.
+
+\[
+\begin{array}{llcl}
+\textit{frame}   & [[f]] &::=& [[ let x = _ in e ]] \\
+\textit{stack}   & [[s]] &::=& [[f]]:[[s]]\ |\ [[nil]] \\
+\textit{machine} & [[m]] &::=& [[ < s , e > ]] \\
+\end{array}
+\]
+
+A control stack is a \emph{list} of \emph{frame}s which record ``what we need
+to do next'' after evaluating the current term $[[e]]$. As we accumulate more
+computational work, we \emph{push} a new frame on the stack. Once we have
+evaluated the current term to a value, we \emph{pop} the current frame from
+the stack (if any) to get the next step in our evaluation. If the stack is
+empty, we have reached the end of the computation.
+
+In the fine-grained \rec language, we only have one form of term that
+sequences computation: $[[let x = e1 in e2]]$. That means that we only need
+one kind of frame, written $[[let x = _ in e2]]$. This frame gets pushed on
+the stack when we are evaluating the right-hand-side of a let definition. Once
+this result has been calculates, the frame remembers what we should do with
+the value of $[[x]]$ in $[[e2]]$ the body of the term.
+
+\subsection{Stack-based small-step semantics}
+
+Using this framework, we can say how (abstract) machines evaluate,
+step-by-step. There are only three rules: either the term does a primitive
+reduction, the term is a $\ottkw{let}$ so we push a frame on the stack, or the
+term is a returned value, and there is a $\ottkw{let}$-frame waiting on the
+stack, so we pop it to access the next step.
+
+\begin{definition}[Stack based small-steps]\
+
+\drules{$[[m |-> m']]$}{$[[m]]$ small-steps to $[[m']]$ }
+{ssm-prim,ssm-push,ssm-pop}
+\end{definition}
+
+We also think about the reflexive, transitive closure of this relation,
+written $[[m |->* m']]$. A complete evaluation is one where $[[m']]$ is some
+\emph{terminal} machine state.
+
+\begin{definition}[Terminal machine state]
+A machine has finished evaluation when the stack is empty and 
+the term is a returned value. In other words, when it is of the form:
+$[[ < nil , ret v > ]]$
+\end{definition}
+
+The key property of this stack-based semantics is that it \emph{linearizes}
+computation. None of the rules are inductive. Instead, we have replaced the
+congruence rule for $\ottkw{let}$ with pushing and popping on the stack. That
+means that a computation may need more steps of evaluation to produce the
+final value. However, each individual step is simpler as we don't need to look
+deep within the term to find a reduction; it is always apparant from the
+top-level configuration of the machine.
+
+\subsection{Example: small-step semantics without and with stacks}
+
+Consider the small step evaluation of this term:
+
+\[
+\begin{array}{ll}
+ & [[let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox{ function application (primitive) } \\
+ & [[let x = (let y = (ret 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox { inline y } \\
+ & [[let x = 1 + 0 in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox { addition (primitive) } \\
+ & [[let x = ret 1 in let z = (let y = (2 + x) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox { inline x } \\
+ & [[let z = (let y = (2 + 1) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox { addition (primitive) } \\
+ & [[let z = (let y = (ret 3) in ret y) in (3 + z)]]  \\
+ & [[~>]] \mbox { inline y } \\
+ & [[let z = (ret 3) in (3 + z)]]  \\
+ & [[~>]] \mbox { inline z } \\
+ & [[(3 + 3)]]  \\
+ & [[~>]] \mbox { addition (primitive) } \\
+ & [[ret 6]] \\
+\end{array}
+\]
+
+During this evaluation, to figure out how to step this term, we needed to find
+the innermost reduction $[[(\x.ret x) 0]]$ hiding inside the nested let
+expression. Then, we had to search of the next additions to do, still hiding inside nested lets.
+
+In a stack based semantics, we will consider the evaluation of a stack $[[s]]$
+paired with a term $[[e]]$.  When the term is a let expression, we will push
+the congruent part of the let expression on the stack and then focus on the
+right hand side. 
+
+This takes a few extra steps on our example to do the pushing.
+
+\[
+\begin{array}{ll}
+ & [[<nil, let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z) >]]  \\
+ & [[~>]] \mbox{ push let x} \\
+ & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, let y = ((\x.ret x) 0) in 1 + y  >]]  \\
+ & [[~>]] \mbox{ push let y} \\
+ & [[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, (\x.ret x) 0 >]]  \\
+ & [[~>]] \mbox{ function application (primitive) } \\
+ & [[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, ret 0 >]]  \\
+ & [[~>]] \mbox{ pop (subst for y) } \\
+ & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 + 0 >]]  \\
+ & [[~>]]\mbox { addition (primitive) } \\
+ & [[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 >]]  \\
+ & [[~>]]\mbox { pop (subst for x) } \\
+ & [[<nil, let z = (let y = (2 + 1) in ret y) in (3 + z)>]]  \\
+ & [[~>]]\mbox{ push let z} \\
+ & [[<let z =  _ in (3 + z) : nil, (let y = (2 + 1) in ret y) >]]  \\
+ & [[~>]]\mbox{ push let y } \\
+ & [[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 2 + 1 >]]  \\
+ & [[~>]]\mbox { addition (primitive) } \\
+ & [[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 3 >]]  \\
+ & [[~>]]\mbox { pop (subst for y) } \\
+ & [[<let z =  _ in (3 + z) : nil, ret 3 >]]  \\
+ & [[~>]]\mbox { pop (subst for z) } \\
+ & [[<nil, 3 + 3 >]]  \\
+ & [[~>]] \mbox { addition (primitive) } \\
+ & [[<nil, ret 6>]] \\
+\end{array}
+\]
+
+
+\subsection{Stack-based big-step semantics}
+
+Now let's design a big-step version of the semantics that uses an explicit stack. 
+Note that in this version of the big-step semantics, each rule has at most one 
+premise. Where derivations in the original bigstep semantics could be wide (due to the 
+$\ottkw{let}$ rule) in this version they are always very tall.
+This version of the semantics also linearizes the computation.
+
+\drules[bsm]{$[[<s, e> |=> v]]$}{$[[e]]$ small-steps to $[[e']]$ }
+{final,prim,push,pop}
+
+\subsection{Example: big-step semantics with stacks}
+Here's the same example as above, expressed with our 
+big-step semantics. This derivation is the ``vertical'' version of 
+the small-step derivation. Note that every step of the machine is the same---the only 
+difference is that we have a single tall derivation instead of a long sequence of steps.
+
+\[
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+\inferrule{
+}{
+[[<nil, ret 6> |=> 6]]
+}
+}{
+[[<nil, 3 + 3 > |=> 6]]
+}
+}{
+[[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 3 > |=> 6]]
+}
+}{
+[[<let y = _ in ret y : let z =  _ in (3 + z) : nil, 2 + 1 > |=> 6]]
+}
+}{
+[[<let z =  _ in (3 + z) : nil, (let y = (2 + 1) in ret y) > |=> 6]]
+}
+}{
+[[<nil, let z = (let y = (2 + 1) in ret y) in (3 + z)> |=> 6]]
+}
+}{
+[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 > |=> 6]]
+}
+}{
+[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, 1 + 0 > |=> 6]] 
+}
+}{
+[[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, ret 0 > |=> 6]] 
+}
+}{
+[[<let y = _ in 1 + y : let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, (\x.ret x) 0 > |=> 6]]
+}
+}{
+[[<let x = _  in let z = (let y = (2 + x) in ret y) in (3 + z) : nil, let y = ((\x.ret x) 0) in 1 + y  > |=> 6]]
+}
+}{
+[[<nil, let x = (let y = ((\x.ret x) 0) in 1 + y) in let z = (let y = (2 + x) in ret y) in (3 + z) > |=> 6]]
+}
+\]
+
+\section{Equivalence between these semantics}
+
+\begin{theorem}[\link{rec/stack.v}{}{Stack machine correctness}]
+The following are equivalent:
+\begin{enumerate}
+\item $[[ e ~>* ret v ]]$ 
+\item $[[ < nil, e > |->* < nil, ret v > ]]$ 
+\item $[[ e => v ]]$ 
+\item $[[ < nil, e > |=> v ]]$
+\end{enumerate}
+\end{theorem}
+
+From above, already have the equivalence between the original small and big step semantics, i.e. (1) iff (3). 
+In this section, we will complete the relationships between these judgements.
+
+\subsection{Stack completeness}
+
+The original big-step and small-step semantics can be simulated by the
+stack-based small-step semantics. It turns out that it is simplest to first
+show the connection between the big-step semantics and the stack based
+semantics, i.e. that (3) implies (2). This also gives us (1) implies (2).
+
+\begin{lemma}[Stack completeness (big-step)]
+If $[[ e => v ]]$ then $[[ < s , e > |->* < s , ret v > ]]$, for any $[[s]]$.
+\end{lemma}
+This proof is by induction on the big-step semantics. 
+
+\begin{lemma}[Stack completeness (small-step)]
+If $[[ e ~>* ret v ]]$ then $[[ < nil, e > |->* < nil, ret v > ]]$
+\end{lemma}
+This follows from the big-step completeness and the equivalence between big
+and small step semantics.
+
+\subsection{Soundness}
+
+It is more difficult to prove the soundness lemma: the fact that all
+executions on the machine semantics can be simulated by the original
+semantics.
+
+\begin{definition}[Unravel]
+Define $[[s { e } ]]$ by recursion on the stack:
+\begin{itemize}
+\item $[[ nil { e } ]] = [[e]]$
+\item $[[ (let x = _ in e2 : s){ e } ]] = [[ s { let x = e in e2 } ]]$
+\end{itemize}
+\end{definition}
+
+\begin{lemma}[Stack congruence]
+If $[[e ~> e']]$ then $[[ s { e } ~> s { e' } ]]$ 
+\end{lemma}
+
+\begin{lemma}[Unravel step]
+If $[[<s, e> |-> <s', e'>]]$ then $[[s{e} ~>* s'{e'}]]$.
+\end{lemma}
+
+\begin{lemma}[Unravel multistep]
+If $[[<s, e> |->* <s', ret v>]]$ then $[[s{e} ~>* s'{ret v}]]$.
+\end{lemma}
+
+The soundness lemma is a corollary of the multistep lemma above.
+\begin{corollary}[Soundness]
+If $[[<nil, e> |->* <nil, ret v>]]$ then $[[ e ~>* ret v ]]$.
+\end{corollary}
+
+\subsection{Small-step and big-step stack equivalence}
+
+Because the small-step and big-step stack semantics are so similar
+it is not difficult to show the equivalence of (2) and (4).
+Both of the directions follow by straightforward induction 
+on the derivations.
+
+\begin{lemma}
+If $[[ <s,e> |->* <nil, v> ]]$ then $[[<s,e> |=> v]]$.
+\end{lemma}
+
+\begin{lemma}
+If $[[<s,e> |=> v]]$ then $[[ <s,e> |->* <nil, v> ]]$.
+\end{lemma}
+
+\section{References and Further reading}
+This chapter is adapted from Chapter 28 of PFPL, translating to a fine-grained CBV language and adding a big-step version of the machine semantics. 
+
+

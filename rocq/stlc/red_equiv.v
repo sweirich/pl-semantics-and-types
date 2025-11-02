@@ -55,7 +55,7 @@ End BigSmall.
 Module SmallBig.
 
 Lemma same_semantics_step : 
-  (forall e e', (e ⤳ e') -> forall v, e' ⇓ v -> e ⇓ v).
+  (forall e e', (e ~> e') -> forall v, e' ⇓ v -> e ⇓ v).
 Proof.
   intros e e' h1.
   induction h1.
