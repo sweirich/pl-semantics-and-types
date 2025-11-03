@@ -121,7 +121,7 @@ Module Stack.
 (** Exceptions: Search for a 'try' frame on the stack for a raised exception *)
 Fixpoint find_exn (s : stack) (v : Val 0) : machine := 
   match s with 
-  (* we found the handler *)
+  (* we found a try block *)
   | cons (f_try e2) k => (k, e2[v..])
   (* no handler, keep looking *)
   | cons _ k  => find_exn k v
@@ -158,35 +158,35 @@ Fixpoint find_eff (s : stack) (n : nat) (seen : list (Frame 0)) : machine :=
 
 
 Inductive step : machine -> machine -> Prop := 
-  | s_prim k e e' : 
+  | s_prim s e e' : 
     e ~>> e' ->
-    step (k, e) (k, e')
+    step (s, e) (s, e')
 
-  | s_pop k e2 v : 
-    step (f_let e2 :: k, ret v) (k, e2[v..])
+  | s_pop s e2 v : 
+    step (f_let e2 :: s, ret v) (s, e2[v..])
 
-  | s_push k e1 e2 : 
-    step (k, let_ e1 e2) (f_let e2 :: k, e1)
+  | s_push s e1 e2 : 
+    step (s, let_ e1 e2) (f_let e2 :: s, e1)
 
   (** exceptions *)
   (* raise an exception *)
   | s_raise f s v : 
-    step (cons f s, raise v) (find_exn (cons f s) v) 
+    step (f :: s, raise v) (find_exn (cons f s) v) 
 
   (* install (push) an exception handler *)
-  | s_try k e1 e2 : 
-    step (k, try e1 e2) (f_try e2 :: k, e1)
+  | s_try s e1 e2 : 
+    step (s, try e1 e2) (f_try e2 :: s, e1)
   (* discard (pop) an exception hander *)
-  | s_discard_try k e2 v : 
-    step (f_try e2 :: k, ret v) (k,ret v)
+  | s_discard_try s e2 v : 
+    step (f_try e2 :: s, ret v) (s,ret v)
   
   (** let/cc *)
   (* letcc *)
-  | s_letcc k e : 
-      step (k,letcc e) (k, e [(cont k)..])
-  (* throw (away the current stack and switch to the new one) *)
-  | s_throw k1 k v :
-      step (k1, throw (cont k) v) (k, ret v)
+  | s_letcc s e : 
+      step (s,letcc e) (s, e [(cont s)..])
+  (* throw (away the current stacs and switch to the new one) *)
+  | s_throw s1 s v :
+      step (s1, throw (cont s) v) (s, ret v)
 
   (** effect handlers *)
   (* perform an effect *)
@@ -195,15 +195,15 @@ Inductive step : machine -> machine -> Prop :=
         (find_eff (cons f s) n nil)
 
   (* install (push) an effect handler *)
-  | s_handle k e1 n e2 e2' : 
-    step (k, handle e1 e2 n e2') (f_handle e2 n e2' :: k, e1)
+  | s_handle s e1 n e2 e2' : 
+    step (s, handle e1 e2 n e2') (f_handle e2 n e2' :: s, e1)
   (* discard (pop) an effect hander *)
-  | s_handle_ret k e2 n e2' v : 
-    step (f_handle e2 n e2' :: k, ret v) (k, e2[v..])
+  | s_handle_ret s e2 n e2' v : 
+    step (f_handle e2 n e2' :: s, ret v) (s, e2[v..])
   (* invoke a saved continuation without discarding the current 
      stack *)
-  | s_continue k1 k2 v :
-    step (k1, continue (cont k2) v) (k2 ++ k1, ret v)
+  | s_continue s1 s2 v :
+    step (s1, continue (cont s2) v) (s2 ++ s1, ret v)
 
   
 .
@@ -276,15 +276,18 @@ Inductive typing_val  {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop :=
     typing_val Γ v (τ [(Mu τ) ..]) ->
     typing_val Γ (fold v) (Mu τ)
 
+  | t_exn k : 
+    typing_val Γ (exn k) Exn
+
   (** let/cc *)
-  | t_cont k τ τ2 : 
-    typing_stack Γ k τ τ2 -> 
-    typing_val Γ (cont k) (Cont τ)
+  | t_cont s τ τ2 : 
+    typing_stack Γ s τ τ2 -> 
+    typing_val Γ (cont s) (Cont τ)
 
   (** effect handlers *)
-  | t_decont k τ τ2 : 
-    typing_stack Γ k τ τ2 -> 
-    typing_val Γ (cont k) (DeCont τ τ2)
+  | t_decont s τ τ2 : 
+    typing_stack Γ s τ τ2 -> 
+    typing_val Γ (cont s) (DeCont τ τ2)
 
   | t_eff n τ : 
     Phi n = τ -> 
@@ -332,12 +335,12 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
 
   (** exceptions *)
   | t_raise v τ : 
-    typing_val Γ v Nat -> 
+    typing_val Γ v Exn -> 
     typing Γ (raise v) τ
 
   | t_try e1 e2 τ : 
     typing Γ e1 τ ->
-    typing (Nat .: Γ) e2 τ ->
+    typing (Exn .: Γ) e2 τ ->
     typing Γ (try e1 e2) τ
 
   (** let/cc *)
@@ -376,7 +379,7 @@ with typing_frame {n} (Γ : Ctx n) : Frame n -> Ty 0 -> Ty 0 -> Prop :=
 
   (** exceptions *)
   | ft_try e2 τ :
-    typing (Nat .: Γ) e2 τ -> 
+    typing (Exn .: Γ) e2 τ -> 
     typing_frame Γ (f_try e2) τ τ
 
   (** effect handlers *)
@@ -391,17 +394,17 @@ with typing_stack {n} (Γ : Ctx n) : Stack n -> Ty 0 -> Ty 0 -> Prop :=
   | st_nil τ : 
     typing_stack Γ nil τ τ
 
-  | st_cons f k τ τ' τ2 : 
+  | st_cons f s τ τ' τ2 : 
     typing_frame Γ f τ τ' ->
-    typing_stack Γ k τ' τ2 ->
-    typing_stack Γ (cons f k) τ τ2
+    typing_stack Γ s τ' τ2 ->
+    typing_stack Γ (cons f s) τ τ2
 .
 
 Inductive machine_ok : machine -> Prop := 
-  | m_eval k e τ τ' : 
-    typing_stack null k τ τ' -> 
+  | m_eval s e τ τ' : 
+    typing_stack null s τ τ' -> 
     typing null e τ ->
-    machine_ok (k, e).
+    machine_ok (s, e).
 
 (** This version of t_var is easier to work with sometimes
     as it doesn't require the type to already be in the form 
@@ -409,10 +412,10 @@ Inductive machine_ok : machine -> Prop :=
 Definition t_var' {n} (Γ : Ctx n) x τ   : Γ x = τ -> typing_val Γ (var x) τ.
 intros <-. eapply t_var. Qed.
 
-Definition st_cons'  {n} (Γ : Ctx n) f k τ τ' τ2 s : 
+Definition st_cons'  {n} (Γ : Ctx n) f s τ τ' τ2 s' : 
     typing_frame Γ f τ τ' ->
-    typing_stack Γ k τ' τ2 ->
-    s = cons f k ->
+    typing_stack Γ s' τ' τ2 ->
+    s = cons f s' ->
     typing_stack Γ s τ τ2.
 intros ? ? ->. eapply st_cons; eauto.
 Qed.
@@ -558,37 +561,14 @@ Proof.
 
 Qed.
 
-(*
-Lemma st_snoc {n} (Γ : Ctx n) f k τ τ2 τ3 : 
-  typing_stack Γ k τ τ2 ->
-  typing_frame Γ f τ2 τ3 ->
-  typing_stack Γ (k ++ (cons f nil)) τ τ3.
-Proof.        
-  move: f τ τ2 τ3.
-  induction k; intros.
-  - cbn. inversion H. subst. 
-    econstructor; eauto with rec. 
-  - cbn. 
-    inversion H. subst. 
-    econstructor; eauto.
-Qed.
-*)
-
-Print List.rev_append.
-Search List.rev_append.
-(* 
-List.rev_alt: forall [A : Type] (l : list A), List.rev l = List.rev_append l nil
-List.rev_append_rev: forall [A : Type] (l l' : list A), List.rev_append l l' = List.rev l ++ l'
-*)
-
+(* Property about list reverse *)
 Lemma rev_snoc {A} (f : A) (l : list A) : 
   List.rev (f :: l) = (List.rev l) ++ (f :: nil).
 Proof.
   induction l; eauto.
 Qed.
 
-Search list.
-
+(** The append operation on stacks preserves types *)
 Lemma st_app {n} (Γ : Ctx n) k1 k2 τ1 τ2 τ3 : 
   typing_stack Γ k1 τ1 τ2 ->
   typing_stack Γ k2 τ2 τ3 ->
@@ -602,8 +582,9 @@ Proof.
     eapply st_cons'; eauto.
 Qed.
 
+(** The [find_exn] operation produces a well-formed next state *)
 Lemma preservation_find_exn v : 
-  typing_val null v Nat ->
+  typing_val null v Exn ->
   forall l τ τ', typing_stack null l τ τ' -> 
                 machine_ok (Stack.find_exn l v).
 Proof.
@@ -689,13 +670,16 @@ Qed.
 (** progress *)
 
 (** A tactic to invert the value typing, when the type is not a
-meta-variable. This acts like a canonical forms lemma. *)
+meta-variable. This acts like a canonical forms lemma.
+NOTE: we have a separate tactic for Nats because they are the 
+only inductively-defined values. We need to be careful about 
+how we invert them.
 
-Print Ty.
-
+ *)
 Ltac canonical_value := 
   lazymatch goal with 
     | [ H : typing_val null _ (Arr _ _) |- _ ] => inversion H; subst; clear H
+    | [ H : typing_val null _ Exn |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Cont _) |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Eff _) |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (DeCont _ _) |- _ ] => inversion H; subst; clear H
@@ -718,6 +702,9 @@ Ltac is_reducible :=
   match goal with [ IR : Stack.irreducible _ |- _ ] => 
       assert False; [eapply IR; eauto using Stack.step, primitive|]; done end.
 
+(** Well-formed machines either reduce or in a designated final configuration 
+    We prove this "A or B" statement in an equivalent form as "not A implies B".
+*)
 Lemma machine_progress m : machine_ok m -> Stack.irreducible m -> final m.
 Proof.
   intros h IR. destruct h as [s e τ τ' hs ht].
