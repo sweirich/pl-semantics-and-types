@@ -138,8 +138,8 @@ requires showing that looking for an exception handler produces an well-typed
 machine. It doesn't matter what type of stack we have when we raise the
 exception; if its well-formed, then any exception handler that we find on the
 stack will produce a well-formed machine.
-\begin{lemma}[Ok try]
-If $[[||- v : Nat]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
+\begin{lemma}[Preservation for $\ottkw{find\_exn}$]
+If $[[||- v : Exn]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
 \end{lemma}
 
 Second, notice more generally that we don't (need to) track the machine type in the 
@@ -404,8 +404,5 @@ good machine state.
 The treatment of exceptions and control operations was inspired by PFPL
 chapters 29 and 30. The material on effect handlers was inspired by Xavier
 Leroy's course ``Control
-Structures''~\url{https://xavierleroy.org/CdF/2023-2024/}.  (The slides from
-this course are available in English, even though the lecture videos are 
-in French.)
-
-
+Structures''~\url{https://xavierleroy.org/CdF/2023-2024/}. The draft 
+book for this course is available at \url{https://xavierleroy.org/control-structures/}.

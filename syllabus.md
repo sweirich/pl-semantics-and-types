@@ -38,8 +38,8 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | M 10/27 |          |         | **Midterm Exam** (in class)                                                                 | 
 | W 10/29 | Ch. 9    | rec     | Explicit control stacks                                                                     |
 | M 11/3  | Ch. 10   | control | Exceptions                                                                                  |
-| W 11/5  | | |                                                                                                   |
-| M 11/10 | | | HW #4 due                                                                                          |
+| W 11/5  |          | control | Continuations (callcc/letcc)                                                                |
+| M 11/10 |          | control | **HW #4 due** <br/> Effect handlers                                                         |
 | W 11/12 | | |                                                                                                   |
 | M 11/17 | | |                                                                                                   |
 | W 11/19 | | |                                                                                                   |
