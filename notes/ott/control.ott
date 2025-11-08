@@ -1,6 +1,7 @@
 grammar 
 
 tau :: 't_' ::= 
+   | Exn              ::    :: Exn
    | Cont tau         ::    :: Cont
    | DeCont tau1 tau2 ::    :: DeCont
    | Eff tau          ::    :: Eff
@@ -12,16 +13,18 @@ e :: 'e_' ::=
    | raise v                ::  :: raise
    | letcc x in e           ::  :: letcc
    {{ tex \ottkw{letcc}\, [[x]]\, \ottkw{in}\, [[e]] }}
-   | cont s                 ::  :: cont
    | throw v1 v2            ::  :: throw
    | perform v              ::  :: perform
    | continue v1 v2         ::  :: continue
    | try e1 with x => e2 ; eff n y => e2' ::  :: handle
    {{ tex \ottkw{try}\, [[e1]]\ \ottkw{with}\, [[x]]\, [[=>]]\, [[e2]]\, ; \ottkw{eff}_[[n]]\, [[y]]\, [[=>]]\, [[e2']] }}
 
+   | exn k                  ::  :: exn
+   | cont s                 ::  :: cont
    | effect n               ::  :: effect
 
 v :: 'v_' ::= 
+   | exn k                  ::  :: exn
    | cont s                 ::  :: cont
    | effect n               ::  :: effect
 
@@ -60,13 +63,13 @@ by
 
 %%% Exceptions
 
-G ||- v : Nat
+G ||- v : Exn
 --------------------- :: raise
 G ||- raise v : tau 
 
 
 G ||- e1 : tau 
-G , x : Nat ||- e2 : tau
+G , x : Exn ||- e2 : tau
 --------------------------------------- :: try
 G ||- try e1 with exn x => e2 : tau
 
@@ -103,6 +106,9 @@ defn
 G ||- v : tau ::  :: typing_val :: 'tv_' 
 {{ tex [[G]] \vdash [[v]] \in [[tau]] }}
 by
+
+-------------------- :: exn
+G ||- exn k : Exn
 
 ||- s : tau
 ---------------------------- :: cont
@@ -152,17 +158,17 @@ defn
 {{ tex \vdash [[frame]] \in [[tau1]] [[~>]] [[tau2]] }}
 by
 
-x : tau1 ||- e2 : tau2
+, x : tau1 ||- e2 : tau2
 ------------------------------------ :: let
 ||- let x = _ in e2 : tau1 ~> tau2
 
 
-x : Nat ||- e2 : tau
+, x : Exn ||- e2 : tau
 ------------------------------------------ :: try
 ||- try _ with exn x => e2 : tau ~> tau
 
-x : tau1 ||- e2 : tau
-y : DeCont (Phi n) tau  ||- e2' : tau
+, x : tau1 ||- e2 : tau
+, y : DeCont (Phi n) tau ||- e2' : tau
 ------------------------------------------ :: handle
 ||- try _ with x => e2 ; eff n y => e2' : tau1 ~> tau
 

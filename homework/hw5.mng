@@ -1,0 +1,294 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=blue,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\usepackage{../notes/notes}
+
+\newcommand*\hwlink[3]{%
+  \href{\pfloc blob/main/homework/rocq/hw5/#1}{{#3}\!\!}
+}
+
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 5}
+\author{NAME: FILL IN HERE}
+
+\inputott{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Stack-based operational semantics}
+
+In this problem you will design a stack based operational semantics for STLC
+with natural numbers and let expressions. 
+For reference, the file \hwlink{stlc/stack.v}{}{\texttt{homework/rocq/hw5/stlc/stack.v}} contains definitions
+to help you get started.
+
+\begin{enumerate}
+\item Define the syntax of stack frames and rules for a small-step stack-based
+  semantics (i.e. the judgement $[[ <s,e> |-> <s',e'> ]]$). We have given you
+  the frame and two rules associated with let expressions to get started.
+
+  Note that because STLC is not a fine grained language, you will need to
+  define stack frames for application, $\ottkw{succ}$, and $\ottkw{nrec}$
+  terms.  Each rule of your small-step stack-based semantics should be an
+  axiom, i.e., should not include any premises in order for the rule to apply.
+
+\begin{definition}[\hwlink{stlc/stack.v}{frame}{Frame Grammar}]
+\[ [[frame]] ::= [[let x = _ in e]]\ |\ \textit{ADD new frames here} \ldots  \]
+\end{definition}
+
+\begin{definition}[\hwlink{stlc/stack.v}{Stack.step}{Stack-based small-step semantics}]\ \\
+\drules{$[[<s,e> |-> <s', e'>]]$}{Add rules here}{ssm-letv,ssm-push}
+\end{definition}
+
+\item As part of making sure that your definitions produce the same semantics
+  as our original semantics for STLC, you should prove several lemmas. One
+  lemma, shown below, connects the big-step semantics to the stack based
+  semantics.
+  \begin{lemma}[\hwlink{stlc/stack.v}{bigstep_completeness}{Bigstep completeness}]
+     $[[ e => v ]]$ implies $[[ <s, e> |->* <s, v> ]]$ for any $s$.
+  \end{lemma}
+  This proof proceeds by induction on the derivation of $[[e => v]]$. Typeset
+  the case when the last rule used was \rref{bs-app}.
+
+\[ \drule{bs-app} \]
+
+\newpage
+
+\item Complete the definition of the ``unravel function'', written $[[s{e}]]$
+  and prove the following lemma connecting the original small-step semantics
+  with your new evaluation frames.
+
+  \begin{definition}[\hwlink{stlc/stack.v}{unravel}{Unravel}] The unravel operation, written $[[s{e}]]$, 
+    takes a stack $[[s]]$ and expression $[[e]]$ and produces a combined
+    expression.
+    \[ 
+    \begin{array}{lcl}
+    [[ nil { e } ]] &=& [[e]] \\
+    [[(let x = _ in e2 : s){e}]] &=& [[s { let x = e in e2 }]]\\
+    \textit{FILL IN HERE}
+    \end{array}
+  \]
+  \end{definition}
+
+  \begin{lemma}[\hwlink{stlc/stack.v}{stack_cong}{Stack congruence}]
+    If $[[e ~> e']]$ then $[[s {e} ~> s{e'}]]$.
+  \end{lemma}
+
+\newpage
+
+\section{Exceptions, Control Operators and Effect Handling}
+
+The next problems concern extension of the stack-based version of \rec\ with
+various control operators. We call this base language \control. For reference,
+the file
+\hwlink{control/control.v}{}{\texttt{homework/rocq/hw5/control/control.v}}
+contains definitions to help you get started.
+
+\item In homework 1, we saw that the extension of STLC with lists and indexing
+  was not type sound. In this problem, we will use exception throwing to
+  safely extend the \control\ language with list indexing.
+
+\[ \drule{t-nth} \\ \drule{s-app-zero} \\ \drule{s-app-succ}  \]
+
+The problem is that indexing from an empty list is \emph{stuck}. We can
+recover soundness by adding a new rule that raises an exception in this case.
+(This rule raises exception ``0'', which we can call
+``NoSuchElementException''.)
+
+\[ \drule{s-app-nil} \]
+
+Prove the preservation preservation lemma for the \control\ language with
+this extension. In your proof, you need only show the case for the
+\rref{t-nth}.
+
+\begin{lemma}[\hwlink{control/control.v}{primitive_preservation}{Primitive Preservation}]
+If $[[ ||- e : tau]]$ and  $[[e ~>> e']]$. 
+The $[[ ||- e' : tau ]]$.
+\end{lemma}
+\begin{proof}
+By induction on $[[ ||- e : tau ]]$. 
+\begin{itemize}
+\item If \rref{t-nth} was the last rule used, then \ldots.
+\end{itemize}
+\end{proof}
+
+% \item In our semantics for $\ottkw{letcc}$, the $\ottkw{throw}$ term requires
+%   that both of its arguments be values. However, we can make this rule more
+%   flexible by allowing the second argument to be a term instead.
+
+% \[ [[e]] ::= \ldots\ |\ [[throw v e]] \]
+
+% \[ \drule{te-throw-e} \qquad \drule{ssm-throw-e} \]
+
+% Is there a program that produces a different result with this semantics,
+% instead of the original semantics?
+
+\newpage
+
+\item The term $[[exit v]]$ \emph{immediately} terminates the execution of a
+  program returning the value $[[v]]$, discarding any computation that is in
+  progress.
+
+For example, we have: 
+\[ [[ < nil , (\x. let z = exit x in 1 + z) 3 > |->* < nil, ret 3 > ]]  \]
+
+What are the typing rules and operational semantics for $[[exit v]]$? You can add these rules to the Rocq development to 
+make sure that they do not violate type safety.
+
+\vspace{0.5in}
+
+\item Effect handlers in OCaml also include a $\ottkw{discontinue}$ term. 
+  See the OCaml Manual (\url{https://ocaml.org/manual/5.3/effects.html}) for more 
+  information.
+
+  This term takes two values as arguments: a continuation and an exception
+  value (i.e., a nat in our simple language). On execution, it jumps to that
+  saved stack and raises the given exception.
+
+\[ \drule{ssm-discontinue} \]
+
+  Design a typing rule for this term and prove the corresponding cases of the preservation
+  and progress lemmas.
+
+\begin{lemma}[\hwlink{control/control.v}{machine_preservation}{Machine Preservation}]
+If $[[ ||- m ok]]$ and  $[[m |-> m']]$. 
+The $[[ ||- m' ok ]]$.
+\end{lemma}
+\begin{proof}
+By inversion on the typing and step judgements.
+\begin{itemize}
+\item If the machine steps by \rref{ssm-discontinue}, then \ldots.
+\end{itemize}
+\end{proof}
+
+\begin{lemma}[\hwlink{control/control.v}{machine_progress}{Machine Progress}]
+If $[[ ||- m ok]]$ and there is no $[[m']]$ such that $[[m |-> m']]$, $[[m]]$ is a final machine state.
+\end{lemma}
+\begin{proof}
+By induction on the typing judgement.
+\begin{itemize}
+\item If the last rule used was \rref{t-discontinue}, then \ldots.
+\end{itemize}
+\end{proof}
+
+
+\newpage
+
+\section{A type-and-effect system for exception handling} 
+
+\item 
+
+  The file \hwlink{exn/exn.v}{}{homework/rocq/hw5/exn/exn.v} contains the definition of a
+  type-and-effect system for exception handling. This language is like the
+  \control\ language, but for simplicity, only includes the exception handling
+  extension and does not include recursive values or types. 
+
+  To make it easier to statically track exception, there are two small
+  modifications to $\ottkw{raise}$ and $\ottkw{try}$. First, raise terms must be called with
+  concrete exception values---i.e. we need to know the identity of the
+  exception that has been raised. Secondly, when installing an exception
+  handler with $\ottkw{try}$, the exception handler applies to only a single
+  exception (indicated by the natural number $k$) and does not catch any other exception value. (In this language
+  there is no way to catch all exceptions.) We've changed the syntax of the
+  $\ottkw{try}$ term to make this explicit.
+
+\[
+\begin{array}{llcl}
+\mathit{term} & [[e]] &::=& [[try e1 with exn k => e2]]\ |\ [[raise (exn k) ]] \\
+\mathit{frame}& [[f]] &::=& [[try _  with exn k => e2]] \\
+\end{array}
+\]
+
+The stack-based small step semantics is similar to before. When an exception
+is raised, the $\ottkw{find\_exn}$ operation searches the stack for a handler
+that exactly matches the exception that was raised. Frames for other
+exceptions are skipped.
+
+\drules{$[[m |-> m']]$}{Stack-based small-step rules}
+{ssm-try-eff,ssm-discard-eff,ssm-raise-eff}
+\[
+\begin{array}{ll}
+[[find_exn (try _ with exn k => e2 : s) k]] &= [[<s, e2>]]\\
+[[find_exn (frame : s) k]] &= [[find_exn s k]] \\
+[[find_exn nil v]] & = [[< nil , raise v >]] \\
+\end{array}
+\]
+
+The type-and-effect rules for this extension track potentially raised
+exceptions. The core rules are similar to the ones that we used 
+to track nontermination.
+
+\drules[tv]{$[[G ||- v : tau]]$}{Value $v$ has type $[[tau]]$}
+{var,abs-eff,zero,succ,pair,injOne,injTwo}
+\drules[tee]{$[[G ||- e : tau @ eff]]$}{Term $e$ has type $[[tau]]$ and effect $[[eff]]$}
+{ret,let,app,ifz,prjOne-bot,prjTwo-bot,case,sub-eff}
+
+What is different this time is that effects are modeled by \emph{sets of
+  natural numbers}, where each natural number in the set indicates the
+identity of an exception that could be thrown.
+
+That means that we interpret the $[[bot]]$ effect as the empty set --- pure
+expressions cannot throw any effects. We define effect subsumption
+$[[eff1 <: eff2]]$ using the subset relation. If we know that a program could
+raise exception 0, it is sound to say that it could raise either exception 0
+or exception 1.
+
+The typing rules for $\ottkw{raise}$ and $\ottkw{try}$ are specific for exception
+tracking.
+The effect of $[[raise (exn k)]]$, is $[[ { k } ]] $, a singleton set that indicates 
+that $[[exn k]]$ could be raised by the program. 
+
+\[ \drule{tee-raise-eff} \]
+
+To type check exception handlers, we need a new operation on effects, written
+$[[eff1 - eff2]]$. Exception handlers \emph{mask} effects, so we need a way to
+remove specific exceptions from the effect of a $\ottkw{try}$ block. The
+effect of a try block includes both the effects of the body of the try (with
+the caught exception removed) plus the effects of the handler.
+
+\[ \drule{tee-try-eff} \]
+
+Your job for this problem is to:
+\begin{enumerate}
+\item Define the typing judgements for frames, stacks, and machines. (You can
+  start with the analogous definitions from the \control language and effect
+  tracking.)
+\item State and prove the preservation lemma for the $[[find_exn s k]]$ term.
+\item (Optional) Prove the \hwlink{exn/exn.v}{machine_preservation}{preservation lemma}.
+\item (Optional) Prove the \hwlink{exn/exn.v}{machine_progress}{progress lemma}.
+\end{enumerate}
+
+The type soundness lemma for this language gives us \emph{effect
+  soundness}. If a machine has effect $\bot$ is in a terminal state, then it
+cannot be an uncaught exception. In other words, we know that all raise
+exceptions will be caught by the program.
+
+\end{enumerate}
+
+
+\end{document}

@@ -1,0 +1,107 @@
+grammar
+
+eff :: '' ::= 
+  | { k }   ::  :: exception 
+  {{ tex \{ [[k]] \} }}
+  | eff1 - eff2 ::  :: handler
+  {{ tex [[eff1]] \ominus [[eff2]] }}
+
+
+e :: 'e_' ::=
+  | throw v e  ::  :: throw_e
+  | exit v     ::  :: abort                      
+  | discontinue v1 v2 ::  :: discontinue
+  | try e1 with exn k => e2 ::  :: try_k
+
+frame :: 'f_' ::= 
+  | try _ with exn k => e2 ::  :: try_k
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+------------------------------- :: app_nil
+nil v ~> raise 0
+
+defns 
+JRecTyping :: '' ::= 
+
+defn 
+G ||- e : tau  ::  :: typing_tm :: 'te_'
+{{ tex [[G]] \vdash [[e]] \in [[tau]] }}
+by
+
+
+G ||- v : Cont tau' 
+G ||- e : tau'
+---------------------------------- :: throw_e
+G ||- throw v e : tau
+
+
+
+
+defns 
+JStackSmall :: '' ::= 
+
+defn 
+m |-> m' ::  :: small_step :: 'ssm_' 
+by
+
+
+---------------------------------------------------------  :: throw_e
+< s , throw (cont s') e > |-> < s' , e >
+
+
+---------------------------------------------------------  :: letv
+< let x = _ in e2 : s , v > |-> < s, e2 [ v/x] >
+
+
+---------------------------------------------------------  :: discontinue
+<s, discontinue (cont s') v> |-> <s', raise v>
+
+
+-------------------------------------------------------------- :: raise_eff
+< frame : s , raise (exn k) > |-> find_exn (frame:s) k
+
+
+--------------------------------------------------------------------- :: try_eff
+< s , try e1 with exn k => e2 > |-> < try _ with exn k => e2 : s , e1 > 
+
+
+----------------------------------------------------- :: discard_eff
+< try _ with exn k => e2 : s , ret v > |-> < s , ret v > 
+
+
+defns 
+JEffTyping :: '' ::= 
+
+
+defn 
+G ||- e : tau @ eff  ::  :: typing_eff_tm :: 'tee_'
+{{ tex [[G]] \vdash [[e]] \stackrel{[[eff]]}{\in} [[tau]] }}
+by
+
+
+
+--------------------------------------- :: raise_eff
+G ||- raise (exn k) : tau @ { k } 
+
+
+G ||- e1 : tau @ eff + { k } 
+G ||- e2 : tau @ eff
+-------------------------------------------------------------------- :: try_eff
+G ||- try e1 with exn k => e2 : tau @ eff
+
+
+G ||- v : tau1 * tau2
+--------------------------------- :: prj1_bot
+G ||- prj1 v : tau1 @ bot
+
+G ||- v : tau1 * tau2
+--------------------------------- :: prj2_bot
+G ||- prj2 v : tau2 @ bot
+ 
