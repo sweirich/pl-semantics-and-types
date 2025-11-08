@@ -146,7 +146,7 @@ $[[e ~>* ret v]]$.
 
 For this problem, you need to typeset the definition of the logical relation
 and state and prove the semantic soundness lemmas for
-\rref{t-let,t-unbox,t-box}.
+\rref{t-let-nb,t-bind,t-pure}.
 
 \end{enumerate}
 
