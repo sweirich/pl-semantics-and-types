@@ -8,6 +8,7 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 2. [HW2](homework/hw2.pdf), due Monday, October 6th at midnight
 3. [HW3](homework/hw3.pdf), due Monday, October 20th at midnight
 4. [HW4](homework/hw4.pdf), due Monday, November 10th at midnight   
+4. [HW5](homework/hw5.pdf), due Monday, November 24th at midnight   
 
 ## Schedule
 
@@ -31,19 +32,19 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/1  |          | rec     | Step-indexed logical relations                                                              |
 | M 10/6  |          | rec     | **HW #2 due** <br/> More step-indexed logical relations                                     |
 | W 10/8  |          | rec     | More step-indexing, Working in Rocq                                                         |
-| M 10/13 | Ch. 7    | eff     | Type-and-effect systems (nontermination)                                                    |
-| W 10/15 |          | eff     | Syntax directed systems, Nontermination Monad                                               |
+| M 10/13 | Ch. 7    | div     | Type-and-effect systems (nontermination)                                                    |
+| W 10/15 |          | div     | Syntax directed systems, Nontermination Monad                                               |
 | M 10/20 | Ch. 8    | modal   | **HW #3 due** <br/> Nontermination monad                                                    |
 | W 10/22 |          | modal   | More nontermination monad                                                                   |
 | M 10/27 |          |         | **Midterm Exam** (in class)                                                                 | 
 | W 10/29 | Ch. 9    | rec     | Explicit control stacks                                                                     |
 | M 11/3  | Ch. 10   | control | Exceptions                                                                                  |
-| W 11/5  | | |                                                                                                   |
-| M 11/10 | | | HW #4 due                                                                                          |
+| W 11/5  | | control | Continuations                                                                                        |
+| M 11/10 | | control | **HW #4 due** <br/> Effect handlers                                                                  |
 | W 11/12 | | |                                                                                                   |
 | M 11/17 | | |                                                                                                   |
 | W 11/19 | | |                                                                                                   |
-| M 11/24 | | | HW #5 due                                                                                          |
+| M 11/24 | | | **HW #5 due**                                                                                     |
 | W 11/26 | | | **No Class**: Friday schedule for Thanksgiving                                                     |
 | M 12/1  | | |                                                                                                   |
 | W 12/3  | | |                                                                                                   |
