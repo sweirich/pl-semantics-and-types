@@ -14,6 +14,7 @@ Inductive Ty (n_Ty : nat) : Type :=
   | Sum : Ty n_Ty -> Ty n_Ty -> Ty n_Ty
   | Arr : Ty n_Ty -> Ty n_Ty -> Ty n_Ty
   | Mu : Ty (S n_Ty) -> Ty n_Ty
+  | Exn : Ty n_Ty
   | Cont : Ty n_Ty -> Ty n_Ty
   | Eff : Ty n_Ty -> Ty n_Ty
   | DeCont : Ty n_Ty -> Ty n_Ty -> Ty n_Ty
@@ -62,6 +63,11 @@ Lemma congr_Mu {m_Ty : nat} {s0 : Ty (S m_Ty)} {t0 : Ty (S m_Ty)}
   (H0 : s0 = t0) : Mu m_Ty s0 = Mu m_Ty t0.
 Proof.
 exact (eq_trans eq_refl (ap (fun x => Mu m_Ty x) H0)).
+Qed.
+
+Lemma congr_Exn {m_Ty : nat} : Exn m_Ty = Exn m_Ty.
+Proof.
+exact (eq_refl).
 Qed.
 
 Lemma congr_Cont {m_Ty : nat} {s0 : Ty m_Ty} {t0 : Ty m_Ty} (H0 : s0 = t0) :
@@ -113,6 +119,7 @@ Fixpoint ren_Ty {m_Ty : nat} {n_Ty : nat} (xi_Ty : fin m_Ty -> fin n_Ty)
   | Sum _ s0 s1 => Sum n_Ty (ren_Ty xi_Ty s0) (ren_Ty xi_Ty s1)
   | Arr _ s0 s1 => Arr n_Ty (ren_Ty xi_Ty s0) (ren_Ty xi_Ty s1)
   | Mu _ s0 => Mu n_Ty (ren_Ty (upRen_Ty_Ty xi_Ty) s0)
+  | Exn _ => Exn n_Ty
   | Cont _ s0 => Cont n_Ty (ren_Ty xi_Ty s0)
   | Eff _ s0 => Eff n_Ty (ren_Ty xi_Ty s0)
   | DeCont _ s0 s1 => DeCont n_Ty (ren_Ty xi_Ty s0) (ren_Ty xi_Ty s1)
@@ -143,6 +150,7 @@ Fixpoint subst_Ty {m_Ty : nat} {n_Ty : nat} (sigma_Ty : fin m_Ty -> Ty n_Ty)
   | Sum _ s0 s1 => Sum n_Ty (subst_Ty sigma_Ty s0) (subst_Ty sigma_Ty s1)
   | Arr _ s0 s1 => Arr n_Ty (subst_Ty sigma_Ty s0) (subst_Ty sigma_Ty s1)
   | Mu _ s0 => Mu n_Ty (subst_Ty (up_Ty_Ty sigma_Ty) s0)
+  | Exn _ => Exn n_Ty
   | Cont _ s0 => Cont n_Ty (subst_Ty sigma_Ty s0)
   | Eff _ s0 => Eff n_Ty (subst_Ty sigma_Ty s0)
   | DeCont _ s0 s1 =>
@@ -187,6 +195,7 @@ subst_Ty sigma_Ty s = s :=
       congr_Arr (idSubst_Ty sigma_Ty Eq_Ty s0) (idSubst_Ty sigma_Ty Eq_Ty s1)
   | Mu _ s0 =>
       congr_Mu (idSubst_Ty (up_Ty_Ty sigma_Ty) (upId_Ty_Ty _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (idSubst_Ty sigma_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (idSubst_Ty sigma_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -235,6 +244,7 @@ Fixpoint extRen_Ty {m_Ty : nat} {n_Ty : nat} (xi_Ty : fin m_Ty -> fin n_Ty)
       congr_Mu
         (extRen_Ty (upRen_Ty_Ty xi_Ty) (upRen_Ty_Ty zeta_Ty)
            (upExtRen_Ty_Ty _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (extRen_Ty xi_Ty zeta_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (extRen_Ty xi_Ty zeta_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -285,6 +295,7 @@ Fixpoint ext_Ty {m_Ty : nat} {n_Ty : nat} (sigma_Ty : fin m_Ty -> Ty n_Ty)
       congr_Mu
         (ext_Ty (up_Ty_Ty sigma_Ty) (up_Ty_Ty tau_Ty) (upExt_Ty_Ty _ _ Eq_Ty)
            s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (ext_Ty sigma_Ty tau_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (ext_Ty sigma_Ty tau_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -335,6 +346,7 @@ ren_Ty zeta_Ty (ren_Ty xi_Ty s) = ren_Ty rho_Ty s :=
       congr_Mu
         (compRenRen_Ty (upRen_Ty_Ty xi_Ty) (upRen_Ty_Ty zeta_Ty)
            (upRen_Ty_Ty rho_Ty) (up_ren_ren _ _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (compRenRen_Ty xi_Ty zeta_Ty rho_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (compRenRen_Ty xi_Ty zeta_Ty rho_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -394,6 +406,7 @@ subst_Ty tau_Ty (ren_Ty xi_Ty s) = subst_Ty theta_Ty s :=
       congr_Mu
         (compRenSubst_Ty (upRen_Ty_Ty xi_Ty) (up_Ty_Ty tau_Ty)
            (up_Ty_Ty theta_Ty) (up_ren_subst_Ty_Ty _ _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (compRenSubst_Ty xi_Ty tau_Ty theta_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (compRenSubst_Ty xi_Ty tau_Ty theta_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -474,6 +487,7 @@ ren_Ty zeta_Ty (subst_Ty sigma_Ty s) = subst_Ty theta_Ty s :=
       congr_Mu
         (compSubstRen_Ty (up_Ty_Ty sigma_Ty) (upRen_Ty_Ty zeta_Ty)
            (up_Ty_Ty theta_Ty) (up_subst_ren_Ty_Ty _ _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 =>
       congr_Cont (compSubstRen_Ty sigma_Ty zeta_Ty theta_Ty Eq_Ty s0)
   | Eff _ s0 =>
@@ -558,6 +572,7 @@ subst_Ty tau_Ty (subst_Ty sigma_Ty s) = subst_Ty theta_Ty s :=
       congr_Mu
         (compSubstSubst_Ty (up_Ty_Ty sigma_Ty) (up_Ty_Ty tau_Ty)
            (up_Ty_Ty theta_Ty) (up_subst_subst_Ty_Ty _ _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 =>
       congr_Cont (compSubstSubst_Ty sigma_Ty tau_Ty theta_Ty Eq_Ty s0)
   | Eff _ s0 =>
@@ -681,6 +696,7 @@ Fixpoint rinst_inst_Ty {m_Ty : nat} {n_Ty : nat}
       congr_Mu
         (rinst_inst_Ty (upRen_Ty_Ty xi_Ty) (up_Ty_Ty sigma_Ty)
            (rinstInst_up_Ty_Ty _ _ Eq_Ty) s0)
+  | Exn _ => congr_Exn
   | Cont _ s0 => congr_Cont (rinst_inst_Ty xi_Ty sigma_Ty Eq_Ty s0)
   | Eff _ s0 => congr_Eff (rinst_inst_Ty xi_Ty sigma_Ty Eq_Ty s0)
   | DeCont _ s0 s1 =>
@@ -887,6 +903,8 @@ Arguments DeCont {n_Ty}.
 Arguments Eff {n_Ty}.
 
 Arguments Cont {n_Ty}.
+
+Arguments Exn {n_Ty}.
 
 Arguments Mu {n_Ty}.
 

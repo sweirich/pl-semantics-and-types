@@ -15,6 +15,7 @@ Inductive Val (n_Val : nat) : Type :=
   | abs : Tm (S n_Val) -> Val n_Val
   | rec : Val (S n_Val) -> Val n_Val
   | fold : Val n_Val -> Val n_Val
+  | exn : nat -> Val n_Val
   | cont : list (Frame n_Val) -> Val n_Val
   | eff : nat -> Val n_Val
   | v_nil : Val n_Val
@@ -90,6 +91,12 @@ Lemma congr_fold {m_Val : nat} {s0 : Val m_Val} {t0 : Val m_Val}
   (H0 : s0 = t0) : fold m_Val s0 = fold m_Val t0.
 Proof.
 exact (eq_trans eq_refl (ap (fun x => fold m_Val x) H0)).
+Qed.
+
+Lemma congr_exn {m_Val : nat} {s0 : nat} {t0 : nat} (H0 : s0 = t0) :
+  exn m_Val s0 = exn m_Val t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => exn m_Val x) H0)).
 Qed.
 
 Lemma congr_cont {m_Val : nat} {s0 : list (Frame m_Val)}
@@ -301,6 +308,7 @@ Fixpoint ren_Val {m_Val : nat} {n_Val : nat}
   | abs _ s0 => abs n_Val (ren_Tm (upRen_Val_Val xi_Val) s0)
   | rec _ s0 => rec n_Val (ren_Val (upRen_Val_Val xi_Val) s0)
   | fold _ s0 => fold n_Val (ren_Val xi_Val s0)
+  | exn _ s0 => exn n_Val s0
   | cont _ s0 => cont n_Val (list_map (ren_Frame xi_Val) s0)
   | eff _ s0 => eff n_Val s0
   | v_nil _ => v_nil n_Val
@@ -374,6 +382,7 @@ Fixpoint subst_Val {m_Val : nat} {n_Val : nat}
   | abs _ s0 => abs n_Val (subst_Tm (up_Val_Val sigma_Val) s0)
   | rec _ s0 => rec n_Val (subst_Val (up_Val_Val sigma_Val) s0)
   | fold _ s0 => fold n_Val (subst_Val sigma_Val s0)
+  | exn _ s0 => exn n_Val s0
   | cont _ s0 => cont n_Val (list_map (subst_Frame sigma_Val) s0)
   | eff _ s0 => eff n_Val s0
   | v_nil _ => v_nil n_Val
@@ -466,6 +475,7 @@ subst_Val sigma_Val s = s :=
       congr_rec
         (idSubst_Val (up_Val_Val sigma_Val) (upId_Val_Val _ Eq_Val) s0)
   | fold _ s0 => congr_fold (idSubst_Val sigma_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 => congr_cont (list_id (idSubst_Frame sigma_Val Eq_Val) s0)
   | eff _ s0 => congr_eff (eq_refl s0)
   | v_nil _ => congr_v_nil
@@ -581,6 +591,7 @@ ren_Val xi_Val s = ren_Val zeta_Val s :=
         (extRen_Val (upRen_Val_Val xi_Val) (upRen_Val_Val zeta_Val)
            (upExtRen_Val_Val _ _ Eq_Val) s0)
   | fold _ s0 => congr_fold (extRen_Val xi_Val zeta_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont (list_ext (extRen_Frame xi_Val zeta_Val Eq_Val) s0)
   | eff _ s0 => congr_eff (eq_refl s0)
@@ -713,6 +724,7 @@ subst_Val sigma_Val s = subst_Val tau_Val s :=
         (ext_Val (up_Val_Val sigma_Val) (up_Val_Val tau_Val)
            (upExt_Val_Val _ _ Eq_Val) s0)
   | fold _ s0 => congr_fold (ext_Val sigma_Val tau_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont (list_ext (ext_Frame sigma_Val tau_Val Eq_Val) s0)
   | eff _ s0 => congr_eff (eq_refl s0)
@@ -847,6 +859,7 @@ Fixpoint compRenRen_Val {k_Val : nat} {l_Val : nat} {m_Val : nat}
            (upRen_Val_Val rho_Val) (up_ren_ren _ _ _ Eq_Val) s0)
   | fold _ s0 =>
       congr_fold (compRenRen_Val xi_Val zeta_Val rho_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont
         (list_comp (compRenRen_Frame xi_Val zeta_Val rho_Val Eq_Val) s0)
@@ -998,6 +1011,7 @@ Fixpoint compRenSubst_Val {k_Val : nat} {l_Val : nat} {m_Val : nat}
            (up_Val_Val theta_Val) (up_ren_subst_Val_Val _ _ _ Eq_Val) s0)
   | fold _ s0 =>
       congr_fold (compRenSubst_Val xi_Val tau_Val theta_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont
         (list_comp (compRenSubst_Frame xi_Val tau_Val theta_Val Eq_Val) s0)
@@ -1173,6 +1187,7 @@ ren_Val zeta_Val (subst_Val sigma_Val s) = subst_Val theta_Val s :=
            (up_Val_Val theta_Val) (up_subst_ren_Val_Val _ _ _ Eq_Val) s0)
   | fold _ s0 =>
       congr_fold (compSubstRen_Val sigma_Val zeta_Val theta_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont
         (list_comp (compSubstRen_Frame sigma_Val zeta_Val theta_Val Eq_Val)
@@ -1353,6 +1368,7 @@ subst_Val tau_Val (subst_Val sigma_Val s) = subst_Val theta_Val s :=
            (up_Val_Val theta_Val) (up_subst_subst_Val_Val _ _ _ Eq_Val) s0)
   | fold _ s0 =>
       congr_fold (compSubstSubst_Val sigma_Val tau_Val theta_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont
         (list_comp (compSubstSubst_Frame sigma_Val tau_Val theta_Val Eq_Val)
@@ -1707,6 +1723,7 @@ Fixpoint rinst_inst_Val {m_Val : nat} {n_Val : nat}
         (rinst_inst_Val (upRen_Val_Val xi_Val) (up_Val_Val sigma_Val)
            (rinstInst_up_Val_Val _ _ Eq_Val) s0)
   | fold _ s0 => congr_fold (rinst_inst_Val xi_Val sigma_Val Eq_Val s0)
+  | exn _ s0 => congr_exn (eq_refl s0)
   | cont _ s0 =>
       congr_cont (list_ext (rinst_inst_Frame xi_Val sigma_Val Eq_Val) s0)
   | eff _ s0 => congr_eff (eq_refl s0)
@@ -2267,6 +2284,8 @@ Arguments v_nil {n_Val}.
 Arguments eff {n_Val}.
 
 Arguments cont {n_Val}.
+
+Arguments exn {n_Val}.
 
 Arguments fold {n_Val}.
 

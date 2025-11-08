@@ -17,6 +17,8 @@ abs    : (bind Val in Tm) -> Val
 rec    : (bind Val in Val) -> Val
 fold   : Val -> Val
 
+-- exception value
+exn    : nat -> Val
 -- continuation value, a saved stack
 cont   : "list"(Frame) -> Val
 -- effect constructors

@@ -5,17 +5,30 @@ Many languages include features for throwing and catching exceptions.
 Exceptions provide a way for programs to signal errors or break out of loops
 early.
 
-Fewer languages provide explicit stack manipulation through control 
-operators. Scheme (and its modern-day variant Racket), includes 
-\texttt{call-with-current-continuation}, or \texttt{call-cc}, that 
-gives users the ability to access the control stack directly. This feature
-acts a little like exceptions --- by passing a captured continuation, users 
-can go back to earlier parts of the stack --- but it is much more powerful. 
-Captured continuations are first class. They can be saved in data structures and 
-stored in function closures. That means that invoking a continuation may take your 
-program to a stack that is very different than the current one.
+Fewer languages provide first-class access to the control stack through
+control operators. Scheme (and its modern-day variant Racket), includes
+\texttt{call-with-current-continuation}, or \texttt{call-cc}. (Other languages
+that have included this feature are Standard ML of New Jersey, Ruby, and
+Smalltalk.)  This feature acts a little like exceptions --- by passing a
+captured continuation, users can go back to earlier parts of the stack --- but
+it is much more powerful.  Captured continuations are first class. They can be
+saved in data structures and stored in function closures. That means that
+invoking a continuation may take your program to a stack that is very
+different than the current one.
 
-Effect handlers are newer still, and have only recently been implemented in OCaml.
+First-class continuations can be used to implement other high-level control
+structures that are difficult implement cleanly otherwise, such as exceptions,
+coroutines or generators, or non-deterministic backtracking. Furthermore, even
+if languages do not include support for first-class continuations, they can be
+implemented through the use of ``continuation-passing-style'' or a concurrency
+monad.
+
+Effect handlers are newer still and have only recently been added to the OCaml
+language. This feature, based on an older idea of \emph{delimited
+continuations} combines features of first-class continuations and exception
+handling to provide more compositionality and more efficient implementation.
+This language feature is being actively explored in research languages such as
+Koka and Eff, and was briefly included in the Scala language.
 
 In this chapter we will consider how to extend the semantics of our stack
 based language with new forms of control operations. 
@@ -27,8 +40,9 @@ convenience, this type \texttt{exn} or \texttt{Exception} can be extended with
 new options corresponding various forms of errors (\texttt{Failure} or
 \texttt{NullPointerException}) and signals (\texttt{Not\_found} or
 \texttt{NoSuchElementException}).  For simplicity in our formalism, we will
-use the type $[[Nat]]$ as our exception type, using different natural numbers to 
-distinguish between different exception values. 
+define a new type $[[Exn]]$ as our exception type, but this type will be
+isomorphic to natural numbers so that we have as many exceptions as we need
+and can distinguish between different exception values.
 
 Our extension with exceptions includes two new terms in the language: a way to
 \emph{raise} or trigger an exception, and a way to install an exception
@@ -63,7 +77,7 @@ When $[[find_exn s v]]$ successfully finds an exception handler frame on the
 stack (see first line of the definition) then the machine switches to the
 stack immediately below the handler and the code in the handler. The value
 $[[v]]$ is the thrown exception value (a natural number in this case) and is
-subsituted for $[[x]]$ in the handler code.  If the $[[find_exn s v]]$ reaches
+substituted for $[[x]]$ in the handler code.  If the $[[find_exn s v]]$ reaches
 the end of the stack without finding an exception handler, the machine stops
 with an empty stack and an uncaught exception (signified by the $[[raise v]]$ term).
 This term cannot step because the \rref{ssm-rule} applies only when the stack is not
@@ -73,22 +87,24 @@ empty.
 
 The typing rule for the two new terms are shown below:
 
-\drules[te]{$[[G ||- e : tau]]$}{Typing rules}
+\drules[tv]{$[[G ||- v : tau]]$}{Typing rules for values}
+{exn}
+\drules[te]{$[[G ||- e : tau]]$}{Typing rules for terms}
 {raise,try}
 
-The term $[[raise v]]$ expects its argument to be an exception value, i.e. a
-natural number. Note that this term could have any type, including $[[Void]]$.
-The $[[raise v]]$ term never produces a value---it just jumps to some other
-part of the program. So it is safe to pretend that this term produces any type
-of value that we want.
+Given any natural number, the value $[[exn k]]$ has the type $[[Exn]]$.  Then
+the term $[[raise v]]$ expects its argument to be an exception value. Note
+that this term could have any type, including $[[Void]]$.  The $[[raise v]]$
+term never produces a value---it just jumps to some other part of the
+program. So it is safe to pretend that this term produces any type of value
+that we want.
 
-The term $[[try e1 with exn x => e2]]$ requires both the body of the try
-block $[[e1]]$ and the exception handler $[[e2]]$ to have the same type. This
+The term $[[try e1 with exn x => e2]]$ requires both the body of the try block
+$[[e1]]$ and the exception handler $[[e2]]$ to have the same type. This
 expression will either terminate normally, or it will trigger the handler. We
 can't tell which will happen statically, so the type system requires them to
 be the same, just as in pattern matching expressions. The variable $[[x]]$ is
-a name for the exception value that was thrown; we are using $[[Nat]]$s as
-exception values in this language.
+a name for the exception value that was thrown.
 
 We can prove type safety for our stack-based language, but we need to extend
 our type system to be able to talk about stacks, frames, and machines. All
@@ -122,8 +138,8 @@ requires showing that looking for an exception handler produces an well-typed
 machine. It doesn't matter what type of stack we have when we raise the
 exception; if its well-formed, then any exception handler that we find on the
 stack will produce a well-formed machine.
-\begin{lemma}[Ok try]
-If $[[||- v : Nat]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
+\begin{lemma}[Preservation for $\ottkw{find\_exn}$]
+If $[[||- v : Exn]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
 \end{lemma}
 
 Second, notice more generally that we don't (need to) track the machine type in the 
@@ -215,7 +231,7 @@ memory around until the stack reference goes out of scope and can be garbage
 collected.  A more efficient version is \emph{one shot} continuations: saved
 stacks that can be jumped to at most once.
 
-At the same time, these continuations are not \emph{composeable}. The issue is
+At the same time, these continuations are not \emph{compose able}. The issue is
 that $\ottkw{letcc}$ captures the \emph{entire} stack. But in some situations
 it may be useful to only capture \emph{part} of the stack and compose that
 part with the current stack in a new context.
@@ -236,7 +252,7 @@ an effect handler is a frame on the stack that executes some code if that
 particular effect has been performed.
 
 The term $[[try e1 with x => e2 ; eff n y => e2']]$ installs an effect handler
-during the excution of $[[e1]]$. If $[[e1]]$ returns a value, then the first 
+during the execution of $[[e1]]$. If $[[e1]]$ returns a value, then the first 
 branch $[[e2]]$ is taken, where $[[x]]$ is bound to that value. However, 
 if $[[e1]]$ performs the effect $[[n]]$, then the second branch $[[e2']]$ is 
 selected, and $[[y]]$ is bound to the continuation of the effect. This 
@@ -383,11 +399,10 @@ type must also be $[[Phi n]]$. The lemma ensures that starting from these
 initial conditions, no matter where we find the effect handler we will have a
 good machine state.
 
-
 \section{Further reading}
 
-See Xavier Leroy's slides from his course on on Control
-Structures~\url{https://xavierleroy.org/CdF/2023-2024/}.  (The slides are in
-English, even though the lecture videos are only available in French.)
-
-
+The treatment of exceptions and control operations was inspired by PFPL
+chapters 29 and 30. The material on effect handlers was inspired by Xavier
+Leroy's course ``Control
+Structures''~\url{https://xavierleroy.org/CdF/2023-2024/}. The draft 
+book for this course is available at \url{https://xavierleroy.org/control-structures/}.
