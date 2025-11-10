@@ -319,7 +319,7 @@ functions. It is \emph{contravariant} in the argument of functions.
 
 For example, we can show the following relationship between these two types
 \[ [[ (tau1 -> top tau2) -> bot (tau1 -> bot tau2) ]] <: [[ (tau1 -> bot tau2) -> bot (tau1 -> top tau2) ]] \]
-(Both of these types can be assigned to the higher-order function $[[\x.ret (\y.x y)]]$).
+(Both of these types can be assigned to the higher-order function $[[\x.ret (\y.y)]]$).
 
 \paragraph{Effect polymorphism} 
 
