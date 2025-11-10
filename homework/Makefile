@@ -1,26 +1,23 @@
-OTT_SOURCE = ../notes/ott/stlc ../notes/ott/bigstep ../notes/ott/rec ../notes/ott/eff ott/hw1 ott/hw2 ott/hw3 ott/hw4
+TOP=hw4
 
 BIBFILES = 
 
+OTT_NOTES  = stlc bigstep rec eff modal stack control
+OTT_HW     = hw1 hw2 hw3 hw4 hw5
+OTT_SOURCE = $(foreach i, $(OTT_NOTES), ../notes/ott/$(i)) $(foreach i, $(OTT_HW), ott/$(i))
 OTTFILES  = $(foreach i, $(OTT_SOURCE), $(i).ott)
 OTTIFLAGS = $(foreach i, $(OTT_SOURCE), -i $(i).ott) -merge true
 RULESFILE = all-rules.tex
 
-PAPER_MNG = $(wildcard *.mng)
-PAPER_SOURCE = $(patsubst %.mng,%.tex,$(PAPER_MNG))
-OTT_FILTER := $(subst .mng,.mng ,$(addprefix -tex_filter ,$(join $(PAPER_MNG), $(PAPER_SOURCE))))
-
-TOP=hw4
-
 all: $(TOP).pdf
 
 %.tex : $(RULESFILE) %.mng Makefile
-	rm -f $(PAPER_SOURCE)
+	rm -f $*.tax
 	ott -tex_wrap false \
             -tex_show_meta false \
             $(OTTIFLAGS) \
-            $(OTT_FILTER)
-	chmod a-w $(PAPER_SOURCE)
+            -tex_filter $*.mng $*.tex
+	chmod a-w $*.tex
 
 $(RULESFILE): $(OTTFILES)
 	ott $(OTTIFLAGS) -o $(RULESFILE) \
