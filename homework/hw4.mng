@@ -61,7 +61,7 @@ are $[[bot]]$, and $[[top]]$ otherwise.
 
 \drules[to]{$[[G |-> e : tau @ eff]]$}{In context $[[G]]$, $[[e]]$ has type $[[tau]]$ and 
   effect $[[eff]]$}
-{ret,let,app,case,prjOne,prjOne,case,unfold}
+{ret,let,app,ifz,prjOne,prjTwo,case,unfold}
 \drules[vo]{$[[G |-> v : tau]]$}{In context $[[G]]$, $[[v]]$ has type $[[tau]]$}
 {var,zero,succ,pair,injOne,injTwo,abs,rec,fold}
 
