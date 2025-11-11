@@ -1,5 +1,15 @@
-(** The rec programming language extended with various control operations: exceptions, let/cc 
-    and effect handlers *)
+(** The rec programming language extended **only**
+    with let/cc and exit.
+
+    We use this language to demonstrate CPS conversion, the 
+    translation of a language with letcc to a language without 
+    letcc.
+
+    The beginning of this file is the same as that in control.control, 
+    however, it omits exceptions and delimited continuations and 
+    focuses only on letcc.
+
+ *)
 
 (** * Imports *)
 
@@ -7,6 +17,8 @@
 
 From Stdlib Require Export ssreflect.
 From Stdlib Require Export Program.Equality.
+From Stdlib Require Import Logic.FunctionalExtensionality.
+
 Require Export common.core.
 Require Export common.fintype.
 
@@ -52,7 +64,18 @@ Fixpoint is_nat (v : Val 0) : bool :=
   | _ => false
   end.
 
-(** * Primitive reductions (i.e. beta steps) 
+Fixpoint to_nat (v : Val 0) : option nat := 
+  match v with 
+  | zero => Some 0
+  | succ v1 => match (to_nat v1) with 
+                | Some v => Some (S v)
+                | None => None
+              end
+  | _ => None
+  end.
+ 
+
+(** * Primitive reductions 
   
   Because we've defined a new syntax for this language, we have to redefine
   these operations here. But they are the same as they were before.
@@ -91,6 +114,7 @@ Proof.
 Qed.
 
 
+
 (** * Semantics based on an abstract machine with an explicit stack *)
 
 (** The frames that we care about are always closed *)
@@ -110,52 +134,12 @@ Definition machine : Type := (stack * Tm 0).
 Inductive final : machine -> Prop := 
   | final_eval v :
     final (nil, ret v)
-  | final_exn v :
-    final (nil, raise v)
-  | final_eff v : 
-    final (nil, perform v)
+  | final_exit v :
+    final (nil, exit v)
+
 .
 
 Module Stack.
-
-(** Exceptions: Search for a 'try' frame on the stack for a raised exception *)
-Fixpoint find_exn (s : stack) (v : Val 0) : machine := 
-  match s with 
-  (* we found a try block *)
-  | cons (f_try e2) k => (k, e2[v..])
-  (* no handler, keep looking *)
-  | cons _ k  => find_exn k v
-  (* uncaught exception *)
-  | nil => (nil, raise v) 
-  end.
-
-(** Effect Handlers: Search for an effect handler for the effect `eff n`.
-
-   As we search the stack, we need to record all of the frames that we
-   encounter along the way, using the accumulating parameter `seen`. 
-   We use these frames to create the resumption continuation passed 
-   to the effect handler. *)
-
-Fixpoint find_eff (s : stack) (n : nat) (seen : list (Frame 0)) : machine :=
-    match s with 
-    | cons (f_handle e2 n' e2') k => 
-        (* check to see if we've found the handler for *this* effect *)
-        if PeanoNat.Nat.eqb n n' then
-          (* we keep the current handler as part of the continuation value, 
-             but do not save the entire stack. This is a "deep" handler. *)
-          let d := List.rev seen ++ (f_handle e2 n e2' :: nil) in
-          (k,  e2'[(cont d)..])
-        else
-          (* keep looking *)
-          find_eff k n (f_handle e2 n' e2' :: seen)
-    | cons f k  => 
-        (* keep looking *)
-        find_eff k n (f :: seen)
-    | nil => 
-        (* uncaught effect *)
-        (nil, perform (eff n)) 
-    end.
-
 
 Inductive step : machine -> machine -> Prop := 
   | s_prim s e e' : 
@@ -167,18 +151,6 @@ Inductive step : machine -> machine -> Prop :=
 
   | s_push s e1 e2 : 
     step (s, let_ e1 e2) (f_let e2 :: s, e1)
-
-  (** exceptions *)
-  (* raise an exception *)
-  | s_raise f s v : 
-    step (f :: s, raise v) (find_exn (cons f s) v) 
-
-  (* install (push) an exception handler *)
-  | s_try s e1 e2 : 
-    step (s, try e1 e2) (f_try e2 :: s, e1)
-  (* discard (pop) an exception hander *)
-  | s_discard_try s e2 v : 
-    step (f_try e2 :: s, ret v) (s,ret v)
   
   (** let/cc *)
   (* letcc *)
@@ -188,26 +160,9 @@ Inductive step : machine -> machine -> Prop :=
   | s_throw s1 s v :
       step (s1, throw (cont s) v) (s, ret v)
 
-  (** effect handlers *)
-  (* perform an effect *)
-  | s_perform f s n : 
-      step (cons f s, perform (eff n))
-        (find_eff (cons f s) n nil)
-
-  (* install (push) an effect handler *)
-  | s_handle s e1 n e2 e2' : 
-    step (s, handle e1 e2 n e2') (f_handle e2 n e2' :: s, e1)
-  (* discard (pop) an effect hander *)
-  | s_handle_ret s e2 n e2' v : 
-    step (f_handle e2 n e2' :: s, ret v) (s, e2[v..])
-  (* invoke a saved continuation without discarding the current 
-     stack *)
-  | s_continue s1 s2 v :
-    step (s1, continue (cont s2) v) (s2 ++ s1, ret v)
-  
-  (* TODO: add step rule for exit *)
-  
-
+  (** exit *)
+  | s_exit s v : 
+      step (s , exit v) (nil, exit v)
 .
   
 Definition irreducible (m : machine) : Prop := 
@@ -224,7 +179,7 @@ Qed.
 
 End Stack.
 
-(** * Typing relation *)
+(** * Typing relations *)
 
 Definition allows_rec_ty (ty : Ty 0) := 
   match ty with 
@@ -278,22 +233,10 @@ Inductive typing_val  {n} (Γ : Ctx n) : Val n -> Ty 0 -> Prop :=
     typing_val Γ v (τ [(Mu τ) ..]) ->
     typing_val Γ (fold v) (Mu τ)
 
-  | t_exn k : 
-    typing_val Γ (exn k) Exn
-
   (** let/cc *)
-  | t_cont s τ τ2 : 
-    typing_stack Γ s τ τ2 -> 
+  | t_cont s τ  : 
+    typing_stack Γ s τ  -> 
     typing_val Γ (cont s) (Cont τ)
-
-  (** effect handlers *)
-  | t_decont s τ τ2 : 
-    typing_stack Γ s τ τ2 -> 
-    typing_val Γ (cont s) (DeCont τ τ2)
-
-  | t_eff n τ : 
-    Phi n = τ -> 
-    typing_val Γ (eff n) (Eff τ)
 
 with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop := 
   | t_ret v τ :
@@ -334,16 +277,6 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
     typing_val Γ v (Mu τ) ->
     typing Γ (unfold v) (τ [(Mu τ) ..]) 
 
-  (** exceptions *)
-  | t_raise v τ : 
-    typing_val Γ v Exn -> 
-    typing Γ (raise v) τ
-
-  | t_try e1 e2 τ : 
-    typing Γ e1 τ ->
-    typing (Exn .: Γ) e2 τ ->
-    typing Γ (try e1 e2) τ
-
   (** let/cc *)
   | t_letcc e τ : 
     typing (Cont τ .: Γ) e τ -> 
@@ -354,23 +287,10 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
     typing_val Γ v2 τ' ->
     typing Γ (throw v1 v2) τ
 
-  (** effect handlers *)
-  | t_perform v τ : 
-    typing_val Γ v (Eff τ) ->
-    typing Γ (perform v) τ
-
-  | t_handle e1 e2 n e2' τ1 τ2 τ : 
-    typing Γ e1 τ1 ->
-    typing (τ1 .: Γ) e2 τ ->
-    Phi n = τ2 ->
-    typing (DeCont τ2 τ .: Γ) e2' τ ->
-    typing Γ (handle e1 e2 n e2') τ
-
-  | t_continue v1 v2 τ1 τ: 
-    typing_val Γ v1 (DeCont τ1 τ) ->
-    typing_val Γ v2 τ1 ->
-    typing Γ (continue v1 v2) τ
-
+  (** exit *)
+  | t_exit v τ τ' : 
+    typing_val Γ v τ ->
+    typing Γ (exit v) τ'
 
 with typing_frame {n} (Γ : Ctx n) : Frame n -> Ty 0 -> Ty 0 -> Prop := 
 
@@ -378,32 +298,19 @@ with typing_frame {n} (Γ : Ctx n) : Frame n -> Ty 0 -> Ty 0 -> Prop :=
     typing (τ1 .: Γ) e1 τ2  ->
     typing_frame Γ (f_let e1) τ1 τ2
 
-  (** exceptions *)
-  | ft_try e2 τ :
-    typing (Exn .: Γ) e2 τ -> 
-    typing_frame Γ (f_try e2) τ τ
-
-  (** effect handlers *)
-  | ft_handle e2 m e2' τ1 τ2 τ : 
-    typing (τ1 .: Γ) e2 τ ->
-    Phi m = τ2 ->
-    typing (DeCont τ2 τ .: Γ) e2' τ -> 
-    typing_frame Γ (f_handle e2 m e2') τ1 τ
-    
-
-with typing_stack {n} (Γ : Ctx n) : Stack n -> Ty 0 -> Ty 0 -> Prop := 
+with typing_stack {n} (Γ : Ctx n) : Stack n -> Ty 0 -> Prop := 
   | st_nil τ : 
-    typing_stack Γ nil τ τ
+    typing_stack Γ nil τ
 
-  | st_cons f s τ τ' τ2 : 
+  | st_cons f s τ τ' : 
     typing_frame Γ f τ τ' ->
-    typing_stack Γ s τ' τ2 ->
-    typing_stack Γ (cons f s) τ τ2
+    typing_stack Γ s τ' ->
+    typing_stack Γ (cons f s) τ 
 .
 
 Inductive machine_ok : machine -> Prop := 
-  | m_eval s e τ τ' : 
-    typing_stack null s τ τ' -> 
+  | m_eval s e τ  : 
+    typing_stack null s τ  -> 
     typing null e τ ->
     machine_ok (s, e).
 
@@ -413,15 +320,7 @@ Inductive machine_ok : machine -> Prop :=
 Definition t_var' {n} (Γ : Ctx n) x τ   : Γ x = τ -> typing_val Γ (var x) τ.
 intros <-. eapply t_var. Qed.
 
-Definition st_cons'  {n} (Γ : Ctx n) f s τ τ' τ2 s' : 
-    typing_frame Γ f τ τ' ->
-    typing_stack Γ s' τ' τ2 ->
-    s = cons f s' ->
-    typing_stack Γ s τ τ2.
-intros ? ? ->. eapply st_cons; eauto.
-Qed.
-
-#[export] Hint Resolve t_var' st_cons' : rec.
+#[export] Hint Resolve t_var' : rec.
 
 #[export] Hint Constructors typing_val typing 
   typing_frame typing_stack : rec.
@@ -431,7 +330,7 @@ Qed.
 Ltac invert_typing := 
   match goal with 
     | [ H : typing_val _ (_ _) _ |- _ ] => inversion H; subst; clear H
-    | [ H : typing_stack _ (cons _ _) _ _ |- _ ] => inversion H; subst; clear H
+    | [ H : typing_stack _ (cons _ _) _  |- _ ] => inversion H; subst; clear H
     | [ H : typing _ (_ _) _ |- _ ] => inversion H; subst; clear H
     | [ H : typing_frame _ (_ _) _ _ |- _ ] => inversion H; subst; clear H
     end.
@@ -445,7 +344,7 @@ Infix "↦*"  := (multi Stack.step) (at level 70) : rec_scope.
 Notation "Γ |-v v ∈ τ" := (typing_val Γ v τ) (at level 70) : rec_scope.
 Notation "Γ |-e e ∈ τ" := (typing Γ e τ) (at level 70) : rec_scope.
 Notation "Γ |-f f ∈ τ1 ~> τ2" := (typing_frame Γ f τ1 τ2) (at level 70): rec_scope.
-Notation "Γ |-s s ∈ τ1 ~> τ2" := (typing_stack Γ s τ1 τ2) (at level 70) : rec_scope.
+Notation "Γ |-s s ∈ τ" := (typing_stack Γ s τ) (at level 70) : rec_scope.
 End Notations.
 
 Import Notations.
@@ -462,7 +361,6 @@ Instance Subst_Stack  {m n : nat}: (Subst1 _ _ _) :=
 Instance Ren_Stack  {m n : nat}: (Ren1 _ _ _) :=
   fun (xi : fin m -> fin n) => list_map (ren_Frame xi).
 
-
 (** Renaming lemma *)
 
 Fixpoint renaming_val {n} (Γ : Ctx n) v τ {m} (Δ:Ctx m) δ : 
@@ -471,8 +369,8 @@ with renaming_tm {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) δ :
   Γ |-e e ∈ τ -> typing_renaming Δ δ Γ -> Δ |-e e⟨δ⟩ ∈ τ
 with renaming_frame {n} (Γ : Ctx n) e τ1 τ2 {m} (Δ:Ctx m) δ : 
   Γ |-f e ∈ τ1 ~> τ2 -> typing_renaming Δ δ Γ -> Δ |-f e⟨δ⟩ ∈ τ1 ~> τ2
-with renaming_stack {n} (Γ : Ctx n) e τ1 τ2 {m} (Δ:Ctx m) δ : 
-  Γ |-s e ∈ τ1 ~> τ2 -> typing_renaming Δ δ Γ -> Δ |-s e⟨δ⟩ ∈ τ1 ~> τ2.
+with renaming_stack {n} (Γ : Ctx n) e τ1 {m} (Δ:Ctx m) δ : 
+  Γ |-s e ∈ τ1 -> typing_renaming Δ δ Γ -> Δ |-s e⟨δ⟩ ∈ τ1.
 Proof. 
   - intros h tR; inversion h.
     all: asimpl.
@@ -487,7 +385,7 @@ Proof.
     all: try solve [econstructor; eauto with renaming].
   - intros h tR; inversion h; subst.
     all: try destruct k; cbn.
-    all: try solve [eauto using st_cons' with rec renaming].
+    all: try solve [eauto with rec renaming].
 Qed.
 
 Hint Resolve renaming_val renaming_tm renaming_frame renaming_stack : rec.
@@ -536,8 +434,8 @@ with
   substitution_frame {n} (Γ : Ctx n) e τ τ' {m} (Δ:Ctx m) σ : 
   Γ |-f e ∈ τ ~> τ' -> typing_subst Δ σ Γ -> Δ |-f e[σ] ∈ τ ~> τ'
 with 
-  substitution_stack {n} (Γ : Ctx n) e τ τ' {m} (Δ:Ctx m) σ : 
-  Γ |-s e ∈ τ ~> τ' -> typing_subst Δ σ Γ -> Δ |-s e[σ] ∈ τ ~> τ'.
+  substitution_stack {n} (Γ : Ctx n) e τ {m} (Δ:Ctx m) σ : 
+  Γ |-s e ∈ τ -> typing_subst Δ σ Γ -> Δ |-s e[σ] ∈ τ.
 Proof.
   all: intros h tS.
   all: inversion h; subst.
@@ -559,80 +457,9 @@ Proof.
   all: intros hS; inversion hS; subst.
   all: eauto with rec.
   all: try solve [inversion H; eauto with rec].
-(* FILL IN HERE *) Admitted.
-
-(* Property about list reverse *)
-Lemma rev_snoc {A} (f : A) (l : list A) : 
-  List.rev (f :: l) = (List.rev l) ++ (f :: nil).
-Proof.
-  induction l; eauto.
 Qed.
 
-(** The append operation on stacks preserves types *)
-Lemma st_app {n} (Γ : Ctx n) k1 k2 τ1 τ2 τ3 : 
-  typing_stack Γ k1 τ1 τ2 ->
-  typing_stack Γ k2 τ2 τ3 ->
-  typing_stack Γ (k1 ++ k2) τ1 τ3.
-Proof.       
-  move=> h1.
-  move: k2 τ3.
-  dependent induction h1; intros.
-  - cbn; eauto.
-  - repeat invert_typing. cbn.
-    eapply st_cons'; eauto.
-Qed.
-
-(** The [find_exn] operation produces a well-formed next state *)
-Lemma preservation_find_exn v : 
-  typing_val null v Exn ->
-  forall l τ τ', typing_stack null l τ τ' -> 
-                machine_ok (Stack.find_exn l v).
-Proof.
-  intro hv.
-  induction l; intros τ τ' h.
-  - econstructor; eauto with rec.
-  - inversion h. subst.
-    inversion H1; cbn; subst; eauto.
-    econstructor; eauto with rec.
-    eapply substitution_tm; eauto with rec.
-Qed.
-
-Lemma preservation_find_eff n τ0 :
-  Phi n = τ0 -> 
-  forall s τ1 τ',  typing_stack null s τ1 τ' -> 
-              forall s1, 
-                typing_stack null (List.rev s1) τ0 τ1 -> 
-                machine_ok (Stack.find_eff s n s1).
-Proof.
-  intros SEQ l τ1 τ' hl.
-  dependent induction hl; intros l1 hl1; cbn.
-  + eapply m_eval. 
-    instantiate (1 := Phi n).
-    econstructor; eauto with rec.
-    econstructor; eauto with rec.
-  + inversion H; subst; cbn.
-    * (* top of stack is f_let. *)
-      eapply IHhl; auto.
-      rewrite rev_snoc.
-      eapply st_app; eauto with rec.
-    * (* top is f_try *)
-      eapply IHhl; auto.
-      rewrite rev_snoc.
-      eapply st_app; eauto with rec.
-    * (* top is f_handle *)
-      destruct (PeanoNat.Nat.eqb n m) eqn:hEQ.
-      - rewrite  PeanoNat.Nat.eqb_eq in hEQ. subst.
-        eapply m_eval; eauto.
-        eapply substitution_tm; eauto.
-        eapply typing_subst_cons; eauto with rec.
-        eapply t_decont.
-        eapply st_app; eauto with rec.
-      - eapply IHhl; auto.
-        rewrite rev_snoc.
-        eapply st_app; eauto with rec.
-Qed.
-
-Lemma machine_preservation m m' : machine_ok m -> Stack.step m m' -> machine_ok m'.
+Lemma machine_preservation m m' : machine_ok m -> m ↦ m' -> machine_ok m'.
 Proof.
   intros h hS.
   (* invert machine_ok and step *)
@@ -646,27 +473,16 @@ Proof.
     econstructor; eauto with rec.
   - (* s_push *)
     econstructor; eauto with rec.
-  - (* s_raise *)
-    eapply preservation_find_exn; eauto with rec.
-  - (* s_try *)
-    econstructor; eauto with rec.
-  - (* s_discard_try *)
-    econstructor; eauto with rec.
   - (* s_letcc *)
     econstructor; eauto with rec.
   - (* s_throw *)
     econstructor; eauto with rec.
-  - (* s_perform *)
-    eapply preservation_find_eff; cbn; eauto with rec.
-  - (* s_handle *)
-    econstructor; eauto with rec.
-  - (* s_handle_ret *)
-    econstructor; eauto with rec.
-  - (* s_continue *)
-    econstructor; eauto using st_app with rec.
-  (* FILL IN HERE *) Admitted.
+  - (* s_exit *)
+    econstructor. eauto with rec. instantiate (1 := Void).
+    econstructor; eauto.
+Qed.
 
-(** progress *)
+(** * Progress lemma *)
 
 (** A tactic to invert the value typing, when the type is not a
 meta-variable. This acts like a canonical forms lemma.
@@ -678,11 +494,7 @@ how we invert them.
 Ltac canonical_value := 
   lazymatch goal with 
     | [ H : typing_val null _ (Arr _ _) |- _ ] => inversion H; subst; clear H
-    | [ H : typing_val null _ Exn |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Cont _) |- _ ] => inversion H; subst; clear H
-    | [ H : typing_val null _ (Eff _) |- _ ] => inversion H; subst; clear H
-    | [ H : typing_val null _ (DeCont _ _) |- _ ] => inversion H; subst; clear H
-    | [ H : typing_val null _ (List _) |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Prod _ _) |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Sum _ _) |- _ ] => inversion H; subst; clear H
     | [ H : typing_val null _ (Mu _) |- _ ] => inversion H; subst; clear H
@@ -706,13 +518,15 @@ Ltac is_reducible :=
 *)
 Lemma machine_progress m : machine_ok m -> Stack.irreducible m -> final m.
 Proof.
-  intros h IR. destruct h as [s e τ τ' hs ht].
+  intros h IR. destruct h as [s e τ hs ht].
   (* induction on the typing judgement for the expression e *)
   dependent induction ht.
   all: try is_reducible.
   - (* e is ret v *)
-    inversion hs; clear hs; subst. econstructor; eauto. 
-    destruct f; is_reducible.
+    inversion hs; clear hs; subst. 
+    econstructor; eauto.
+    inversion H0; subst.
+    is_reducible.
   - (* e is app v1 v2 *)
     canonical_value.
     is_reducible. (* beta reduction *)
@@ -732,20 +546,330 @@ Proof.
     is_reducible. is_reducible. 
   - (* unfold *) 
     canonical_value. is_reducible. 
-  - (* raise v *) 
-    inversion hs; clear hs; subst.
-    econstructor; eauto with rec.  (* uncaught exn is final *)
-    is_reducible.
   - (* throw - can step to saved continuation *)
     canonical_value.
     is_reducible.
-  - (* perform *)
-    canonical_value.
-    inversion hs; subst; clear hs. econstructor. (* uncaught perform is final *)
-    is_reducible. 
-  - (* continue *)
-    canonical_value.
-    is_reducible.
-(* FILL IN HERE *) Admitted.
+Qed.
 
+(* ----------------------------------------------------------- *)
+(** * CPS translation *)
+
+Import FinValues.
+
+Reserved Notation "T{ t }". 
+Reserved Notation "C{ t }".
+
+Fixpoint transTy {n} (t : Ty n) : Ty n := 
+  match t with 
+  | Nat => Nat
+  | Unit => Unit
+  | Void => Void
+  | Arr t1 t2 => Arr T{ t1 } (Arr C{ t2} Void)
+  | Prod t1 t2 => Prod T{ t1 } T{ t2 }
+  | Sum t1 t2 => Sum T{ t1 } T{ t2 }
+  | Cont t => C{ t } 
+  | var_Ty x => var_Ty x
+  | Mu t => Mu T{ t }
+  | _ => Void   (* there are extra types in the syntax, but we interpret as Void *)
+  end 
+where "T{ t }" := (transTy t) 
+and "C{ t }" := (Arr (transTy t) Void).
+
+
+
+(** The term translation is parameterized by 
+    xi - a renaming that describes how variables must be shifted in the output.
+    w  - a "continuation value", in the output scope 
+ *)
+
+Reserved Notation "E{ e }".
+Reserved Notation "V{ v }".
+Reserved Notation "S{ s }".
+
+(** Most of the time, we can infer the appropriate renaming argument (xi) 
+    automatically. So we define our notation (below) to do so. *)
+Ltac infer_xi := 
+  first [eassumption | 
+         (eapply up_ren); eassumption ].
+          
+
+Fixpoint transTm {n} (e : Tm n) {m} (xi : ren n m) (w : Val m) {struct e} : Tm m := 
+  match e with 
+  | ret v => 
+      app w  V{v}
+  | let_ e1 e2 => 
+      E{e1} (abs (E{e2} w⟨↑⟩))
+  | app v1 v2 => 
+      let_ (app V{v1} V{v2}) (app (var f0) w⟨↑⟩)
+  | ifz v e1 e2 => 
+      ifz V{v} (E{e1} w) (E{e2} w⟨↑⟩)
+  | prj b v => 
+      let_ (prj b V{v}) (app w⟨↑⟩ (var f0))
+  | case v e1 e2 => 
+      case V{v} (E{e1} w⟨↑⟩) (E{e2} w⟨↑⟩)
+  | letcc e => let_ (ret w) (E{e} w⟨↑⟩)
+  | throw v1 v2 => app V{v1} V{v2}
+  | unfold v => let_ (unfold V{v}) (app  w⟨↑⟩ (var f0))
+  | exit v => exit V{v}
+  | _ => ret zero
+  end
+with transVal {n} (v : Val n) {m} (xi : ren n m) {struct v} : Val m  := 
+  let fix transStack {n} (s : Stack n) {m} (xi : ren n m) : Val m := 
+       match s with 
+       | nil => 
+           abs (exit (var f0))
+       | f_let e2 :: s' => 
+           abs (E{ e2 } (transStack s' xi)⟨↑⟩) 
+       | _ => zero
+       end 
+  in
+  match v with 
+  | var x => (var x)⟨xi⟩
+  | unit => unit
+  | zero => zero
+  | succ v => succ V{v}
+  | abs e => abs (ret (abs (transTm e ((up_ren xi) >> shift) (var f0))))
+  | prod v1 v2 => prod V{v1} V{v2}
+  | inj b v => inj b V{v}
+  | fold v => fold V{v}
+  | rec v => rec V{v}
+  | cont s => transStack s xi
+  | _ => zero
+  end
+where "E{ e }" := (transTm e ltac:(infer_xi)) (only parsing)
+and "V{ v }" := (transVal v ltac:(infer_xi)) (only parsing)
+.
+
+Notation "E{ e }" := (transTm e _) (only printing).
+Notation "V{ v }" := (transVal v _) (only printing).
+
+Reserved Notation "S{ s }".
+
+Fixpoint transStack {n} (s : Stack n) {m} (xi : ren n m) : Val m := 
+  match s with 
+  | nil => 
+      abs (exit (var f0))
+  | f_let e2 :: s' => 
+      abs (E{ e2 } (ren_Val ↑ S{ s' }))
+  | _ => zero
+  end
+where "S{ s }" := (transStack s ltac:(infer_xi)) (only parsing).
+
+Inductive transCtx : forall {n} (Γ : Ctx n) {m} (Δ : Ctx m), ren n m -> Type := 
+  | tc_nil {m} (Δ : Ctx m): 
+    transCtx null Δ null
+  | tc_abs {n} (Γ : Ctx n) {m} (Δ : Ctx m) τ1 τ2 xi
+    : transCtx Γ Δ xi -> 
+      transCtx (τ1 .: Γ) (C{τ2} .: ((T{τ1} .: Δ)))
+               ((up_ren xi) >> shift)
+  | tc_up {n} (Γ : Ctx n) {m} (Δ : Ctx m) τ xi
+    : transCtx Γ Δ xi -> 
+      transCtx (τ .: Γ) (T{τ} .: Δ) (up_ren xi).
+
+Lemma typing_transCtx  {n} (Γ : Ctx n){m}(Δ : Ctx m) 
+  (xi : ren n m) : 
+  transCtx Γ Δ xi ->
+  forall x, Δ (xi x) = T{ Γ x }.
+Proof.
+  intro h. induction h.
+  - intro x. destruct x.
+  - auto_case. 
+  - auto_case.
+Qed.
+
+
+(** * The type translation commutes with renaming and substitution *)
+
+Lemma transTy_ren {n} (τ : Ty n) {m} (xi : fin n -> fin m) : 
+  ren_Ty xi (T{ τ }) = T{ ren_Ty xi τ }.
+Proof.
+  move: m xi.
+  induction τ.
+  all: intros m xi.
+  all: auto.
+  all: try solve [cbn; rewrite IHτ1; rewrite IHτ2; auto].
+  all: try solve [cbn; rewrite IHτ; auto].
+Qed.
+
+Lemma transTy_subst {n} (τ : Ty n) {m} (σ : fin n -> Ty m) : 
+ subst_Ty (σ >> transTy) (T{τ}) = T{subst_Ty σ τ}.
+Proof.
+  move: m σ.
+  induction τ.
+  all: rename n_Ty into n.
+  all: intros m σ.
+  all: cbn; auto.
+  all: try rewrite IHτ1.
+  all: try rewrite IHτ2.
+  all: try solve [cbn; auto].
+  all: try solve [rewrite IHτ; cbn; auto].
+    f_equal.
+    rewrite <- IHτ.
+    f_equal.
+    unfold up_Ty_Ty.
+    extensionality x.
+    destruct x; cbn; try done.
+    unfold funcomp.
+    rewrite <- transTy_ren.
+    done.
+Qed.
+
+Lemma transTy_Mu {τ : Ty 1} : 
+  (T{τ})[(Mu (T{τ}))..] = T{τ [(Mu τ)..]}.
+Proof.
+  replace (transTy τ)[((Mu (transTy τ))..)] with 
+    (transTy τ)[(((Mu τ)..) >> transTy)].
+  unfold subst1, Subst_Ty.
+  rewrite transTy_subst; auto.
+  eapply ext_Ty. auto_case. 
+Qed.
+
+
+(** * The translation preserves types *)
+
+Fixpoint typing_transTm {n} (Γ : Ctx n) (e : Tm n) τ : 
+  Γ |-e e ∈ τ -> forall {m} (Δ : Ctx m) xi w, 
+      transCtx Γ Δ xi ->
+      Δ |-v w ∈ C{ τ } ->
+      Δ |-e E{ e } w ∈ Void
+with typing_transVal {n} (Γ : Ctx n) (v : Val n) τ : 
+  Γ |-v v ∈ τ -> forall {m} (Δ : Ctx m) xi, 
+  transCtx Γ Δ xi ->
+  Δ |-v V{v} ∈ T{τ}
+with typing_transStack {n} (Γ : Ctx n) (s : Stack n) τ : 
+  Γ |-s s ∈ τ -> forall {m} (Δ : Ctx m) xi, 
+  transCtx Γ Δ xi ->
+  Δ |-v S{s} ∈ C{τ}.
+Proof.
+-  all: intros h m Δ xi w TG Tw.
+   all: inversion h; subst.
+   all: cbn.
+   + eapply t_app; eauto.
+   + eapply typing_transTm; eauto.
+     eapply t_abs; eauto.
+     eapply typing_transTm; eauto.
+     eapply tc_up; eauto.
+     eapply renaming_val; eauto.
+     eapply typing_renaming_shift.
+   + eapply typing_transVal in H; eauto.
+     eapply typing_transVal in H0; eauto.
+     eapply t_let; eauto.
+     cbn in H.
+     eapply t_app; eauto.
+     eapply t_app; eauto.
+     eapply t_var'; eauto.
+     cbn. eauto.
+     eapply renaming_val; eauto.
+     eapply typing_renaming_shift; eauto.
+   + eapply typing_transVal in H; eauto.
+     eapply typing_transTm in H0; eauto.
+     eapply t_ifz; eauto.
+     eapply typing_transTm; eauto.
+     eapply tc_up; eauto.
+     eapply renaming_val; eauto.
+     eapply typing_renaming_shift; eauto.
+   + eapply typing_transVal in H; eauto. cbn in H.
+     eapply t_let; eauto. 
+     eapply t_prj1; eauto.
+     eapply t_app; eauto.
+     eapply renaming_val; eauto with rec.
+     eapply typing_renaming_shift; eauto.
+     eapply t_var'; eauto.
+   + eapply typing_transVal in H; eauto. cbn in H.
+     eapply t_let; eauto. 
+     eapply t_prj2; eauto.
+     eapply t_app; eauto.
+     eapply renaming_val; eauto with rec.
+     eapply typing_renaming_shift; eauto.
+     eapply t_var'; eauto.
+   + eapply typing_transVal in H; eauto. cbn in H.
+     eapply t_case; eauto.
+     eapply typing_transTm; eauto.
+     eapply tc_up; eauto.
+     eapply renaming_val; eauto with rec.
+     eapply typing_renaming_shift; eauto.
+     eapply typing_transTm; eauto.
+     eapply tc_up; eauto.
+     eapply renaming_val; eauto with rec.
+     eapply typing_renaming_shift; eauto.
+   + (* unfold *)
+     eapply typing_transVal in H; eauto. cbn in H.
+     eapply t_let; eauto. 
+     eapply t_unfold; eauto.
+     eapply t_app; eauto.
+     eapply renaming_val; eauto with rec.
+     eapply typing_renaming_shift; eauto.
+     eapply t_var'; eauto.
+     rewrite transTy_Mu.
+     cbn. done.
+   + eapply t_let; eauto with rec.
+     eapply typing_transTm; eauto.
+     eapply tc_up; eauto.
+     eapply renaming_val; eauto with renaming.
+   + eapply typing_transVal in H; eauto. cbn in H.
+     eapply typing_transVal in H0; eauto. 
+     eapply t_app; eauto. 
+   + (* exit *)
+     eapply typing_transVal in H; eauto.
+     eapply t_exit; eauto.     
+- intro h; inversion h.
+  all: intros m Δ xi TG.
+  + eapply t_unit.
+  + cbn. eapply typing_transCtx in TG; eauto. 
+    eapply t_var'; eauto.
+  + eapply t_zero.
+  + eapply typing_transVal in H; eauto. cbn in H.
+    eapply t_succ; eauto.
+  + eapply typing_transVal in H; eauto.
+    eapply typing_transVal in H0; eauto. 
+    eapply t_prod; eauto.
+  + eapply typing_transVal in H; eauto.
+    eapply t_inl; eauto.
+  + eapply typing_transVal in H; eauto.
+    eapply t_inr; eauto.
+  + eapply t_abs; eauto.
+    eapply t_ret; eauto.
+    eapply t_abs; eauto.
+    eapply typing_transTm; eauto.
+    eapply tc_abs; eauto.
+    eapply t_var'. eauto.
+  + eapply typing_transVal in H0; eauto. cbn.
+    eapply t_rec; eauto.
+    destruct τ; eauto.
+    eapply tc_up; eauto.
+  + eapply typing_transVal in H; eauto.
+    cbn.
+    eapply t_fold; eauto.
+    rewrite transTy_Mu.
+    auto.
+  + eapply typing_transStack in H; eauto.
+- intros h; inversion h.
+  all: intros m Δ xi TG.
+  all: cbn.
+  + 
+    eapply t_abs; eauto.
+    eapply t_exit; eauto.
+    eapply t_var'; eauto. 
+  + inversion H; subst.
+    eapply t_abs; eauto.
+    eapply typing_transTm; eauto with renaming.
+    eapply tc_up; eauto.
+    eapply renaming_val; eauto with renaming.    
+Qed.
+
+(** * top-level result *)
+
+Corollary top_level : 
+  forall e tau, 
+    null |-e e ∈ tau -> 
+    null |-v abs (transTm e null (var f0)) ∈ Arr C{tau} Void.
+Proof.          
+  intros e tau h.
+  eapply typing_transTm with (Δ := C{tau} .: null)(w := var f0) in h.
+  eapply t_abs; eauto.
+  eapply tc_nil; eauto.
+  eapply t_var'; eauto.
+Qed.
+
+(* ----------------------------------------------------- *)
 

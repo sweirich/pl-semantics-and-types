@@ -80,3 +80,10 @@
     Interpretation of annotated version of the modal type system
     in type theory (i.e. Rocq's Gallina language). Requires an 
     intrinistically-typed version of the syntax.
+
+- CONTROL: exceptions, continuations, and effect handlers
+  * [control.syntax]
+  * [control.typesyntax]
+  * [control.control]
+  
+  
