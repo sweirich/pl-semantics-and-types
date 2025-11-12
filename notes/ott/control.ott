@@ -7,6 +7,10 @@ tau :: 't_' ::=
    | Eff tau          ::    :: Eff
    | Phi n            :: M  :: Phi
     {{ tex \Phi([[n]]) }}
+   | C{ tau }       :: M  :: ContTrans
+    {{ tex \mathcal{C}( [[tau]] ) }}
+   | T{ tau }       :: M  :: TyTrans
+    {{ tex \mathcal{T}( [[tau]] ) }}
 
 e :: 'e_' ::= 
    | try e1 with exn x => e2    ::  :: try
@@ -22,11 +26,22 @@ e :: 'e_' ::=
    | exn k                  ::  :: exn
    | cont s                 ::  :: cont
    | effect n               ::  :: effect
+   | exit v                 ::  :: exit
+   | E{ e } v               ::  :: TmTrans
+    {{ tex \mathcal{E}( [[ e ]] )_{[[v]]}  }}
+   | V{ v }                 ::  :: ValTrans
+    {{ tex \mathcal{V}( [[ v ]] ) }}
+   | S{ s }                 ::  :: StkTrans 
+    {{ tex \mathcal{S}( [[ s ]] ) }}
 
 v :: 'v_' ::= 
    | exn k                  ::  :: exn
    | cont s                 ::  :: cont
    | effect n               ::  :: effect
+   | V{ v }                 ::  :: ValTrans
+    {{ tex \mathcal{V}( [[ v ]] ) }}
+   | S{ s }                 ::  :: StkTrans 
+    {{ tex \mathcal{S}( [[ s ]] ) }}
 
 frame  :: 'f_' ::= 
    | try _ with exn x => e2 ::   :: try 
@@ -36,7 +51,14 @@ frame  :: 'f_' ::=
 stack , s :: 's_' ::= 
    | s1 ++ s2               ::  :: append
    | rev s                  ::  :: s
-  
+
+
+sigma {{ tex \sigma }} , rho {{ tex \rho }} :: 'sub_' ::= 
+{{ com substitution and environments: map all variables in scope to tersm }}
+  | T{ sigma }             ::   :: SubstTyTrans
+    {{ tex \mathcal{T}( [[ sigma ]] ) }}   
+  | V{ sigma }             ::   :: SubstValTrans
+    {{ tex \mathcal{V}( [[ sigma ]] ) }}
 
 machine , m :: '' ::= 
    | find_exn s v    ::   :: find_exn
@@ -101,6 +123,12 @@ G ||- v1 : DeCont tau1 tau
 G ||- v2 : tau1
 --------------------------- :: continue
 G ||- continue v1 v2 : tau
+
+%%% Exit
+
+G ||- v : tau
+--------------------- :: exit
+G ||- exit v : tau'
 
 defn 
 G ||- v : tau ::  :: typing_val :: 'tv_' 
@@ -220,3 +248,26 @@ by
 
 ------------------------------------------------------------ :: continue
 < s1, continue (cont s2) v > |-> <s2 ++ s1 , ret v>
+
+
+------------------------------------------------------------ :: exit
+< s, exit v > |-> < nil, exit v >
+
+defns
+
+JCPS :: '' ::=
+
+defn 
+G ~ D ::  :: transCtx :: 'tc_'
+by
+
+--------------- :: nil
+  ~ D 
+
+G ~ D
+----------------------------------------------------------------------- :: abs
+( G, x : tau1 )  ~ ( D , x : T{ tau1 } , y : C{ tau2 } )
+
+G ~ D
+------------------------------------------------------------ :: up
+( G, x : tau1 )  ~ ( D , x : T{ tau1 } )

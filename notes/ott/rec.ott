@@ -13,7 +13,17 @@ tau {{ tex \tau }} :: 'ty_' ::=
      {{ tex \nu[[alpha]].[[tau]] }}
    | tau1 * tau2     ::   :: Prod
    | tau1 + tau2     ::   :: Sum
-   | tau [ tau1 / alpha ] ::   :: Subst
+   | tau [ sigma ]   ::   :: Subst
+   | tau < xi >      ::   :: Rename
+   | sigma alpha     ::   :: Lookup
+
+xi {{ tex \xi }} :: 'ren_' ::= 
+{{ com renaming: map all variables in scope to new names }}
+   | alpha1 / alpha2 ::   :: TyRename
+
+sigma {{ tex \sigma }} , rho {{ tex \rho }} :: 'sub_' ::= 
+{{ com substitution and environments: map all variables in scope to tersm }}
+   | tau / alpha     ::   :: TySubst
 
 e :: 'e_' ::= 
    | ( e1 , e2 )                             ::   :: Pair
@@ -32,6 +42,7 @@ e :: 'e_' ::=
    | unfold e                                ::   :: Unfold
    | roll e                                  ::   :: Roll
    | unroll e                                ::   :: Unroll
+   | unit        ::   :: unit
    | zero        ::   :: zero
    | S v         ::   :: succ
    | 0           :: M :: zero_not
@@ -50,6 +61,7 @@ v , w :: 'v_' ::=
    | roll e      ::   :: Roll
    | zero        ::   :: zero
    | S v         ::   :: succ
+   | unit        ::   :: unit
    | 0           :: M :: zero_not
    | 1           :: M :: one_not
    | 2           :: M :: two_not

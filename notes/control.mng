@@ -108,7 +108,7 @@ a name for the exception value that was thrown.
 
 We can prove type safety for our stack-based language, but we need to extend
 our type system to be able to talk about stacks, frames, and machines. All
-three of these judgements are for runtime constructs, so we only care about
+three of these judgments are for runtime constructs, so we only care about
 type checking them with the empty context.
 
 \begin{definition}[Frame, Stack and Machine typing]
@@ -143,7 +143,7 @@ If $[[||- v : Exn]]$ and $[[ ||- s : tau1]]$, then $[[ ||- find_exn s v ok ]]$
 \end{lemma}
 
 Second, notice more generally that we don't (need to) track the machine type in the 
-$[[||- m ok]]$ judgement. This means that our preservation theorem doesn't necessarily 
+$[[||- m ok]]$ judgment. This means that our preservation theorem doesn't necessarily 
 ``preserve'' the type of the machine, it just preserves the fact that the machine is 
 well-formed as it steps.
 \begin{lemma}[Preservation]
@@ -218,6 +218,368 @@ any value
 \drules[te]{$[[G ||- e : tau]]$}{Term typing}
 {letcc,throw}
 
+\subsection{Continuations and the Curry-Howard Isomorphism}
+
+The Curry-Howard Isomorphism relates constructive logic with typed functional
+programming. It observes that there is a correspondence between logical
+propositions and types, and with the proofs of those propositions and programs
+that have those types. This idea is the basis of modern proof assistants based
+on dependent type theory, such as Rocq, Lean or Agda.  To show that a
+proposition is true, you just need to find a program that has that type.
+
+\begin{definition}[Correspondence between propositions and types]
+\[
+\begin{array}{ll}
+A \wedge B & [[ tau1 * tau2 ]] \\
+A \vee B & [[ tau1 + tau2 ]] \\
+A \Rightarrow B & [[ tau1 -> tau2 ]] \\   
+\neg A & [[ A -> Void ]] \\
+\textit{True}  &  [[ Unit ]] \\
+\textit{False} &  [[ Void ]] \\
+\end{array}
+\]
+\end{definition}
+
+This chart shows the correspondence between common logical combinators
+(conjunction, disjunction, implication, negation) and types. And, it makes sense that constructive proofs of of these combinators correspond to programs. For example, a constructive proof of a conjunction $A \wedge B$ is a pair of proofs, one which shows $A$ and another that shows $B$. We can see this in the definition of conjunction in Rocq standard library:
+
+\begin{lstlisting}
+Inductive and (A B : Prop) : Prop := 
+    conj : A -> B -> A /\ B.
+\end{lstlisting}
+
+Similarly, a proof of a disjunction $A \vee B$ is either a proof of $A$, or a proof of $B$. This corresponds to a sum type.
+
+\begin{lstlisting}
+Inductive or (A B : Prop) : Prop :=  
+    or_introl : A -> A \/ B 
+  | or_intror : B -> A \/ B.
+\end{lstlisting}
+
+The proof of an implication $A \Rightarrow B$ is a function that takes a proof
+of $A$ to a proof of $B$. This corresponds to a function.  In constructive
+logic, negation $\neg A$ is the same as saying that $A$ is impossible. In
+other words, it is a function that takes a proof of $A$ to a proof of
+$\textit{False}$---i.e. a type that has no inhabitants (so there can never be
+a proof of $\textit{False}$.
+
+For example, we can prove various properties by creating programs in Gallina, the
+language of the Rocq proof assistant. (Usually we don't write these programs directly; tactics let us construct them more conveniently.) For example, we can show (half)
+of one of the de Morgan laws as follows:
+\begin{lstlisting}
+Definition demorgan1 : not P /\ not Q -> not (P \/ Q) := 
+  fun npnq => match npnq with 
+             | conj np nq => 
+                fun p_or_q => 
+                  match p_or_q with 
+                  | or_introl p => np p
+                  | or_intror q => nq q
+                  end
+             end.
+\end{lstlisting}
+The inverse of this law is also expressible using a proof term in Rocq.
+\begin{lstlisting}
+Definition demorgan2 : not (P \/ Q) -> not P /\ not Q := 
+   fun h => conj (fun p => h (or_introl p)) (fun q => h (or_intror q)).
+\end{lstlisting}
+
+However, there is a difficulty with the other de Morgan identity. One direction 
+is also easy. 
+\begin{lstlisting}
+Definition demorgan3: not P \/ not Q -> not (P /\ Q) := 
+   fun h => match h with 
+            | or_introl np => fun pq => match pq with 
+                                        | conj p q => np p
+                                        end
+            | or_intror nq => fun pq => match pq with 
+                                        | conj p q => pq q
+                                        end
+            end.
+\end{lstlisting}
+
+However, the remaining direction is not constructively provable.
+\begin{lstlisting}
+Lemma demorgan4 : not (P /\ Q) -> not P \/ not Q.
+\end{lstlisting}
+There is no way to prove this proposition in Rocq, without using 
+any axioms. 
+
+What does this have to do with control operators?  Suppose Rocq had explicit
+control over continuations. We can pretend that is the case by assuming that
+there is some continuation type $\ottkw{cont}$, and the two operations
+$\ottkw{callcc}$ and $\ottkw{throw}$. (To make it easier to add the control
+operator to Rocq, we use $\ottkw{callcc}$ instead of $\ottkw{letcc}$. The
+former uses a function argument instead of a let expression to bind the
+current continuation.)
+ 
+Furthermore, we can give reasonable definitions to the continuation type and
+the throw operation. All we \emph{really} need to axiomatize is callcc.
+\begin{lstlisting}
+Definition cont  : Prop -> Prop := fun A => False.
+Definition throw : forall A, cont A -> A -> False := fun A k v => k v.
+Axiom callcc     : forall A, ((cont A) -> A) -> A.
+\end{lstlisting}
+
+If you look closely at the type of $\ottkw{callcc}$, you may recognize it as
+Pierce's law, usually written $((P \Rightarrow Q) \Rightarrow P) \Rightarrow
+P$. This axiom is equivalent to the law of the excluded middle, which states
+that any proposition is either true or false, $P \vee \neg P$.  Adding either
+Pierce's law or the law of the excluded middle to constructive logic turns it
+into classical logic. That means that these axioms are consistent with
+constructive logic, but cannot be proven constructively. If you would like to
+reason using classical logic in Rocq, you need to assume one of these axioms.
+
+These axioms are equivalent. For example, you can derive the law of the excluded 
+middle using callcc.
+\begin{lstlisting}
+Definition excluded_middle {A} : A \/ cont A :=
+  callcc (fun k => or_intror (fun a => 
+             throw k (or_introl a))).
+\end{lstlisting}
+This proof captures the current continuation $k$ and then immediately asserts
+that $A$ is not true. But if it was the case that $A$ was actually true
+(i.e. someone called this function with some $a$ that is a proof of $A$), then
+we can throw this proof to the captured continuation to assert that $A$ was
+really true all along. It's a bit like time travel---we can assert whatever we want 
+without evidence, but if we ever find out that we were wrong, we can go back in 
+time and replace our answer with the other version.
+
+Furthermore, with $\ottkw{callcc}$, we can show the problematic de Morgan law from above: 
+\begin{lstlisting}
+Definition demorgan4 : not (P /\ Q) -> not P \/ not Q := 
+  fun npq => callcc (fun k => 
+     or_introl (fun p => throw k (or_intror (fun q => npq (conj p q))))). 
+\end{lstlisting}
+What does this proof mean? To show that $not (P /\ Q)$ implies $not P \/ not Q$,
+we take a proof that both $P$ and $Q$ cannot be true simultaneously and then
+capture the current continuation $k$. At this point, we assert that it is $P$
+that is not true, by showing a proof that $P$ leads to
+$\textit{False}$. However, if we ever receive a proof of $P$, we use the
+captured continuation to go back to where we started and assert that no, it
+was $q$ that was not true. If, in this case, we also receive a proof of $Q$,
+we can use our assumption with the evidence for $P$ and $Q$ that we have
+already received.
+
+Another proposition that is equivalent to Pierce's law and the law of the excluded middle is double negation elimination. 
+
+\[ not (not P) \Rightarrow P \]
+
+This proposition holds classically, but not constructively. In other words, $P$ in classical logic $P$ is the same as its double negation, but they are different propositions in constructive logic.  
+
+In fact, even though a property $P$ may only be provable using classical
+logic, we can prove its double negation, i.e. $not (not P)$, using
+constructive logic. To show this fact, we need a technique that allows us to
+transform a proof term that uses $\ottkw{callcc}$ into one that does not.
+And that technique is called \emph{Continuation-Passing-Style conversion} or CPS conversion.
+
+\subsection{CPS conversion}
+
+CPS conversion is a translation from a language that includes explicit
+continuation operations, like $\ottkw{letcc}$ or $\ottkw{callcc}$ into one
+that does not include these constructs. It is useful for logicians, but it is
+more useful for programmers, providing access to continuation-based
+programming even when it is not supported by the underlying programming
+language.
+
+The key idea of CPS is that we will translate the program so that every
+function will take a second argument: its continuation. Furthermore, once the
+function has computed its result it will call this continuation with that
+result instead of returning it. Functions never return when written in
+continuation-passing-style, they only jump to the next instruction.  That
+means that in order to call a function, we need to give it not just its
+argument, but what it should do next---its continuation---sort of like 
+putting a return address on the stack when we call a function.
+
+Because the continuation is always available for every term, it is easy to
+implement $[[letcc x in e]]$; we only need to bind $x$ to that continuation.
+
+Our goal is to define a translations for terms $[[E{e}w]]$ and for types $[[T{tau}]]$, such that the following theorem holds. 
+\begin{theorem}[\link{control/cps.v}{top_level}{CPS translation is type preserving}]\ \\
+If $[[ ||- e : tau ]]$ then $[[ ||- \x. E{e} x : (T{tau} -> Void) -> Void ]]$
+\end{theorem}
+The term translation $[[E{e}w]]$ takes two arguments: a term to translate $e$
+and a continuation $w$. This continuation should have type $[[T{tau} ->
+    Void]]$, so that the type of the top-level translation is the double
+negation (plus inner type translation) of the original type of the term.
+
+The type translation mostly leaves the structure of the types alone. However,
+it makes two changes. For function types, instead of returning a result of
+type $[[T{tau2}]]$, the function is transformed to take a continuation
+argument instead.  The type of the continuation argument is $[[C{tau2}]]$. The
+function doesn't return a type anymore (so its result type is $[[Void]]$),
+instead it passes its result to this continuation.  We also use $[[C{tau}]]$
+as the translation of the continuation type.
+
+\begin{definition}[\link{control/cps.v}{transTy}{Type translation}]
+\[
+\begin{array}{lcl}
+[[ T{ Nat }          ]] &=& [[ Nat ]]\\
+[[ T{ Void }         ]] &=& [[ Void ]]\\
+[[ T{ tau1 * tau2 }  ]] &=& [[ T{ tau1 } * T{ tau2 } ]]\\
+[[ T{ tau1 + tau2 }  ]] &=& [[ T{ tau1 } + T{ tau2 } ]]\\
+[[ T{ alpha }        ]] &=& [[ alpha ]] \\
+[[ T{ mu alpha. tau }]] &=& [[ mu alpha. T{ tau } ]] \\
+[[ T{ tau1 -> tau2 } ]] &=& [[ T{ tau1 } -> C{ tau2 } -> Void ]]\\
+[[ T{ Cont tau }     ]] &=& [[ C{ tau } ]] \\
+\\
+[[ C{ tau } ]]          &=& [[ T{ tau } -> Void ]] \\
+\end{array}
+\]
+\end{definition}
+
+
+
+
+A continuation $[[C{tau}]]$ is a function that wants an argument of type
+$[[T{tau}]]$. But what should its result type be? If we want the theorem above
+to hold, then it has to be $[[Void]]$. So continuations themselves can never
+return any answers.
+
+Wait a minute. If continuations never return, and we translate $[[e]]$ to
+$[[\x.E{e} x]]$, i.e. a term waiting for its continuation, what continuation
+do we pass in for $[[x]]$ to run the translated term? How do we get the
+result? Continuations cannot return results, so they need to communicate them
+in another way. Therefore, we add the $[[exit v]]$ construct to the
+language. This term aborts the computation immediately. It doesn't return $v$,
+it \emph{exits} with $v$, where an exited machine is a new terminal state.
+
+\[ \drule{ssm-exit} \qquad \drule{te-exit} \]
+
+It may seem like a subtle difference between returning a value and exiting
+with a value, but the payoff is in the typing rule. A returned value may be
+used by another computation.  So it's type needs to be the same as the type of
+the value. But an exited value is \emph{done}. No one can ever use it. So the
+typing rule for exit can have any type, including $[[Void]]$.  That means that
+to run the translated term, we can pass in $[[\y. exit y]]$ as the initial
+continuation.
+
+The translation for terms $[[E{ e } w]]$ is defined mutually with a translation 
+for values $[[V{v}]]$ and stacks $[[S{s}]]$. For clarity, we use the metavariable 
+$w$ for values used as continuations by the term translation. (The more common practice
+is to use a $k$.)
+\begin{definition}[\link{control/cps.v}{transTm}{Term, Value and Stack translation}]
+\[
+\begin{array}{lcl}
+[[ V{ x }            ]] &=& [[ x ]] \\
+[[ V{ zero }         ]] &=& [[ zero ]] \\
+[[ V{ succ v }       ]] &=& [[ succ V{ v } ]] \\
+[[ V{ unit }         ]] &=& [[ unit ]] \\
+[[ V{ \x . e }       ]] &=& [[ \ x . ret \ y. E{ e } y ]] \\
+[[ V{ ( v1 , v2 ) }  ]] &=& [[ ( V{ v1 } , V{ v2 } ) ]] \\
+[[ V{ inj1 v }       ]] &=& [[ inj1 V{ v } ]] \\
+[[ V{ inj2 v }       ]] &=& [[ inj2 V{ v } ]] \\
+[[ V{ fold v }       ]] &=& [[ fold V{ v } ]] \\
+[[ V{ rec x . v }    ]] &=& [[ rec x.  V{ v }  ]] \\
+[[ V{ cont s }       ]] &=& [[ S{ s } ]] \\
+\\
+[[ E{ ret v } w      ]] &=& [[ w V{ v } ]] \\ 
+[[ E{ let x = e1 in e2 } w ]] &=& [[ E{ e1 } (\x. E{ e2 } w ) ]] \\
+[[ E{ v1 v2 } w      ]] &=& [[ let x = V{ v1 } V{ v2 } in x w ]] \\
+[[ E{ letcc x in e } w ]] &=& [[ let x = ret w in E{ e }w ]] \\ 
+[[ E{ throw v1 v2 } w ]]&=& [[ V{ v1 } V{ v2 } ]] \\
+[[ E{ exit v } w     ]] &=& [[ exit V{v} ]] \\
+[[ E{ prj1 v } w     ]] &=& [[ let x = prj1 V{ v } in w x ]] \\
+[[ E{ prj2 v } w     ]] &=& [[ let x = prj2 V{ v } in w x ]] \\
+[[ E{ unfold v } w   ]] &=& [[ let x = unfold V{ v } in w x ]] \\
+[[ E{ case v of { 0 => e1 ; S y => e2 } } w ]] 
+  &=& [[ case V{ v } of { 0 => E{ e1 } w ; S y => E{ e2 } w } ]] \\
+[[ E{ case v of { inj1 x => e1 ; inj2 y => e2 } } w ]] 
+  &=& [[ case V{ v } of { inj1 x => E{ e1 } w ; inj2 y => E{ e2 } w } ]] \\
+\\
+[[ S{ nil }         ]] &=& [[ \x. exit x ]] \\
+[[ S{ let x = _ in e2 : s } ]] &=& [[ \x. E{ e2 } S{ s } ]] \\
+\end{array}
+\]
+\end{definition}
+The value translation produces a new value through structural recursion. For
+function values, the translation introduces a second abstraction (for the
+continuation $y$ that will be passed to the function). This continuation is
+used to translate the body of the function. For continuation values, $[[cont
+    s]]$, the translation uses the \emph{stack translation} to convert an
+explicit stack into a continuation function. If the stack is empty, then the
+continuation function should exit with its value. Otherwise, if there is a
+frame on the stack, the continuation function uses the term translation to
+process that value, with the continuation computed from the rest of the stack.
+
+The term translation is more interesting. Instead of returning a value, the
+translation passes it to the continuation $w$. Let expressions use the
+continuation argument for sequencing. In an application, the translated
+function expects a continuation argument in addition to the usual one. After
+the first (partial) application, the result is applied to the current
+continuation.  For $\ottkw{letcc}$, the current continuation value is named by
+a let expression before continuing the translation.  For $\ottkw{throw}$, the
+continuation value is applied to the argument, the current continuation is
+discarded.  Similarly $\ottkw{exit}$, discards the current continuation and
+just halts the program.  The remainder of the cases merely propagate the
+continuation through the translation.
+
+Finally, we need to define the translation of substitutions. We translate
+substitution by translating each of the types or values in the range of the
+substitution.
+
+\begin{definition}[Substitution translation]
+\[ [[ T{ sigma } alpha ]] = [[ T{ sigma alpha } ]]  \]
+\[ [[ V{ sigma } x ]] = [[ V{ sigma x } ]]  \] 
+\end{definition}
+
+\paragraph{Properties of the type translation}
+
+The type translation commutes with renaming and substitution.
+\begin{lemma}[\link{control/cps.v}{transTy_ren}{Type translation renaming}]
+\[ [[ T{ tau }<xi> ]] = [[T{ tau<xi> } ]] \]
+\end{lemma}
+\begin{lemma}[\link{control/cps.v}{transTy_subst}{Type translation substitution}]
+\[ [[ T{ tau }[ T{ sigma } ] ]] = [[T{ tau[sigma] } ]] \]
+\end{lemma}
+
+This final property establishes the result that we need for recursive types:
+
+\begin{corollary}[\link{control/cps.v}{transTy_Mu}{Recursive type translation}]
+\[ [[ T{ tau }[ mu alpha. T{ tau } / alpha ] ]] = [[ T{ tau [mu alpha. tau/alpha] } ]] \]
+\end{corollary}
+
+\paragraph{Properties of the term and value translations}
+
+To prove our main lemma, we need to generalize it to talk about open
+terms. However, the scope of the result of the translation is not the same
+scope as that of the input. When the scope is extended when going under an
+abstraction, the translation also adds a continuation argument. We can
+establish the relationship between the input and output contexts using the
+following inductive definition. Bindings introduced by abstractions use
+\rref{tc-abs}, whereas other bindings use \rref{tc-up}.
+
+\begin{definition}[\link{control/cps.v}{transCtx}{Context translation}]\ \\
+\drules[tc]{$[[G ~ D ]]$}{Typing context relation}{nil,abs,up}
+\end{definition}
+
+We can now state our main lemma:
+
+\begin{lemma}[\link{control/cps.v}{typing_transTm}{CPS translation is type preserving}]
+Suppose $[[G ~ D ]]$.
+\begin{enumerate}
+\item If $[[ G ||- v : tau ]]$ then $[[ D ||- V{ v } : T{ tau } ]]$
+\item If $[[ G ||- e : tau ]]$ and  $[[ D ||- w : C{ tau } ]]$ then 
+  $[[ D ||- E{ e } w : Void ]]$
+\item If $[[ ||- s : tau1 ~> tau ]]$ then $[[ ||- S{ s } : C{ tau } ]]$
+\end{enumerate}
+\end{lemma}
+
+The proof of this lemma is by structural recursion on terms and values.  By
+choosing a single variable as the initial continuation, we can observe how
+this translation uses double negation on the input type. Alternatively, we can
+use an initial continuation to get a complete program.
+
+\begin{corollary}[\link{control/cps.v}{top_level1}{CPS translation is type preserving}]
+If $[[ ||- e : tau ]]$ then $[[ ||- \x. E{e} x : (T{tau} -> Void) -> Void ]]$
+and $[[ ||- E{e} (\y. exit y) : Void ]]$.
+\end{corollary}
+
+What we haven't shown is that this translation is semantics preserving.
+
+\begin{proposition}[Semantic correctness]
+If $[[ <nil, e> |->* <nil, ret v>]]$ then $[[E{e} (\y. exit y) ~>* exit V{v}]]$.
+\end{proposition}
+
 \section{Effect handlers}
 
 The control operator $\ottkw{letcc}$ demonstrates how to \emph{reify} the
@@ -284,7 +646,7 @@ different this time is that when we perform an effect, we need to search the
 current stack to find the handler for that effect, along the way saving all of
 the stack frames that we encounter while searching for the effect.
 
-The metaoperation $[[find_eff s n s']]$ searches stack $[[s]]$, looking for a handler 
+The meta-operation $[[find_eff s n s']]$ searches stack $[[s]]$, looking for a handler 
 for effect $[[n]]$, and accumulating frames in argument $[[s']]$. The \rref{ssm-perform}
 calls this operation with an initial accumulator of the empty stack. 
 
@@ -299,7 +661,7 @@ calls this operation with an initial accumulator of the empty stack.
 \end{array}
 \]
 
-When a maching frame is found, then the next machine stack is the one  
+When a matching frame is found, then the next machine stack is the one  
 where the handler was installed $[[s]]$. The next machine term is the 
 branch for that effect ($[[e2']]$). Furthermore, the variable $[[y]]$ is 
 replaced with a continuation composed of the accumulated stack frames along with 
@@ -322,8 +684,8 @@ lists, so this is merely a list append operation.
 
 \subsection{Typing rules and type safety}
 
-To typecheck programs that involve effect handlers, we need a more informative
-type for our saved continuations. Our original typing judgement for stacks
+To type check programs that involve effect handlers, we need a more informative
+type for our saved continuations. Our original typing judgment for stacks
 only tracked the type of the term that was compatible with the frame at the
 top of the stack. It did not say anything about the type of value that would
 eventually be returned by the machine.  This is a feature of exceptions and
@@ -404,5 +766,7 @@ good machine state.
 The treatment of exceptions and control operations was inspired by PFPL
 chapters 29 and 30. The material on effect handlers was inspired by Xavier
 Leroy's course ``Control
-Structures''~\url{https://xavierleroy.org/CdF/2023-2024/}. The draft 
-book for this course is available at \url{https://xavierleroy.org/control-structures/}.
+Structures''~\url{https://xavierleroy.org/CdF/2023-2024/}. The draft book for
+this course is available at \url{https://xavierleroy.org/control-structures/}.
+More information about CPS conversion and its verification using Autosubst is
+available in Pottier's paper~\cite{pottier:cps}.
