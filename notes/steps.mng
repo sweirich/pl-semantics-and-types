@@ -389,9 +389,9 @@ the step-count $k$.
 \\
    [[V Void v k]]                &=& \textit{never} \\
    [[V Nat v k]]                 &=& [[v elem nats]] \\
-   [[V tau1 -> tau2 \x.e k]]     &=& \forall [[v1]], [[V tau1 v1 ===>k C tau2 e[v2/x] ]] \\
+   [[V tau1 -> tau2 \x.e k]]     &=& \forall [[v1]], [[V tau1 v1 ===>k C tau2 e[v1/x] ]] \\
    [[V tau1 -> tau2 rec x.v k]]  &=& [[|> k V tau1 -> tau2 v[rec x.v/x]  ]] \\
-   [[V tau1 * tau2 (v1, v2) k]]  &=& [[|> k V tau1 v1 and |> k V tau2 v3 ]] \\
+   [[V tau1 * tau2 (v1, v2) k]]  &=& [[|> k V tau1 v1 and |> k V tau2 v2 ]] \\
    [[V tau1 * tau2 rec x. v k]]  &=& [[|> k V tau1 * tau2 v[rec x.v/x]   ]] \\
    [[V tau1 + tau2 inj1 v1 k]]   &=& [[|> k V tau1 v1 ]] \\
    [[V tau1 + tau2 inj2 v2 k]]   &=& [[|> k V tau2 v2 ]] \\

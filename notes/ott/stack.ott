@@ -18,6 +18,7 @@ stack, s :: 's_'  ::=
     {{ tex [] }}
    | frame : s    ::    :: cons
    | ( s ) ::    :: stack_paren
+   | s [ sigma ] ::   :: stack_subst
 
 machine, m :: '' ::= 
    | < s , e > ::   :: config

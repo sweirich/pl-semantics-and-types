@@ -38,11 +38,11 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 10/22 |          | modal   | More nontermination monad                                                                   |
 | M 10/27 |          |         | **Midterm Exam** (in class)                                                                 | 
 | W 10/29 | Ch. 9    | rec     | Explicit control stacks                                                                     |
-| M 11/3  | Ch. 10   | control | Exceptions                                                                                  |
-| W 11/5  | | control | Continuations                                                                                        |
-| M 11/10 | | control | **HW #4 due** <br/> Effect handlers                                                                  |
-| W 11/12 | | |                                                                                                   |
-| M 11/17 | | |                                                                                                   |
+| M 11/3  | Ch. 10.1 | control | Exceptions                                                                                  |
+| W 11/5  | Ch. 10.2 | control | Continuations                                                                               |
+| M 11/10 | Ch. 10.3 | control | **HW #4 due** <br/> Effect handler examples                                                 |
+| W 11/12 |          | control | Semantics of effect handlers                                                                |
+| M 11/17 | Ch. 10.2 | control | CPS conversion                                                                              |
 | W 11/19 | | |                                                                                                   |
 | M 11/24 | | | **HW #5 due**                                                                                     |
 | W 11/26 | | | **No Class**: Friday schedule for Thanksgiving                                                     |

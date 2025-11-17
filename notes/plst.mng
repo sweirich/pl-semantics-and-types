@@ -80,7 +80,7 @@
 \input{modal}
 \input{stack}
 \input{control}
-
+%% \input{equiv}
 
 \backmatter
 

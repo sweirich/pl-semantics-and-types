@@ -1,5 +1,5 @@
 \chapter{Explicit control stacks}
-\label{ch:control-stacks}
+\label{ch:stack}
 
 In this chapter, we look at what happens if we make the \emph{control stack}
 explicit in the semantics of a programming language. The control stack records

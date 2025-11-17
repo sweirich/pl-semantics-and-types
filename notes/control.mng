@@ -453,10 +453,11 @@ typing rule for exit can have any type, including $[[Void]]$.  That means that
 to run the translated term, we can pass in $[[\y. exit y]]$ as the initial
 continuation.
 
-The translation for terms $[[E{ e } w]]$ is defined mutually with a translation 
-for values $[[V{v}]]$ and stacks $[[S{s}]]$. For clarity, we use the metavariable 
-$w$ for values used as continuations by the term translation. (The more common practice
-is to use a $k$.)
+The translation for terms $[[E{ e } w]]$ is defined mutually with a
+translation for values $[[V{v}]]$ and stacks $[[S{s}]]$. We use the
+metavariable $w$ for values used as continuations by the term
+translation. (The more common practice is to use a $k$, but already use that
+letter to stand for for natural numbers.)
 \begin{definition}[\link{control/cps.v}{transTm}{Term, Value and Stack translation}]
 \[
 \begin{array}{lcl}
@@ -574,11 +575,38 @@ If $[[ ||- e : tau ]]$ then $[[ ||- \x. E{e} x : (T{tau} -> Void) -> Void ]]$
 and $[[ ||- E{e} (\y. exit y) : Void ]]$.
 \end{corollary}
 
-What we haven't shown is that this translation is semantics preserving.
+To show that the semantics is preserved by the simulation, we first need to show 
+two substitution lemmas. The first shows that substitution commutes with the 
+translation. Note that the ``continuation'' $[[w]]$ is part of the output scope, 
+isn't translated like the term, value or stack. Therefore, we still need to translate
+the value as we push it through the continuation.
 
-\begin{proposition}[Semantic correctness]
-If $[[ <nil, e> |->* <nil, ret v>]]$ then $[[E{e} (\y. exit y) ~>* exit V{v}]]$.
-\end{proposition}
+\begin{lemma}[\link{control/cps.v}{transSubst3}{Substitution}]
+\begin{enumerate}
+\item $[[ (E{e} w)[V{v}/x] ]]$ = $[[ E{ e[v/x] } (w[V{v}/x]) ]]$
+\item $[[ (V{v1})[V{v}/x] ]]$ = $[[ V{ v1[v/x] } ]]$
+\item $[[ (S{s})[V{v}/x] ]]$ = $[[ S{ s[v/x] } ]]$
+\end{enumerate}
+\end{lemma}
+
+The second lemma, called \emph{Kubstitution} by Pottier~\cite{pottier:cps},
+lets us substitute for variables that are free in the continuation only, and
+not in the expression.
+\begin{lemma}[\link{control/cps.v}{transSubst2}{Kubstitution}]
+\begin{enumerate}
+\item 
+  If $x \not\in [[fv(e)]]$ then $[[ (E{e} w)[v/x] ]]$ = $[[ E{ e[v/x] } (w[V{v}/x]) ]]$
+\end{enumerate}
+\end{lemma}
+
+We can use these substitution lemmas to show that a step with the stack machine semantics
+can be simulated by zero-or-more steps with the usual small-step semantics (augmented with 
+a small-step rule for $\ottkw{exit}$. 
+
+\begin{lemma}[\link{control/cps.v}{trans_step}{Semantic correctness}]
+If $[[ <s1, e1> |-> <s2,e2>]]$ then $[[E{e1} S{s1} ~>* E{e2} S{s2}]]$
+\end{lemma}
+
 
 \section{Effect handlers}
 

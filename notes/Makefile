@@ -1,11 +1,11 @@
 ## Makefile for paper
 
-OTT_SOURCE = stlc rec eff modal stack control
+OTT_SOURCE = stlc rec eff modal stack control 
 BIBFILES = weirich.bib
 
 OTTFILES  = $(foreach i, $(OTT_SOURCE), ott/$(i).ott)
 OTTIFLAGS = $(foreach i, $(OTT_SOURCE), -i ott/$(i).ott) -merge true
-RULESFILE = all-rules.tex
+RULESFILE = all-rules.tex 
 
 PAPER_MNG = $(wildcard *.mng)
 PAPER_SOURCE = $(patsubst %.mng,%.tex,$(PAPER_MNG))
