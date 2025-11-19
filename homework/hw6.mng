@@ -1,0 +1,183 @@
+\documentclass{article}
+\usepackage{fullpage}
+
+\usepackage{bigfoot}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=blue,bookmarksnumbered,pdfencoding=auto,psdextra]{hyperref}
+% From https://tex.stackexchange.com/a/430877/133551 and Heiko's comment
+\pdfstringdefDisableCommands{%
+  \def\({}%
+  \def\){}%
+}
+\usepackage{supertabular}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{ottalt}
+\usepackage[T1]{fontenc}
+
+\usepackage{../notes/notes}
+
+\usepackage{lstrocq}
+\lstset{language=Rocq}
+
+\newcommand*\hwlink[3]{%
+  \href{\pfloc blob/main/homework/rocq/hw6/#1}{{#3}\!\!}
+}
+
+
+% force footnotes to be on a single page
+\interfootnotelinepenalty=10000
+
+\title{CIS 7000-1 Homework 6}
+\author{NAME: FILL IN HERE}
+
+\inputott{all-rules}
+
+\begin{document}
+\maketitle
+
+\newcommand\answer[1]{}
+
+\section{Monads are Monoids in the Category of Endofunctors}
+(The starter code for this problem is in the file: \hwlink{control/monads.v}{}{rocq/control/monads.v}.)
+
+Recall the definition of \emph{difference lists} or \texttt{dlist}s from class. The key idea of this data structure is that it abstracts over ``what should be in the rest of the list''. This allows an efficient implementation of list append as function composition. 
+
+\begin{lstlisting}
+Definition dlist (A : Type) := list A -> list A.
+Definition dnil {A} : dlist A := fun k => k.
+Definition dcons {A} : A -> dlist A -> dlist A  := fun x dl => fun k => x :: dl k.
+Definition dapp {A} : dlist A -> dlist A -> dlist A := fun f g => fun x => (f (g x)).
+Definition list_of_dlist {A} : dlist A -> list A := fun dl => dl [].
+\end{lstlisting}
+
+\begin{enumerate}
+\item Show that difference lists are monoids. In other words, prove the
+  following three properties.
+\begin{lstlisting}
+Lemma dlist_left_id {A} {dl : dlist A} : 
+   dapp dnil dl = dl.
+Lemma dlist_right_id {A} {dl : dlist A} : 
+   dapp dl dnil = dl.
+Lemma dlist_assoc {A}{dl1 dl2 dl3 : dlist A} : 
+   dapp (dapp dl1 dl2) dl3 = dapp dl1 (dapp dl2 dl3).
+\end{lstlisting}
+
+\item Consider this reimplementation of the list reverse function. If you unfold the definitions, 
+you will see that it is the same as the implementation of list reversal using an accumulator.
+\begin{lstlisting}
+Fixpoint reverse_dlist {A} (xs : list A) : dlist A := 
+  match xs with 
+  | nil => dnil
+  | y :: ys => dapp (reverse_dlist ys) (dcons y dnil)
+  end.
+\end{lstlisting}
+
+Prove that this implementation of reverse is the same as the usual definition (which is as above but uses lists instead of dlists).
+\begin{lstlisting}
+Lemma reverse_dlist_spec {A} (xs : list A) : List.rev xs = list_of_dlist (reverse_dlist xs).
+\end{lstlisting}
+
+\item The \emph{continuation monad} is a way of representing computations that abstract 
+over ``what to do next''. This allows a convenient way of defining code in continuation passing
+style.
+
+Here is how we can define the continuation monad in Rocq.
+\begin{lstlisting}
+Definition M (K A : Type) := (A -> K) -> K.
+Definition ret {A K} : A -> M K A := fun x k => k x.
+Definition bind {K A B} : M K A -> (A -> M K B) -> M K B := 
+  fun m1 m2 => fun (k : B -> K) => m1 (fun a => m2 a k).
+\end{lstlisting}
+
+We'll also introduce standard notation for the bind operation.
+\begin{lstlisting}
+Infix ">>=" := bind (at level 70).
+Notation "x <- m1 ;; m2" := (bind m1 (fun x => m2)) (at level 70).
+\end{lstlisting}
+
+Prove that \texttt{M K} is a monad by showing the three monad laws.
+
+\begin{lstlisting}
+Lemma M_left_id {K A B}{x:A}{h : A -> M K B} : ret x >>= h = h x.
+Lemma M_right_id {K A}{x:A}{m : M K A} : m >>= ret = m.
+Lemma M_assoc {K A B C}{m : M K A}{g : A -> M K B}{h : B -> M K C}  : 
+  ((m >>= g) >>= h) = (m >>= (fun (x : A) => g x >>= h)).
+\end{lstlisting}
+
+\item We can rewrite the reverse function using the continuation monad as follows:
+
+\begin{lstlisting}
+Fixpoint reverse_cps {K A} (xs : list A) : M K (list A) := 
+  match xs with 
+  | nil => ret nil
+  | y :: ys => zs <- reverse_cps ys ;; ret (zs ++ [y])
+  end.
+\end{lstlisting}
+
+Prove that this version of reverse is equivalent to the usual definition.
+
+\begin{lstlisting}
+Lemma reverse_cps_spec {A} (xs: list A) : rev xs = reverse_cps xs (fun x => x).
+\end{lstlisting}
+
+\end{enumerate}
+
+\newpage
+
+\section{Continuation-Passing Style Translation}
+
+In this problem you will work with the CPS translation that we discussed in
+class. The core language is the stack based language with $\ottkw{letcc}$,
+$\ottkw{throw}$, $\ottkw{cont}$, and $\ottkw{exit}$.
+
+For reference, the files
+\hwlink{control/letcc.v}{}{\texttt{homework/rocq/hw5/control/letcc.v}} and
+\hwlink{control/cps.v}{}{\texttt{homework/rocq/hw5/control/cps.v}} contains
+definitions to help you get started.
+
+Recall the theorem that states that the CPS translation is type preserving.
+
+\begin{lemma}[\hwlink{control/cps.v}{typing_transTm}{CPS translation is type preserving}]
+Suppose $[[G ~ D ]]$.
+\begin{enumerate}
+\item If $[[ G ||- v : tau ]]$ then $[[ D ||- V{ v } : T{ tau } ]]$
+\item If $[[ G ||- e : tau ]]$ and  $[[ D ||- w : C{ tau } ]]$ then 
+  $[[ D ||- E{ e } w : Void ]]$
+\item If $[[ ||- s : tau1 ~> tau ]]$ then $[[ ||- S{ s } : C{ tau } ]]$
+\end{enumerate}
+\end{lemma}
+
+This lemma depends on the definitions of the type, term, value and stack
+translations, as well as the relation $[[G ~ D]]$, which are available in the
+lecture notes.
+
+\begin{enumerate}
+\item Prove this lemma. Note you don't need to type set all of the cases
+  here: just pick a small number that you believe are representative.
+
+\item (Optional) This translation is not the only possible CPS
+  translation. Pick a different one, define how it works and prove the
+  analogous lemma that states that the translation preserves types. You don't
+  need to include the full language that we include in the lecture notes. At a
+  minimum, your translation should work for the core lambda calculus:
+  variables, functions, applications, ret and let. (Do \emph{not} try to prove
+  a simulation relation for the translation that you have picked.)
+
+  For example, the translation that Pottier uses in his paper produces more
+  efficient output by generalizing the continuation argument to the term
+  translation. (His version is based on a translation by Danvy and Filinski
+  from 1992).  Or, you could look up Plotkin's original call-by-value
+  translation (in his 1975 paper), or one created by Sabry and Wadler in 1997.
+  For a more logical point of view, S\o{}rensen and Urzyczyn in ``Lecture Notes
+  on the Curry Howard Isomorphism'', present a different translation based on
+  the double negation translation studied since the 1930s.
+\end{enumerate}
+
+
+\end{document}
