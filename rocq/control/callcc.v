@@ -1,4 +1,4 @@
-Require Import Classical.
+From Stdlib Require Import Classical.
 
 Check classic.
 
@@ -52,6 +52,8 @@ Lemma demorgan2 : not (P \/ Q) -> not P /\ not Q.
 intros h. split. intros p. apply h. left. exact p.
 intros q. apply h. right. exact q.
 Defined.
+
+Print demorgan2.
 
 Lemma demorgan3 : not P \/ not Q -> not (P /\ Q).
 intro h. destruct h. intros pq. destruct pq. 

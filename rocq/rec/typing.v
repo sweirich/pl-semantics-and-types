@@ -8,6 +8,7 @@ Disable Notation "s ⟨ xi_Val ⟩" (all).
 Require Export rec.reduction.
 Import rec.reduction.Notations.
 
+
 (** * Typing relation *)
 
 Definition allows_rec_ty (ty : Ty 0) := 

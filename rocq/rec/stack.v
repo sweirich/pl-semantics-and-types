@@ -1,7 +1,7 @@
 Require Export rec.prim.
 
 Import SyntaxNotations.
-Export Lists.List.ListNotations.
+Import Lists.List.ListNotations.
 Open Scope list_scope.
 Open Scope rec_scope.
 

@@ -2,9 +2,9 @@
 
 From Stdlib Require Export ssreflect.
 From Stdlib Require Export Program.Equality.
+
 Require Export common.core.
 Require Export common.fintype.
-
 Require Export common.fin_util.
 Require Export common.relations.
 Require Export common.renaming.
@@ -32,6 +32,7 @@ Notation "⇑ σ" := (var var_zero .: σ >> ren_Val ↑)
 End SyntaxNotations.
 
 Export SyntaxNotations.
+
 
 (** * Syntax properties *)
 
