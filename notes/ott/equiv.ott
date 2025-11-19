@@ -1,0 +1,74 @@
+grammar
+
+e :: '' ::= 
+  | C {| e |}   ::   :: plug
+
+
+v :: '' ::= 
+  | C {| v |}   ::   :: plug
+
+
+
+scope , X :: '' ::= 
+  |                     ::    :: empty
+  | x                   ::    :: single_
+  | scope1 , scope2     ::    :: cons
+
+R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \mathcal{R}_\mathcal{V} }} :: '' ::= 
+  | kleene              ::    :: kleene
+  {{ tex \leq_{\textit{K} } }}
+  | USE                 ::    :: USE
+  {{ tex \leq_{\textit{U} } }}
+  | C                   ::    :: C
+  {{ tex \leq_{\textit{C} } }}
+  | CIU                 ::    :: CIU
+  {{ tex \leq_{\textit{CIU} } }}
+  | CTX                 ::    :: CTX
+  {{ tex \leq_{\textit{CTX} } }}
+  | log                 ::    :: log
+  {{ tex \leq_{\textit{Log} } }}
+
+C :: 'C_' ::= 
+  | _               ::  :: hole
+  | C v2            ::  :: app1
+  | v1 C            ::  :: app2 
+  | let x = C in e2 ::  :: let1
+  | let x = e1 in C ::  :: let2
+  | ret C           ::  :: ret 
+  | prj1 C          ::  :: prj1
+  | prj2 C          ::  :: prj2
+  | case C of { 0 => e0 ; S y => e1 } ::  :: ifz1
+  | case v of { 0 => C ; S y => e1 }  ::  :: ifz2
+  | case v of { 0 => e0 ; S y => C }  ::  :: ifz3
+  | case v of { inj1 x1 => e1 ; inj2 x2 => e2 } ::   :: case1
+  | case v of { inj1 x1 => e1 ; inj2 x2 => e2 } ::  :: case2
+  | case v of { inj1 x1 => e1 ; inj2 x2 => e2 } ::  :: case3
+  | succ C          ::  :: succ
+  | ( C , v2 )      ::  :: prod1
+  | ( v1 , C )      ::  :: prod2
+  | inj1 C          ::  :: inj1
+  | inj2 C          ::  :: inj2
+  | fun_ x y . C    ::  :: abs
+  | C1 o C2         ::  :: compisse 
+   {{ tex [[C1]] \circ [[C2]] }}
+
+
+formula :: 'formula_' ::=
+  | e1 == e2            ::    :: closed
+  | scope |- e          ::    :: scope_check
+  | scope |- sigma      ::    :: closing_sub
+  | scope |- e1 RE e2   ::    :: scoped_relation
+  | e1 USE e2           ::    :: closed_relation
+  | G |- e1 == e2 : tau ::    :: typed_eq
+  | Reflexive RE        ::    :: Reflexive
+  | Transitive RE       ::    :: Transitive
+  | Adequate RE         ::    :: Adequate
+  | Compatible RE RV    ::    :: Compatible
+  | halts e             ::    :: halts_e
+  | halts m             ::    :: halts
+  | halts k m           ::    :: halts_n
+    {{ tex \ottkw{halts}_{[[k]]} [[m]] }}
+  | m |- k > m'          ::    :: steps_n
+    {{ tex [[m]] \mapsto_{[[k]]} [[m']] }}
+
+
