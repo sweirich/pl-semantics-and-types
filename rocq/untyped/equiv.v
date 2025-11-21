@@ -22,7 +22,7 @@ From Stdlib Require Import Arith.
 
 Require Export common.core.
 Require Export untyped.stack.
-Require Import rec.iprop.
+Require Export rec.iprop.
 
 Require Export untyped.ctx.
 

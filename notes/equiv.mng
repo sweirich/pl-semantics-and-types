@@ -35,7 +35,7 @@ programs are equivalent? How can we make use of this property?
 
 In this chapter, we will examine a few different definitions of equivalence
 for a call-by-value version of the \emph{untyped} lambda calculus, augumented
-with numbers, recursive functions, products, sums and unit.  As in the
+with numbers, recursive functions and unit.  As in the
 previous chapters, we will work with a fine-grained language, and use a
 stack-based operational semantics for evaluation.
 
@@ -202,17 +202,13 @@ them to have different termination behavior.
 
 A program context is any part of a term or value that can surround a term or value. We use the metavariable $[[C]]$ to refer to contexts that produce terms and contexts that produce values. 
 
-\begin{definition}[Program Context]
+\begin{definition}[\link{equiv/contextual.v}{Context}{Program Context}]
 \[
 \begin{array}{lcl}
 [[C]] &::= & [[_]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
-      & |   & [[ret C]]\ |\ [[prj1 C]]\ |\ [[prj2 C]]\ [[ case C of { 0 => e0 ; S y => e1 } ]] \\
-      & |   & [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
-      & |   & [[case v of { inj1 x1 => e1 ; inj2 x2 => e2 } ]]\ |\ [[case v of { inj1 x1 => e1 ; inj2 x2 => e2 } ]]\\
-      & |   & [[case v of { inj1 x1 => e1 ; inj2 x2 => e2 }]] \\
+      & |   & [[ret C]]\ |\ [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
 \\
-[[C]] &::= & [[_]]\ |\ [[succ C]]\ [[ (C, v2) ]]\ |\ [[(v1, C)]]\ |\ [[inj1 C]]\ |\ [[inj2 C]] \\
-      & |   & [[fun_ x y . C ]] \\
+[[C]] &::= & [[_]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
 \end{array}
 \]
 \end{definition}
@@ -252,7 +248,7 @@ related. Because our syntax is mutually defined by terms and values, we
 actually need compatibility to hold for a pair of relations.
 
 \begin{definition}[\link{untyped/equiv.v}{Compatible}{Compatible}]
-A pair of scoped relations $[[RE]]$ and $[[RV]]$ ares compatible when the following properties hold: 
+A pair of scoped relations $[[RE]]$ and $[[RV]]$ are compatible when the following properties hold: 
 \begin{enumerate}
 \item $[[X |- x RV x]]$
 \item $[[X |- unit RV unit ]]$
@@ -319,4 +315,8 @@ If $[[ X |- e log e']]$ and $[[ X |- e' CIU e'' ]]$, then $[[ X |- e log e'']]$.
 \end{lemma}
 
 
-
+\section{Further Reading}
+This chapter is inspired by Pitts\cite{pitts:DagSemProc.10351.6}. Similar
+material is available in PFPL chapter 47~\cite{harper:pfpl}, although that is for a typed
+language, not the untyped lambda calculus. Furthermore, similar mechanized results for CBPV 
+are available in Forster et al.~\cite{forster:cbpv}.

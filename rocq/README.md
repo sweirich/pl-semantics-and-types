@@ -82,8 +82,20 @@
     intrinistically-typed version of the syntax.
 
 - CONTROL: exceptions, continuations, and effect handlers
-  * [control.syntax]
-  * [control.typesyntax]
-  * [control.control]
-  
-  
+  * [control.syntax.sig](control/syntax.sig)
+  * [control.syntax](control/syntax.v) Syntax of a language with exceptions, continuations and effect handlers
+  * [control.typesyntax.sig](control/typesyntax.sig)
+  * [control.typesyntax](control/typesyntax.v)
+  * [control.control](control/control.v) Type system, operational semantics and soundness proofs
+  * [control.letcc](control/letcc.v) Language with continuations only
+  * [control.cps](control/cps.v) Continuation-Passing-Style translation for letcc language
+  * [control.callcc](control/callcc.v) Classical logic examples
+
+- UNTYPED: untyped lambda calculus and program equivalence
+  * [untyped.syntax.sig](untyped/syntax.sig)
+  * [untyped.syntax.v](untyped/syntax.v)
+  * [untyped.prim.v](untyped/prim.v) Primitive reductions
+  * [untyped.stack.v](untyped/stack.v) Stack-based operational semantics
+  * [untyped.ctx.v](untyped/ctx.v) CTX relation as largest adequate compatible pre-order
+  * [untyped.equiv.v](untyped/equiv.v) CTX is equivalent to CIU (via step-indexed logical relation)
+  * [untyped.contextual.v](untyped/contextual.v) CTX is equivalent to Contextual equivalence
