@@ -8,6 +8,17 @@ v :: '' ::=
   | C {| v |}   ::   :: plug
 
 
+phi {{ tex \phi }} :: 'iProp_' ::= 
+  | V v1 v2         :: M :: VPE
+   {{ tex \mathcal{V}[\![\, [[v1]]\ \leq [[v2]] ]\!] }}
+  | C e1 e2         :: M :: CPE
+   {{ tex \mathcal{C}[\![\, [[e1]]\ \leq [[e2]] ]\!] }}
+  | St s1 s2        :: M :: StPE
+   {{ tex \mathcal{S}[\![\, [[s1]]\ \leq [[s2]] ]\!] }}
+  | m1 <=. m2        :: M :: Approx
+   {{ tex [[m1]] \sqsubseteq^\cdot [[m2]] }}
+
+
 
 scope , X :: '' ::= 
   |                     ::    :: empty
@@ -49,8 +60,10 @@ C :: 'C_' ::=
   | inj1 C          ::  :: inj1
   | inj2 C          ::  :: inj2
   | fun_ x y . C    ::  :: abs
-  | C1 o C2         ::  :: compisse 
+  | C1 o C2         ::  :: compose 
    {{ tex [[C1]] \circ [[C2]] }}
+
+
 
 
 formula :: 'formula_' ::=
@@ -58,6 +71,8 @@ formula :: 'formula_' ::=
   | scope |- e          ::    :: scope_check
   | scope |- sigma      ::    :: closing_sub
   | scope |- e1 RE e2   ::    :: scoped_relation
+  | scope |- v1 RV v2   ::    :: scoped_value_relation
+  | |- s1 RE s2         ::    :: stack_relation
   | e1 USE e2           ::    :: closed_relation
   | G |- e1 == e2 : tau ::    :: typed_eq
   | Reflexive RE        ::    :: Reflexive
@@ -67,8 +82,33 @@ formula :: 'formula_' ::=
   | halts e             ::    :: halts_e
   | halts m             ::    :: halts
   | halts k m           ::    :: halts_n
-    {{ tex \ottkw{halts}_{[[k]]} [[m]] }}
-  | m |- k > m'          ::    :: steps_n
-    {{ tex [[m]] \mapsto_{[[k]]} [[m']] }}
+    {{ tex \ottkw{halts}^{[[k]]} [[m]] }}
+  | m |- k > m'         ::    :: steps_n
+    {{ tex [[m]] \mapsto^{[[k]]} [[m']] }}
+  | m <= m'             ::     :: approx
+    {{ tex [[m]] \sqsubseteq [[m']] }}
+  | m < k = m'          ::     :: approx_n
+    {{ tex [[m]] \sqsubseteq^{[[k]]} [[m']] }} 
+  | X |- sigma1 log sigma2 @ k :: M :: RelSigma
+   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{Log}^{[[k]]} [[sigma2]]  }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
 
+defns
+  JStep :: '' ::=
+
+
+defn
+m |- k >  m' ::  :: step_n :: 'sn_'
+{{ com counted multi-step evaluation }}
+{{ tex [[m]] \mapsto^{[[k]]} [[m']] }}
+by
+
+------------------- :: refl
+m |-0> m
+
+m0 |-> m1
+m1 |-k> m2
+------------------- :: trans
+m0 |-S k> m2

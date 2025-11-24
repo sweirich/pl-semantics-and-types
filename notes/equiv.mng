@@ -31,7 +31,7 @@ And what if the programs are open? We cannot evaluate them, so how can we
 figure out whether they are equivalent?  And why does it matter whether
 programs are equivalent? How can we make use of this property?
 
-\section{Preliminaries}
+\section{Preliminaries: Syntax and small-step semantics}
 
 In this chapter, we will examine a few different definitions of equivalence
 for a call-by-value version of the \emph{untyped} lambda calculus, augumented
@@ -42,16 +42,17 @@ stack-based operational semantics for evaluation.
 \begin{definition}[\link{untyped/syntax.sig}{}{Syntax}]
 \[
 \begin{array}{lrcl}
-\textit{values} & [[v]] & ::= & [[x]]\ |\ [[unit]]\ |\ [[fun_ f x.e]]\ |\ [[0]]\ |\ [[S v]]\ |\ [[(v1, v2)]]\
-               |\ [[inj1 v]] |\ [[inj2 v]] \\
+\textit{values} & [[v]] & ::= & [[x]]\ |\ [[unit]]\ |\ [[fun_ f x.e]]\ |\ [[0]]\ |\ [[S v]]\ \\ % |\ [[(v1, v2)]]\ |\ [[inj1 v]] |\ [[inj2 v]] \\
 \textit{terms}  & [[e]] & ::= & [[ret v]]\ |\ [[let x = e1 in e2]]\ |\ [[v1 v2]]\ |\ [[case v of { 0 => e0 ; S y => e1 } ]]\\
-       && | & [[prj1 v]]\ |\ [[prj2 v]]\ |\ [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] \\
+%       && | & [[prj1 v]]\ |\ [[prj2 v]]\ |\ [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] \\
+\textit{frame} & [[frame]] & ::= & [[ let x = _ in e2]] \\
+\textit{stack} & [[s]]     & ::= & [[nil]]\ |\ [[frame : s]] \\
 \end{array}
 \]
 \end{definition}
 
-The small-step operational semantics is similar to the one found in Chapter~\ref{ch:stack}.
-We define the stack semantics in terms of an underlying \link{untyped/prim.v}{primitive}{primitive reduction relation} (not shown).
+The small-step operational semantics is similar to the one found in Chapter~\ref{ch:stack}, and makes use of a stack of frames.
+We define the stack semantics in terms of an underlying \link{untyped/prim.v}{primitive}{primitive reduction relation} (written $[[~>>]]$ but not shown here).
 
 \begin{definition}[\link{untyped/stack.v}{step}{Small-step semantics}]
 \drules{$[[m |-> m']]$}{$[[m]]$ small-steps to $[[m']]$ }
@@ -64,12 +65,12 @@ of steps taken during evaluation.
 
 \begin{definition}[\link{common/relations.v}{step_n}{Stepped small-step semantics}]
 
-\drules[ms-k]{$[[e ~k> e']]$}{$[[e]]$ small-steps to $[[e']]$ in exactly $k$ steps}
-{refl,step}
+\drules[sn]{$[[m |-k> m']]$}{$[[m]]$ small-steps to $[[m']]$ in exactly $k$ steps}
+{refl,trans}
 \end{definition}
 
 We also define predicates that talk about when a machine evaluates to a terminal 
-state: i.e. the stack is empty and it returns a value.
+state: i.e. an empty stack paired with a returned value.
 
 \begin{definition}[\link{untyped/stack.v}{halts}{Halts}]
 A machine halts, written $[[halts m]]$ when $[[m |->* <nil, ret v>]]$.
@@ -88,7 +89,17 @@ Suppose $[[m |-> m']]$.
 \end{enumerate}
 \end{lemma}
 
-\subsection{Scopes and scoped relations}
+We can also say when one machine \emph{approximates} (or \emph{approximates in k}) another machine. 
+\begin{definition}[Approximates]
+We have $[[m1 <= m2]]$ when $[[halts m1 implies halts m2]]$ and 
+$[[m1 <k= m2]]$ when $[[halts k m1 implies halts m2]]$.
+\end{definition}
+
+These two relations are pre-orders as they are both reflexive and transitive.
+The second one is also a step-indexed relation. When we want to generalize 
+over the steps, we write it as $[[m1 <=. m2]]$.
+
+\section{Scopes and scoped relations}
 
 We are not going to talk about typing for this language, but we will be
 explicit about \emph{scopes}. A scope, $X$, is a set variables that are allowed to
@@ -103,15 +114,15 @@ A term/value is \emph{well scoped}, written $[[ X |- e ]]$ (or $[[ X |- v
 \end{definition}
 
 \begin{definition}[Closed]
-A term/value is \emph{closed}, written $[[ |- e ]]$ (or $[[ |- v ]]$), when
-it is well-scoped with an empty set of variables. (We use a blank to 
+A term/value is \emph{closed}, written $[[ |- e ]]$ (or $[[ |- v ]]$), when it
+is well-scoped with an empty set of variables. (We use an empty character to
 indicate the empty set.)
 \end{definition}
 
 \begin{definition}[\link{untyped/ctx.v}{scoped_relation}{Scoped binary relation}]
 A scoped binary relation is a relation between two terms or values with the
 same scope. We use the metavariables $[[RE]]$ and $[[RV]]$ for arbitrary scoped 
-relations on terms and values and corresponding judgment forms 
+relations on terms and values and assert that terms and values are in these relations uing the judgment forms 
 $[[X |- e RE e']]$ and $[[X |- v RV v']]$.
 \end{definition}
 
@@ -121,20 +132,36 @@ $[[ X |- sigma]]$, when it maps all variables in $[[X]]$ to closed values. In ot
 we have $[[ |- sigma x ]]$ for all $[[x]] \in [[X]]$.
 \end{definition}
 
+\begin{definition}[\link{equiv/ctx.v}{PreOrder}{Scoped pre-order}]
+A scoped relation is a \emph{scoped pre-order} when it is reflexive and
+transitive.
+\end{definition}
+
+\begin{definition}[Scoped equivalence]
+A scoped relation is a \emph{scoped equivalence} when it is reflexive, transitive and
+symmetric.
+\end{definition}
+
+We can trivially turn any preorder into an equivalence by relating terms in
+both directions. Therefore, we are going to mainly work with preorders going
+forward. This is both easier (as we don't have to show both directions) and
+sometimes more informative (as there are terms that will only be related in
+one direction).
+
 \section{Observations on terms}
 
-Let's look at our first relation, which only talks about closed terms. This
+Let's look at our first preorder, which only talks about closed terms. This
 relation orders expressions by their termination behavior when evaluated by
-arbitrary stacks. The relation is a pre-order: we can show that it is both
-reflexive and transitive.
+arbitrary stacks. The relation is a pre-order---it is not to difficult to show
+that it is both reflexive and transitive.
 
 \begin{definition}[\link{untyped/equiv.v}{CIU}{Usage Preorder}]
 We say that $[[e USE e']]$ when
-$[[halts <s,e>]]$ implies $[[halts <s,e'>]]$, for all stacks $[[s]]$.
+$[[halts <s,e>]]$ implies $[[halts <s,e'>]]$, for all stacks $[[s]]$. 
+In other words, we have $[[<s,e> <= <s,e'>]]$ for all stacks $[[s]]$.
 \end{definition}
 
-Furthermore, we turn this preorder into an equivalence by relating
-terms in both directions.
+Remember that we can extend this to an equivalence.
 
 \begin{definition}[Usage Equivalence]
 We say that $[[e]] \equiv_{U} [[e']]$ when $[[e USE e']]$ and $[[e' USE e]]$.
@@ -142,7 +169,7 @@ We say that $[[e]] \equiv_{U} [[e']]$ when $[[e USE e']]$ and $[[e' USE e]]$.
 
 We call this idea of running the program using arbitrary stacks as making
 \emph{observations} on the terms. This fact that we quantify over all stacks
-is important because just because both terms coterminate does not mean that
+is important because just because both terms co-terminate does not mean that
 they should be equivalent.  One could program could terminate with 3 and the
 other terminate with 5. However, one way to observe the difference between
 these terms is to run these two programs on a stack that diverges when its
@@ -179,10 +206,12 @@ include upen terms.
 We say that $[[ X |- e CIU e' ]]$ when for all stacks $[[s]]$, and for all 
 closing substitutions $[[X |- sigma]]$, 
 $[[halts <s,e[sigma]>]]$ implies $[[halts <s,e'[sigma]>]]$.
+In other words, $[[<s,e[sigma]> <= <s,e'[sigma]>]]$.
 \end{definition}
 
-Furthermore, if this relation holds in both directions, then we get an equivalence
-relation, which we call \emph{observational equivalence}.
+Furthermore, if this relation holds in both directions, then we get an
+equivalence relation, which we call \emph{observational equivalence} or
+\emph{CIU} equivalence.
 
 \begin{definition}[Observational equivalence]
 Two terms are \emph{observationally equivalent} when $[[ X |- e CIU e' ]]$
@@ -194,13 +223,11 @@ closed instantiations}~\cite{Mason_Talcott_1991}, i.e. we create closed
 instantiations with arbitrary substitutions, and use them with arbitrary
 stacks. 
 
-This definition is most useful for showing that terms are \emph{not}
-equivalent. To do so we only need to find a stack and a substution that causes
-them to have different termination behavior.
-
 \section{Contextual Equivalence}
 
-A program context is any part of a term or value that can surround a term or value. We use the metavariable $[[C]]$ to refer to contexts that produce terms and contexts that produce values. 
+A program context is any part of a term or value that can surround a term or
+value. We use the metavariable $[[C]]$ to refer to contexts that produce terms
+and contexts that produce values.
 
 \begin{definition}[\link{equiv/contextual.v}{Context}{Program Context}]
 \[
@@ -213,8 +240,8 @@ A program context is any part of a term or value that can surround a term or val
 \]
 \end{definition}
 
-We use the notation $[[C{|e|}]]$ and $[[C{|v|}]]$ for plugging the hole in a context with a value or term 
-the location of the hole has to match up.
+We use the notation $[[C{|e|}]]$ and $[[C{|v|}]]$ for plugging the hole in a
+context with a value or term the location of the hole has to match up.
 
 Here's another way to define an equality on terms. Instead of using stacks and
 closing substitutions, we can quantify over contexts. (This definition is
@@ -224,7 +251,6 @@ typically used when we don't have a stack-based semantics handy.)
 Define $[[X |- e1 C e2 ]]$ when 
 $[[halts C {| e1 |} ]]$ implies $[[halts C {| e2 |} ]]$ for any $[[ C]]$.
 \end{definition}
-
 
 \section{Contextual Equivalence (Pitts)}
 
@@ -241,6 +267,7 @@ properties, we will see that it is enough.
 \begin{definition}[\link{untyped/equiv.v}{Adequate}{Adequate}]
 A scoped relation $[[RE]]$ is \emph{adequate} when $[[ |- e RE e']]$ means that 
 $[[ halts < nil, e > ]]$ implies $[[ halts < nil, e' >]]$.
+In other words, $[[ <nil,e> <= <nil, e'> ]]$.
 \end{definition}
 
 Compatibility means that terms are related when their subterms are
@@ -265,8 +292,10 @@ A pair of scoped relations $[[RE]]$ and $[[RV]]$ are compatible when the followi
 \end{enumerate}
 \end{definition}
 
-If we have more syntactic forms in our language, we will need to add more
-clauses to this definition.
+If we have more syntactic forms in our language, we need to add more
+clauses to this definition. The property that we want to hold is that 
+we have one clause for each syntactic form, so that we can guarantee that 
+the relation is reflexive.
 
 \begin{lemma}[\link{untyped/equiv.v}{Compatible_refl}{Compatible relations are reflexive}]
 If we have $[[Compatible RE RV]]$, then both $[[RE]]$ and $[[RV]]$ are reflexive.
@@ -287,25 +316,82 @@ any relation that equates them, as long as that relation has the right
 properties. That is a useful definition because it gives us a practical way to
 show that terms are contextually equivalent.
 
-So we have one definition that is useful for applications of equivalence and one definition 
-that is useful actually showing that two specific programs are equivalent. 
+\section{A logical relation}
 
-The amazing result is that both of these definitions coincide. The goal of
-this chapter is to prove the following result:
+Finally, we can define a \emph{step-indexed} logical relation.
 
-\begin{theorem}[\link{untyped/equiv.v}{CTX_CIU}{$[[CTX]]$ is the same as $[[CIU]]$}]
-We have $[[X |- e CIU e']]$ iff $[[X |- e CTX e']]$.
+\begin{definition}[\link{untyped/equiv.v}{C}{Step-indexed Logical Relation}]
+\[ 
+\begin{array}{lclcl} 
+   [[C e1 e2 k]] 
+      & = & \forall [[s1]], [[s2]], [[St s1 s2 ===>k <s1,e1> <=. <s2,e2> ]] \\
+\\
+   [[St s1 s2 k]] &=& \forall [[v1]], [[v2]], 
+       [[V v1 v2 ===>k <s1,ret v1> <=. <s2,ret v2> ]] \\
+\\
+   [[V unit unit k]]             &=& \textit{always} \\
+   [[V zero zero k]]             &=& \textit{always} \\
+   [[V (succ v1) (succ v2) k]]   &=& [[|> k V v1 v2]] \\
+   [[V (fun_ x y.e) v2 k]]        &=& \forall [[v]][[v']], 
+   [[V v v' ===>k C e[(fun_ x y. e)/y, v1/x] (v2 v') ]] \\
+\end{array}
+\]                 
+\end{definition}
+
+Because stacks are closed, we can immediately relate them by quantifying 
+over all steps. 
+\begin{definition}[Stack relation]
+$[[ |- s1 log s2 ]]$ when 
+  $[[ St s1 s2 k]]$, for all $[[k]]$.
+\end{definition}
+
+This relation extends to a step-indexed relation on closing substitutions.
+\begin{definition}[Related closing substitutions]
+ $[[ X |- sigma1 log sigma2 @ k ]]$ 
+when $[[ V (sigma1 x) (sigma2 x) k ]]$
+\end{definition}
+
+Which we can use to create scoped preorders on values, terms and stacks.
+\begin{definition}[Related values, terms and stacks]\ \\
+\begin{enumerate}
+\item
+$[[ X |- v1 log v2 ]]$ when 
+  $[[ X |- sigma1 log sigma2 @ k ]]$ 
+  implies $[[ V v1[sigma1] v2[sigma2] k]]$
+  for all $[[k]]$.
+\item
+$[[ X |- e1 log e2 ]]$ when 
+  $[[ X |- sigma1 log sigma2 @ k ]]$ implies 
+  $[[ C e1[sigma1] e2[sigma2] k]]$, 
+  for all $[[k]]$
+\item
+\end{enumerate}
+\end{definition}
+
+\section{Relating the relations}
+
+The amazing result is that all of these definitions coincide. The goal of this
+chapter is to prove the following results:
+
+\begin{theorem}[\link{untyped/contextual.v}{CTX_Contextual}{$[[C]]$ is the same as $[[CTX]]$}]
+We have $[[X |- e C e']]$ iff $[[X |- e CTX e']]$.
 \end{theorem}
 
-Proving this theorem requires the definition of a logical relation, $[[X |- e log e']]$.
+\begin{theorem}[\link{untyped/equiv.v}{CTX_CIU}{$[[CTX]]$ is the same as $[[CIU]]$}]
+We have $[[X |- e CIU e']]$ iff $[[X |- e log e']]$ iff $[[X |- e CTX e']]$.
+\end{theorem}
+
 \begin{enumerate}
+\item Show that $[[C]]$ is adequate and compatible (so $[[C]]$ implies $[[CTX]]$).
 \item Show that $[[log]]$ is adequate and compatible (and therefore reflexive).
 \item Show that $[[log]]$ implies $[[CIU]]$. This follows from the reflexivity of the logical relation.
 \item Show that $[[CIU]]$ implies $[[log]]$. This follows from the reflexivity of the logical relation, and the fact that it is closed under CIU-equivalence (see lemma~\ref{lem:eqtm_closed_CIU}).
 \item Show that $[[CIU]]$ equivalence implies $[[CTX]]$. This requires 
   showing that it is adequate and transitive (easy). To show that it is compatible, we use the fact that it is equivalent to a compatible relation ($[[log]]$).
 \item Show that $[[CTX]]$ implies $[[CIU]]$. This happens in two steps. We first show this result for closed terms, by induction over the arbitrary stack. Then, we extend the proof to open terms 
-by showing that contextual equivalence is closed under substitution.
+by showing that contextual equivalence is closed under substitution
+\item Show $[[CTX]]$ implies $[[C]]$, using the adequacy of $[[CTX]]$, the fact that 
+  contexts preserve compatible relations, and the compatibility of $[[CTX]]$.
 \end{enumerate}
 
 
@@ -313,6 +399,9 @@ by showing that contextual equivalence is closed under substitution.
 \label{lem:eqtm_closed_CIU}
 If $[[ X |- e log e']]$ and $[[ X |- e' CIU e'' ]]$, then $[[ X |- e log e'']]$.
 \end{lemma}
+
+
+
 
 
 \section{Further Reading}
