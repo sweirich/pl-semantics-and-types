@@ -34,7 +34,7 @@ Open Scope rec_scope.
 (** The usual definition of contextual equivalence talks about 
     evaluating terms in arbitrary program contexts.
 
-    i.e.  e <=ctx e' when  
+    i.e.  e <=C e' when  
           forall C,  halts C{|e|} implies halts C{|e'|} 
 
     This does in what step what CIU equivalence does in two: provides 
@@ -49,7 +49,7 @@ Open Scope rec_scope.
     in arbitrary term contexts, so that we can prove that this preorder is 
     Compatible.
 
-    i.e.  v <=ctx v' when  forall C, halts C{|v|} implies halts C{|v'|} 
+    i.e.  v <=C v' when  forall C, halts C{|v|} implies halts C{|v'|} 
 
     This means that we need to plug values in contexts that produce terms 
     and values into contexts that produce values.
@@ -209,7 +209,7 @@ all: repeat unfold Contextual, ContextualVal.
   compose_rewrite C1.
 
 - (* app *)
-  intros v1 v2 v1' v2' C1 C2 C h.
+  intros v1 v2 v1' v2' C1 C2 C.
   specialize (@C2 (c_app2 v2 # ∘ C)).
   compose_rewrite C2.
   specialize (@C1 (c_app1 # v1' ∘ C)).
@@ -217,9 +217,9 @@ all: repeat unfold Contextual, ContextualVal.
 
 Qed.
 
-Lemma Transitive_Contextual : Transitive Contextual.
+Lemma Transitive_Contextual : ScopedTransitive Contextual.
 Proof.
-  constructor. intros n e1 e2 e3 CT1 CT2 C h.
+  intros n e1 e2 e3 CT1 CT2 C h.
   unfold Contextual in CT1, CT2.
   eauto.
 Qed.
@@ -255,29 +255,29 @@ Proof.
   all: specialize (Compatible_vplug n e1 e2 RE RV H h).
   + auto.
   + eapply comp_app. eapply Compatible_vplug; eauto.
-    eapply scoped_refl.
-  + eapply comp_app. eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
+  + eapply comp_app. eapply scoped_refl. typeclasses eauto.
     eapply Compatible_vplug; eauto.
   + eapply comp_let. eapply Compatible_plug; eauto.
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
   + eapply comp_let. 
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
     eapply Compatible_plug.
   + eapply comp_ifz.
     eapply Compatible_vplug.
-    eapply scoped_refl.
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
+    eapply scoped_refl. typeclasses eauto.
   + eapply comp_ifz.
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
     eapply Compatible_plug.
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
   + eapply comp_ifz.
-    eapply scoped_refl.
-    eapply scoped_refl.
+    eapply scoped_refl. typeclasses eauto.
+    eapply scoped_refl. typeclasses eauto.
     eapply Compatible_plug.
-
   + eapply comp_ret. 
     eapply Compatible_vplug.
+
 - intros h m C.
   dependent destruction C.
   all: cbn.

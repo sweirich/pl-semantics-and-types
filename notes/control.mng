@@ -111,12 +111,12 @@ our type system to be able to talk about stacks, frames, and machines. All
 three of these judgments are for runtime constructs, so we only care about
 type checking them with the empty context.
 
-\begin{definition}[Frame, Stack and Machine typing]
+\begin{definition}[Frame, Stack and Machine typing] \
 \drules[tf]{$[[||- frame : tau1 ~> tau2 ]]$}{Frame $[[frame]]$ takes values of type $[[tau1]]$ to stacks of type $[[tau2]]$}
 {let,try}
 \drules[tss]{$[[||- s : tau1]]$}{Stack $s$ accepts terms of type $[[tau1]]$}
 {nil,cons}
-\drules[m]{$[[||- m ok]]$}{Machine $m$ is well-typed}{ok}
+\drules[m]{$[[||- m ok]]$}{Machine $m$ is well-typed}{ok-s}
 \end{definition}
 
 We expect our machines to stop executing when the stack is empty and the term
@@ -728,7 +728,9 @@ stack. We need to know that this composition will work out. If this type
 information is not necessary (such as in checking a machine, or in the typing
 rule for a non-delimited continuation) we can merely ignore the second type.
 
-\begin{definition}[Delimited stack typing and values]
+\begin{definition}[Delimited stack typing and values]\ \\
+\drules[m]{$[[ ||- m ok ]]$}{Machine is well typed} 
+{ok}
 \drules[ts]{$[[||- s : tau1 ~> tau2]]$}{Stack typing}
 {nil,cons}
 \drules[tv]{$[[G ||- v : tau]]$}{Value typing}

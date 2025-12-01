@@ -34,45 +34,47 @@ Import rec.iprop.Notations.
 Open Scope list_scope.
 Open Scope rec_scope.
 
+(** * convenience lemma for autosubst *)
+
+Lemma subst_rewrite : forall {n} (σ : fin n -> Val 0) (e : Tm (S (S n)))  (v1 v2 : Val 0), 
+    e [⇑ (⇑ σ)][v1 .: v2..] = e [v1 .: (v2 .: σ)].
+intros.
+asimpl.
+done.
+Qed.
+
 (* -------------------------------------------------------- *)
 
 (** * Closed instantiations (of uses) *)
 
-Definition ciu : Tm 0 -> Tm 0 -> Prop := 
-  fun e e' => 
-    forall s, Small.halts (s, e) -> Small.halts (s, e').
-
 Definition CIU : scoped_relation Tm := 
   fun n e e' => 
-    forall σ, ciu e[σ] e'[σ].
+    forall σ, forall s, (s, e[σ]) ⊑ (s, e'[σ]).
 
 (* By definition CIU is an adequate pre-order *)
 
 Instance Adequate_CIU : Adequate CIU.
 Proof.
   intros e e' h.
-  unfold CIU, ciu in h.
-  unfold Small.halts.
+  unfold CIU in h.
   specialize (h ids nil).
   asimpl in h.
   done.
 Qed.
 
-Instance Reflexive_CIU : Reflexive CIU.
-  constructor.
-  - intros n t. unfold CIU, ciu.
-    done.
+Instance Reflexive_CIU : ScopedReflexive CIU.
+Proof.
+  intros n t. unfold CIU. intros. reflexivity.
 Qed.
 
-Instance Transitive_CIU : Transitive CIU.
+Instance Transitive_CIU : ScopedTransitive CIU.
 Proof.
-  constructor.
-  - intros n t1 t2 t3.
-    unfold CIU, ciu.
-    intros h1 h2 s E.
-    specialize (h1 s E).
-    specialize (h2 s E).
-    intro h; eauto.
+  intros n t1 t2 t3.
+  unfold CIU.
+  intros h1 h2 σ s.
+  specialize (h1 σ s).
+  specialize (h2 σ s).
+  intro h; eauto.
 Qed.
 
 
@@ -91,12 +93,12 @@ Fixpoint V (v v' : Val 0) k {struct k} : Prop :=
   let fix St (s s' : stack) k := 
     ▷ (St s s') k /\
     forall v v', (V v v') k ->
-            (fun k => Small.halts_n (s, ret v) k -> Small.halts (s', ret v')) k
+            (s, ret v) ⊑n (s', ret v') @ k
   in
   let fix C (e e' : Tm 0) k := 
     ▷ (C e e') k /\
     forall s s' , (St s s') k ->
-             (fun k => Small.halts_n (s, e) k -> Small.halts (s', e')) k
+             (s, e) ⊑n (s', e') @ k
   in
    match v , v' with 
    | unit, unit => True
@@ -114,27 +116,28 @@ Fixpoint V (v v' : Val 0) k {struct k} : Prop :=
 Fixpoint St (s s' : stack) k := 
     ▷ (St s s') k /\
     forall v v', (V v v') k ->
-            (fun k => Small.halts_n (s, ret v) k -> 
-                   Small.halts   (s', ret v')) k.
+            (s, ret v) ⊑n (s', ret v') @ k.
 Fixpoint C (e e' : Tm 0) k := 
     ▷ (C e e') k /\
     forall s s' , (St s s') k ->
-             (fun k => Small.halts_n (s, e) k -> Small.halts (s', e')) k.
+             (s, e) ⊑n (s', e') @ k.
 
 (* extended to open relations by closing over 
    related substitutions *)
 
-Definition eqsig n (σ σ' : fin n -> Val 0) k :=
+Definition logsig n (σ σ' : fin n -> Val 0) k :=
     forall x, V (σ x) (σ' x) k.
 
-Definition eqval n (v v' : Val n) := 
-  forall k σ σ' , eqsig n σ σ' k -> V v[σ] v'[σ'] k.
+Definition logval n (v v' : Val n) := 
+  forall k σ σ' , logsig n σ σ' k -> V v[σ] v'[σ'] k.
 
-Definition eqtm  n (e e' : Tm n) := 
-  forall k σ σ' , eqsig n σ σ' k -> C e[σ] e'[σ'] k.
+Definition logtm  n (e e' : Tm n) := 
+  forall k σ σ' , logsig n σ σ' k -> C e[σ] e'[σ'] k.
   
-Definition eqst (s s' : stack) := 
+Definition logst (s s' : stack) := 
   forall k, St s s' k.
+
+
 
 (** * All step-indexed definitions are downward closed. *)
 
@@ -174,9 +177,9 @@ all: try solve [destruct hC;
 
 Qed.
 
-Instance Down_eqsig n σ σ' : IProp (eqsig n σ σ').
+Instance Down_logsig n σ σ' : IProp (logsig n σ σ').
 constructor. 
-unfold eqsig.
+unfold logsig.
 intros k EQ j LE x.
 eapply dclosed; eauto.
 Qed.
@@ -186,7 +189,7 @@ Qed.
 Lemma St_def : forall s s' k, 
   St s s' k <-> 
   (forall v v' , ((V v v') ⇒ 
-              (fun k => Small.halts_n (s, ret v) k -> Small.halts (s', ret v'))) k).
+              (Small.approx_n (s, ret v) (s', ret v'))) k).
 Proof.
   move=> E E'.
   elim /strong_ind. intros k ih.
@@ -215,7 +218,7 @@ Qed.
 Lemma C_def (e e' : Tm 0) k :
  C e e' k <->  
    (forall s s' , ((St s s') ⇒ 
-              (fun k => Small.halts_n (s, e) k -> Small.halts (s', e'))) k).
+              (Small.approx_n (s, e)(s', e'))) k).
 Proof. 
   move: k.
   elim /strong_ind. intros k ih.
@@ -284,16 +287,16 @@ Qed.
 
 
 
-(** * Computation relation is closed under reverse eval *)
+(** * Computation relation is closed under evaluation *)
 
-Lemma reverse_prim2 e1 e2 e2' k : 
+Lemma reverse_prim e1 e2 e2' k : 
   C e1 e2' k -> e2 ~>> e2' -> C e1 e2 k.
 Proof.
   repeat rewrite C_def.
   intros h hSS.
-  intros E E' j LEj StEE hEe1.
-  specialize (h _ _ j LEj StEE hEe1).
-  eapply Small.halts_reverse_prim; eauto.
+  intros s s' j LEj StEE h1.
+  specialize (h _ _ j LEj StEE h1).
+  eapply halts_reverse_prim; eauto.
 Qed.
 
 
@@ -345,56 +348,48 @@ Proof.
   } 
   specialize (he1 StLET h2).
 
-  eapply Small.halts_reverse; eauto using Small.step.
+  eapply halts_reverse; eauto using Small.step.
 Qed.
 
 (** * Compatibility rules: values *)
 
-Lemma eqvar n x : eqval n (var x) (var x).
+Lemma logvar n x : logval n (var x) (var x).
 Proof.
 intros k σ σ' Es.
-cbn. unfold eqsig in Es. eauto.
+cbn. unfold logsig in Es. eauto.
 Qed.
 
-Lemma eqzero n : eqval n zero zero.
+Lemma logzero n : logval n zero zero.
 Proof.
 intros k σ σ' Es.
-cbn. unfold eqsig in Es. eauto.
+cbn. unfold logsig in Es. eauto.
 next k. done.
 Qed.
 
-Lemma equnit n : eqval n unit unit.
+Lemma logunit n : logval n unit unit.
 Proof.
 intros k σ σ' Es.
-cbn. unfold eqsig in Es. eauto.
+cbn. unfold logsig in Es. eauto.
 next k. done.
 Qed.
 
-Lemma eqsucc n v v' : 
-  eqval n v v' -> 
-  eqval n (succ v) (succ v').
+Lemma logsucc n v v' : 
+  logval n v v' -> 
+  logval n (succ v) (succ v').
 Proof.
 intro h.
 intros k σ σ' Es.
-cbn. unfold eqsig in Es.
-next k. eapply h. unfold eqsig.
+cbn. unfold logsig in Es.
+next k. eapply h. unfold logsig.
 intros x. eapply dclosed. eauto. lia.
 Qed.
 
-Lemma subst_rewrite : forall {n} (σ : fin n -> Val 0) (e : Tm (S (S n)))  (v1 v2 : Val 0), 
-    e [⇑ (⇑ σ)][v1 .: v2..] = e [v1 .: (v2 .: σ)].
-intros.
-asimpl.
-done.
-Qed.
-
-
-Lemma eqabs n e e' : 
-  eqtm _ e e' ->
-  eqval n (abs e) (abs e').
+Lemma logabs n e e' : 
+  logtm _ e e' ->
+  logval n (abs e) (abs e').
 Proof.
 intro h.
-unfold eqval.
+unfold logval.
 (** we need to use strong induction because of recursive functions *)
 elim /strong_ind. intros k ih.
 intros σ σ' Es.
@@ -403,10 +398,10 @@ intros v v' j LEj Vv.
 rewrite subst_rewrite.
 next j.
 cbn in Vv.
-eapply reverse_prim2. 2: { econstructor. } 
+eapply reverse_prim. 2: { econstructor. } 
 rewrite subst_rewrite.
 eapply h.
-unfold eqsig.
+unfold logsig.
 intro x. destruct x; cbn; auto.
 destruct f; cbn; auto.
 eapply dclosed with (j:=j) in Es; eauto.
@@ -420,49 +415,82 @@ Qed.
 
 (** * Compatibility rules: terms *)
 
-Lemma eqret n v v' : 
-  eqval n v v' 
-  -> eqtm n (ret v) (ret v').  
+Lemma logret n v v' : 
+  logval n v v' 
+  -> logtm n (ret v) (ret v').  
 Proof.
 (* FILL IN HERE *) Admitted.
 
+Lemma C_app : forall k v1 v1' v2 v2',
+  V v1 v1' k ->
+  V v2 v2' k ->
+  C (app v1 v2) (app v1' v2') k.
+Proof.
+  intros k.
+  move=> v1 v1' v2 v2' h1 h2.
+  rewrite C_def.
+  intros E E' j LEj StE h.
+  rewrite V_def in h1.
+  destruct (v1) eqn:EQv1; try done.
+  (* most cases involve  an assumption that a stuck term halts *)
+  all: try solve [destruct v1' eqn:EQv1'; try done;
+  inversion h; inversion H; inversion H0; inversion H8].
+  - (* abs case *)
+    subst.
+    eapply halts_n_forward in h; eauto using stack.Small.step, primitive.
+    move: h => [i [EQ h]]. subst.
+
+    have Vv2: (V v2 v2' i).
+    eapply dclosed; eauto. lia.
+    specialize (h1 _ _ (S i) ltac:(lia) Vv2).
+    cbn in h1.
+    rewrite C_def in h1.
+    specialize (h1 E E' i ltac:(lia)).
+    eapply h1; eauto. eapply dclosed; eauto.
+Qed.
 
 (* Application is congruence *)
-Lemma eqapp n v1 v1' v2 v2' : 
-  eqval n v1 v1' -> eqval n v2 v2' ->
-  eqtm n (app v1 v2) (app v1' v2').
+Lemma logapp n v1 v1' v2 v2' : 
+  logval n v1 v1' -> logval n v2 v2' ->
+  logtm n (app v1 v2) (app v1' v2').
+Proof.
+  intros h1 h2 k σ σ' hs. 
+  specialize (h1 k σ σ' hs).
+  specialize (h2 k σ σ' hs).
+  cbn.
+  eapply C_app; eauto.
+Qed.
+
+
+Lemma loglet n e1 e1' e2 e2' : 
+  logtm n e1 e1' -> logtm (S n) e2 e2' -> 
+  logtm n (let_ e1 e2) (let_ e1' e2').
 Proof.
 (* FILL IN HERE *) Admitted.
 
-Lemma eqlet n e1 e1' e2 e2' : 
-  eqtm n e1 e1' -> eqtm (S n) e2 e2' -> 
-  eqtm n (let_ e1 e2) (let_ e1' e2').
-Proof.
-(* FILL IN HERE *) Admitted.
 
-
-Lemma eqifz n v v' e0 e0' e1 e1' : 
-  eqval n v v' -> eqtm n e0 e0' -> eqtm _ e1 e1' -> 
-  eqtm _ (ifz v e0 e1) (ifz v' e0' e1').
+Lemma logifz n v v' e0 e0' e1 e1' : 
+  logval n v v' -> logtm n e0 e0' -> logtm _ e1 e1' -> 
+  logtm _ (ifz v e0 e1) (ifz v' e0' e1').
 Proof. 
 (* FILL IN HERE *) Admitted.
 
 
 
-Instance compat_eq : Compatible eqtm eqval.
+Instance compat_eq : Compatible logtm logval.
 constructor.
-- eapply eqvar.
-- eapply equnit.
-- eapply eqzero.
-- eapply eqsucc.
+- eapply logvar.
+- eapply logunit.
+- eapply logzero.
+- eapply logsucc.
 
-- eapply eqabs.
+- eapply logabs.
 
-- eapply eqret. 
-- eapply eqlet.
-- eapply eqifz.
+- eapply logret. 
+- eapply loglet.
+- eapply logifz.
 
-- eapply eqapp.
+- eapply logapp.
 
 Qed.
 
@@ -472,27 +500,25 @@ Qed.
     reflexive. This is our fundamental property of the 
     logical relation. *)
 
-Corollary refl_val n v : eqval n v v.
-Proof.
-  eapply scoped_refl; eauto.
+Instance refl_val : ScopedReflexive logval.
+typeclasses eauto.
 Qed.
-Corollary refl_tm n e : eqtm n e e.
-Proof.
-  eapply scoped_refl; eauto.
+Instance refl_tm : ScopedReflexive logtm.
+typeclasses eauto.
 Qed.
 
-Lemma refl_sig n s : forall k, eqsig n s s k.
+Lemma refl_sig n s : forall k, logsig n s s k.
 Proof.
-  intros k. unfold eqsig. 
+  intros k. unfold logsig. 
   intros x.
   move: (refl_val 0 (s x)) => h.
-  unfold eqval in h.
+  unfold logval in h.
   specialize (h k ids ids). asimpl in h.
   eapply h.
-  unfold eqsig. auto_case.
+  unfold logsig. auto_case.
 Qed.
 
-Lemma refl_St E : eqst E E.
+Lemma refl_St E : logst E E.
 Proof.
 (* FILL IN HERE *) Admitted.
 
@@ -502,25 +528,25 @@ Proof.
    reflexive, we can show that it is equivalent to CIU *)
 
 (** * Logical  preorder implies CIU pre-order *)
-Lemma eqtm_CIU n e e' : 
-  eqtm n e e' -> CIU n e e'.
+Lemma logtm_CIU n e e' : 
+  logtm n e e' -> CIU n e e'.
 Proof.
 (* FILL IN HERE *) Admitted.
 
 (** * Logical preorder is closed under CIU *)
-Lemma eqtm_closed_CIU n e e' e'' :
-  eqtm n e e' -> CIU n e' e'' -> eqtm n e e''.
+Lemma logtm_closed_CIU n e e' e'' :
+  logtm n e e' -> CIU n e' e'' -> logtm n e e''.
 Proof. 
 (* FILL IN HERE *) Admitted.
 
 
 (** * CIU Pre-order implies logical preorder *)
-Lemma CIU_eqtm n e e' : 
-  CIU n e e' -> eqtm n e e'.
+Lemma CIU_logtm n e e' : 
+  CIU n e e' -> logtm n e e'.
 Proof.
   intros h.
   move: (refl_tm n e) => hE.
-  eapply eqtm_closed_CIU; eauto.
+  eapply logtm_closed_CIU; eauto.
 Qed.
 
 
@@ -529,30 +555,30 @@ Qed.
 (** Because CIU is equivalent to to logical equivalence, we can 
 now show that it is compatible. *)
 
-Instance Compatible_CIU : Compatible CIU eqval.
+Instance Compatible_CIU : Compatible CIU logval.
 constructor.
-- eapply eqvar; eauto.
-- eapply equnit; eauto.
-- eapply eqzero; eauto.
-- eapply eqsucc; eauto.
+- eapply logvar; eauto.
+- eapply logunit; eauto.
+- eapply logzero; eauto.
+- eapply logsucc; eauto.
 
 - intros n e1 e2 CIU.
-  eapply eqabs.
-  eapply CIU_eqtm; auto.
+  eapply logabs.
+  eapply CIU_logtm; auto.
 
 - intros.
-  eapply eqtm_CIU.
-  eapply eqret; eauto.
+  eapply logtm_CIU.
+  eapply logret; eauto.
 - intros.
-  eapply eqtm_CIU.
-  eapply eqlet; eauto using CIU_eqtm.
+  eapply logtm_CIU.
+  eapply loglet; eauto using CIU_logtm.
 - intros. 
-  eapply eqtm_CIU.
-  eapply eqifz; eauto using CIU_eqtm.
+  eapply logtm_CIU.
+  eapply logifz; eauto using CIU_logtm.
 
 - intros.
-  eapply eqtm_CIU.
-  eapply eqapp; eauto.
+  eapply logtm_CIU.
+  eapply logapp; eauto.
 
 Qed.
 
@@ -594,14 +620,13 @@ Proof.
     econstructor; eauto.
     eapply comp_let.
     eapply comp_ret.
-    eapply scoped_refl; eauto.
+    eapply scoped_refl; typeclasses eauto.
     done.
   } 
   have C2 : CTX n e[v..] (let_ (ret v) e).
   { 
     eapply CIU_CTX.
     unfold CIU. intros s.
-    unfold ciu.
     intros E.
     asimpl.
     intro h1.
@@ -616,7 +641,6 @@ Proof.
   { 
     eapply CIU_CTX.
     unfold CIU. intros s.
-    unfold ciu.
     intros E.
     asimpl.
     intro h1.
@@ -671,11 +695,10 @@ Proof.
 Qed.
 
 Lemma CTX_ciu e e' :
-  CTX 0 e e' -> ciu e e'.
+  CTX 0 e e' -> forall s, (s, e) ⊑ (s, e').
 Proof. 
   intros h.
   inversion h. clear h.
-  unfold ciu.
   intros s.
   move: e e' H2.
   induction s; intros e e' Re.
@@ -685,10 +708,11 @@ Proof.
     repeat rewrite halts_LET.
     intro h1.
     move: (@comp_let _ _ H) => CC.
-    have Rtt: RE 1 t t. eapply scoped_refl.
+    have Rtt: RE 1 t t. eapply scoped_refl. typeclasses eauto.
     specialize (CC 0 e e' t t Re Rtt).
     move: (IHs _ _ CC) => h2.
-    auto.
+    eapply halts_forward. eapply h2. 2: eauto using Small.step. 
+    eapply halts_reverse. eapply h1. eauto using Small.step.
 Qed.
 
 
@@ -708,41 +732,77 @@ Qed.
 
 (** Now we have that all of our preorders are equivalent. *)
 
-Lemma eqtm_CTX n e e' : 
-  eqtm n e e' -> CTX n e e'.
-Proof. intro h. eapply CIU_CTX. eapply eqtm_CIU. auto. Qed.
-Lemma CTX_eqtm n e e' :
-  CTX n e e' -> eqtm n e e'.
-Proof. intro h. eapply CIU_eqtm. eapply CTX_CIU. auto. Qed.
+Lemma logtm_CTX n e e' : 
+  logtm n e e' -> CTX n e e'.
+Proof. intro h. eapply CIU_CTX. eapply logtm_CIU. auto. Qed.
+Lemma CTX_logtm n e e' :
+  CTX n e e' -> logtm n e e'.
+Proof. intro h. eapply CIU_logtm. eapply CTX_CIU. auto. Qed.
 
+Instance Transitive_logtm : ScopedTransitive logtm.
+unfold ScopedTransitive.
+intros.
+eapply CIU_logtm. eapply logtm_CIU in H. eapply logtm_CIU in H0.
+eapply scoped_trans; eauto.
+Qed.
 
-Instance Compatible_CTX : Compatible CTX eqval.
+Instance Compatible_CTX : Compatible CTX logval.
 constructor.
-- eapply eqvar; eauto.
-- eapply equnit; eauto.
-- eapply eqzero; eauto.
-- eapply eqsucc; eauto.
+- eapply logvar; eauto.
+- eapply logunit; eauto.
+- eapply logzero; eauto.
+- eapply logsucc; eauto.
 
 - intros n e1 e2 CTX.
-  eapply eqabs.
-  eapply CTX_eqtm; auto.
+  eapply logabs.
+  eapply CTX_logtm; auto.
 
 - intros.
-  eapply eqtm_CTX.
-  eapply eqret; eauto.
+  eapply logtm_CTX.
+  eapply logret; eauto.
 - intros.
-  eapply eqtm_CTX.
-  eapply eqlet; eauto using CTX_eqtm.
+  eapply logtm_CTX.
+  eapply loglet; eauto using CTX_logtm.
 - intros. 
-  eapply eqtm_CTX.
-  eapply eqifz; eauto using CTX_eqtm.
+  eapply logtm_CTX.
+  eapply logifz; eauto using CTX_logtm.
 
 - intros.
-  eapply eqtm_CTX.
-  eapply eqapp; eauto.
+  eapply logtm_CTX.
+  eapply logapp; eauto.
 
 Qed.
 
 
 (** -------------------------------------------------------- *)
 
+Lemma C_prim_forward k e1 e2 e2' : 
+  e1 ~>> e2 -> e2 = e2' -> C e1 e2' k.
+Proof.
+  intros h <-.
+  have L: logtm _ e1 e1. eapply scoped_refl. typeclasses eauto.
+  unfold logtm in L.
+  have ES: logsig 0 var var k.
+  { unfold logsig. auto_case. } 
+  specialize (L k ids ids ES).
+  asimpl in L.
+  rewrite C_def.
+  intros s s' j LEj StEE h1.
+  rewrite C_def in L.
+  specialize (L _ _ j LEj StEE h1).
+  eapply halts_forward; eauto.
+  eapply Small.s_prim. auto.
+Qed.
+
+Lemma C_prim_reverse k e1 e2 e2' : 
+  e1 ~>> e2 -> e2 = e2' -> C e2' e1 k.
+Proof.
+  intros h <-.
+  have L: logtm _ e2 e2. eapply scoped_refl. typeclasses eauto.
+  unfold logtm in L.
+  have ES: logsig 0 var var k.
+  { unfold logsig. auto_case. } 
+  specialize (L k ids ids ES).
+  asimpl in L.
+  eapply reverse_prim; eauto.
+Qed.

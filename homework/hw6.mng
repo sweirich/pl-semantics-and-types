@@ -200,10 +200,10 @@ These new features means extending the definition of program contexts accordingl
 \begin{definition}[\hwlink{equiv/contextual.v}{Context}{Program Context}]
 \[
 \begin{array}{lcl}
-[[C]] &::= & [[_]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
+[[C]] &::= & [[#]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
       & |   & [[ret C]]\ |\ [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
 \\
-[[C]] &::= & [[_]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
+[[C]] &::= & [[#]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
 \end{array}
 \]
 \end{definition}

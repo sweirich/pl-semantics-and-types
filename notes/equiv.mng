@@ -31,7 +31,7 @@ And what if the programs are open? We cannot evaluate them, so how can we
 figure out whether they are equivalent?  And why does it matter whether
 programs are equivalent? How can we make use of this property?
 
-\section{Preliminaries: Syntax and small-step semantics}
+\section{Preliminaries}
 
 In this chapter, we will examine a few different definitions of equivalence
 for a call-by-value version of the \emph{untyped} lambda calculus, augumented
@@ -95,11 +95,11 @@ We have $[[m1 <= m2]]$ when $[[halts m1 implies halts m2]]$ and
 $[[m1 <k= m2]]$ when $[[halts k m1 implies halts m2]]$.
 \end{definition}
 
-These two relations are pre-orders as they are both reflexive and transitive.
-The second one is also a step-indexed relation. When we want to generalize 
+The approximation relation is a pre-order as it is both reflexive and transitive.
+The second one is a reflexive, step-indexed relation. When we want to generalize 
 over the steps, we write it as $[[m1 <=. m2]]$.
 
-\section{Scopes and scoped relations}
+\subsection{Scopes and scoped relations}
 
 We are not going to talk about typing for this language, but we will be
 explicit about \emph{scopes}. A scope, $X$, is a set variables that are allowed to
@@ -114,8 +114,8 @@ A term/value is \emph{well scoped}, written $[[ X |- e ]]$ (or $[[ X |- v
 \end{definition}
 
 \begin{definition}[Closed]
-A term/value is \emph{closed}, written $[[ |- e ]]$ (or $[[ |- v ]]$), when it
-is well-scoped with an empty set of variables. (We use an empty character to
+A term/value is \emph{closed}, written $[[ null |- e ]]$ (or $[[ null |- v ]]$), when it
+is well-scoped with an empty set of variables. (We use $[[null]]$ to
 indicate the empty set.)
 \end{definition}
 
@@ -129,7 +129,7 @@ $[[X |- e RE e']]$ and $[[X |- v RV v']]$.
 \begin{definition}[Closing substitution]
 A substitution $[[sigma]]$ is a \emph{closing} substitution, written 
 $[[ X |- sigma]]$, when it maps all variables in $[[X]]$ to closed values. In other words, 
-we have $[[ |- sigma x ]]$ for all $[[x]] \in [[X]]$.
+we have $[[ null |- sigma x ]]$ for all $[[x]] \in [[X]]$.
 \end{definition}
 
 \begin{definition}[\link{equiv/ctx.v}{PreOrder}{Scoped pre-order}]
@@ -148,7 +148,7 @@ forward. This is both easier (as we don't have to show both directions) and
 sometimes more informative (as there are terms that will only be related in
 one direction).
 
-\section{Observations on terms}
+\subsection{Observations on terms}
 
 Let's look at our first preorder, which only talks about closed terms. This
 relation orders expressions by their termination behavior when evaluated by
@@ -156,7 +156,7 @@ arbitrary stacks. The relation is a pre-order---it is not to difficult to show
 that it is both reflexive and transitive.
 
 \begin{definition}[\link{untyped/equiv.v}{CIU}{Usage Preorder}]
-We say that $[[e USE e']]$ when
+We say that $[[e <= e']]$ when
 $[[halts <s,e>]]$ implies $[[halts <s,e'>]]$, for all stacks $[[s]]$. 
 In other words, we have $[[<s,e> <= <s,e'>]]$ for all stacks $[[s]]$.
 \end{definition}
@@ -164,7 +164,7 @@ In other words, we have $[[<s,e> <= <s,e'>]]$ for all stacks $[[s]]$.
 Remember that we can extend this to an equivalence.
 
 \begin{definition}[Usage Equivalence]
-We say that $[[e]] \equiv_{U} [[e']]$ when $[[e USE e']]$ and $[[e' USE e]]$.
+We say that $[[e]] \equiv_{U} [[e']]$ when $[[e <= e']]$ and $[[e' <= e]]$.
 \end{definition}
 
 We call this idea of running the program using arbitrary stacks as making
@@ -197,7 +197,9 @@ because it is based on what the program does (how it interacts with the
 external environment) instead of how the program is implemented (its internal
 definitions).
 
-\section{CIU equivalence}
+\section{Scoped preorders and equivalences}
+
+\subsection{CIU pre-order $[[CIU]]$}
 
 Next, we use closing substitutions to extend our usage preorder/equivalence to 
 include upen terms.
@@ -223,7 +225,7 @@ closed instantiations}~\cite{Mason_Talcott_1991}, i.e. we create closed
 instantiations with arbitrary substitutions, and use them with arbitrary
 stacks. 
 
-\section{Contextual Equivalence}
+\subsection{Contextual pre-order and equivalence ($[[CON]]$)}
 
 A program context is any part of a term or value that can surround a term or
 value. We use the metavariable $[[C]]$ to refer to contexts that produce terms
@@ -232,27 +234,27 @@ and contexts that produce values.
 \begin{definition}[\link{equiv/contextual.v}{Context}{Program Context}]
 \[
 \begin{array}{lcl}
-[[C]] &::= & [[_]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
+[[C]] &::= & [[#]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
       & |   & [[ret C]]\ |\ [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
 \\
-[[C]] &::= & [[_]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
+[[C]] &::= & [[#]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
 \end{array}
 \]
 \end{definition}
 
 We use the notation $[[C{|e|}]]$ and $[[C{|v|}]]$ for plugging the hole in a
-context with a value or term the location of the hole has to match up.
+context with a value or term.
 
 Here's another way to define an equality on terms. Instead of using stacks and
 closing substitutions, we can quantify over contexts. (This definition is
 typically used when we don't have a stack-based semantics handy.)
 
 \begin{definition}[Contextual pre-order]
-Define $[[X |- e1 C e2 ]]$ when 
+Define $[[X |- e1 CON e2 ]]$ when 
 $[[halts C {| e1 |} ]]$ implies $[[halts C {| e2 |} ]]$ for any $[[ C]]$.
 \end{definition}
 
-\section{Contextual Equivalence (Pitts)}
+\subsection{Contextual Equivalence (Pitts) ($[[CTX]]$)}
 
 Yet another way to define when two terms are related is \emph{coinductively}. We
 will define a \emph{contextual pre-order} as the largest pre-order that is 
@@ -265,7 +267,7 @@ seems too weak to be a basis of an equivalence, in conjunction with the other
 properties, we will see that it is enough.
 
 \begin{definition}[\link{untyped/equiv.v}{Adequate}{Adequate}]
-A scoped relation $[[RE]]$ is \emph{adequate} when $[[ |- e RE e']]$ means that 
+A scoped relation $[[RE]]$ is \emph{adequate} when $[[ null |- e RE e']]$ means that 
 $[[ halts < nil, e > ]]$ implies $[[ halts < nil, e' >]]$.
 In other words, $[[ <nil,e> <= <nil, e'> ]]$.
 \end{definition}
@@ -316,7 +318,7 @@ any relation that equates them, as long as that relation has the right
 properties. That is a useful definition because it gives us a practical way to
 show that terms are contextually equivalent.
 
-\section{A logical relation}
+\subsection{A logical relation $[[log]]$}
 
 Finally, we can define a \emph{step-indexed} logical relation.
 
@@ -368,41 +370,182 @@ $[[ X |- e1 log e2 ]]$ when
 \end{enumerate}
 \end{definition}
 
+\section{Examples}
+The amazing result is that all of these definitions coincide. All of the pre-orders (and induced equivalence relations) from the previous section relate the same terms.
+
+But why do we have so many definitions? How can we use them?
+
+Pitt's definition of contextual equivalence reassures us that, from our
+starting definitions of what it means for programs to approximate one another,
+we have the coarsest definition possible. There isn't some other definition of
+equivalence out there that would relate more terms. Furthermore, if we find 
+any preorder that is compatible and adequate, that relates two terms, then 
+we know that they are in the contextual preorder.
+
+The traditional definition of Contextual equivalence justifies the refactoring
+that programmers do, or that compilers do when they optimize code. It says
+that you can start with any program identify some subterm anywhere and replace
+it with something equivalent without changing the semantics of the program.
+
+The CIU pre-order is the most convenient definition for reasoning about
+reduction. For example, we can use this definition to show that inlining or
+``beta-reduction'' is a sound program transformation.
+\begin{lemma}[\link{untyped/equiv_examples.v}{fun_beta}{Beta reduction and expansion}]
+\begin{enumerate}
+\item $[[ X |- (fun_ x y.e) v CIU v [v/y, fun_ x y. e/x] ]]$
+\item $[[ X |- v [v/y, fun_ x y. e/x] CIU (fun_ x y.e) v ]]$
+\end{enumerate}
+\end{lemma}
+
+From these (and other) facts, we can show that the usual definition of untyped
+$\beta$-equivalence implies contextual equivalence. However,
+$\beta$-equivalence is not as large as contextual equivalence: there are terms
+that are not $\beta$-equivalent that are not contextually equivalent.
+
+Finally, the logical relation is the most convenient for showing the soundness
+of ``$\eta$-reductions''. 
+
+\begin{lemma}[\link{untyped/equiv_examples.v}{fun_eta}{Function $\eta$-reduction}]
+$[[ X |- fun_ x y. v y log v ]]$
+\end{lemma}
+
+\begin{lemma}[\link{untyped/equiv_examples.v}{nat_eta}{Nat $\eta$-reduction}]
+$[[ X |- case v of { 0 => 0; S x => S x } log v ]]$
+\end{lemma}
+
+On the other hand, using our definitions, \emph{$\eta$-expansions} are not validated by our 
+definitions. We can use the tradutional definition of contextual equivalence to show that 
+
+\begin{lemma}[Failure of $\eta$-expansion]
+It is not the case that $[[ X |- v CON fun_ x y. v y ]]$ for all $[[v]]$.
+\end{lemma}
+Choose $[[v]]$ as zero and the context as $[[ # zero ]]$.
+
 \section{Relating the relations}
 
-The amazing result is that all of these definitions coincide. The goal of this
-chapter is to prove the following results:
+Finally, let's prove that these relations are equivalent.
 
-\begin{theorem}[\link{untyped/contextual.v}{CTX_Contextual}{$[[C]]$ is the same as $[[CTX]]$}]
-We have $[[X |- e C e']]$ iff $[[X |- e CTX e']]$.
+\begin{theorem}[\link{untyped/contextual.v}{CTX_Contextual}{$[[CON]]$ is the same as $[[CTX]]$}]
+We have $[[X |- e CON e']]$ iff $[[X |- e CTX e']]$.
 \end{theorem}
 
 \begin{theorem}[\link{untyped/equiv.v}{CTX_CIU}{$[[CTX]]$ is the same as $[[CIU]]$}]
 We have $[[X |- e CIU e']]$ iff $[[X |- e log e']]$ iff $[[X |- e CTX e']]$.
 \end{theorem}
 
+We don't do this all at once: it takes several steps to make all of these definitions line up.
+
 \begin{enumerate}
-\item Show that $[[C]]$ is adequate and compatible (so $[[C]]$ implies $[[CTX]]$).
+\item Show that $[[CON]]$ is adequate and compatible (so $[[CON]]$ implies $[[CTX]]$).
 \item Show that $[[log]]$ is adequate and compatible (and therefore reflexive).
 \item Show that $[[log]]$ implies $[[CIU]]$. This follows from the reflexivity of the logical relation.
 \item Show that $[[CIU]]$ implies $[[log]]$. This follows from the reflexivity of the logical relation, and the fact that it is closed under CIU-equivalence (see lemma~\ref{lem:eqtm_closed_CIU}).
-\item Show that $[[CIU]]$ equivalence implies $[[CTX]]$. This requires 
+\item Show that $[[CIU]]$ implies $[[CTX]]$. This requires 
   showing that it is adequate and transitive (easy). To show that it is compatible, we use the fact that it is equivalent to a compatible relation ($[[log]]$).
 \item Show that $[[CTX]]$ implies $[[CIU]]$. This happens in two steps. We first show this result for closed terms, by induction over the arbitrary stack. Then, we extend the proof to open terms 
 by showing that contextual equivalence is closed under substitution
-\item Show $[[CTX]]$ implies $[[C]]$, using the adequacy of $[[CTX]]$, the fact that 
+\item Show that $[[CTX]]$ implies $[[C]]$, using the adequacy of $[[CTX]]$, the fact that 
   contexts preserve compatible relations, and the compatibility of $[[CTX]]$.
 \end{enumerate}
 
+\subsection{$[[CON]]$ is adequate and compatible}
+
+To reason about contextual equivalence, we need to be able to compose contexts, written $[[C1 o C2]]$
+and reason about how that composition interacts with plugging terms.
+
+\begin{lemma}[\link{untyped/contextual.v}{compose_plug}{Compose plug}]
+ C2 {| C1 {| e |} |} = (C1 o C2) {| e |}
+\end{lemma}
+
+Showing that contextual equivalence is adequate is easy. We merely need to use the context that is a single hole, and the definition falls out. 
+
+For compatibility, we need to instantiate premises with the appropriate contexts. For example, so 
+show that contextual equivalence is compatible for application expressions, we prove the following 
+sublemma.
+
+\begin{lemma}[App Compatibility]
+If $[[X |- v1 CON v2 ]]$ and $[[ X |- v1' CON v2' ]]$ then $[[X |- v1 v1' CON v2 v2']]$.
+\end{lemma}
+\begin{proof}
+To show $[[X |- v1 v1' CON v2 v2']]$, we pick an arbitrary context $[[C]]$, and show that 
+$[[ C {| v1 v1' |} <= C {| v2 v2' |} ]] $. We instantiate our first assumption
+with the context $[[v2 # o C]]$ to conclude that $[[  C{| v2 v1' |} <= C{| v2 v2' |} ]]$.
+Then, we instantiate the second assumption with $[[ # v1 o C]]$ to conclude that 
+$[[ C{| v1 v1' |} <= C {| v2 v1' |} ]]$. Chaining these approximations together 
+transitively gives us the desired result.
+\end{proof}
+
+\subsection{$[[log]]$ is compatible}
+
+Because we have defined the logical relation as a step-indexed relation, we
+need to first show that it is downward closed. This is not difficult to do.
+
+\begin{lemma}[\link{untyped/equiv.v}{compat_eq}{Logical equivalence is compatible}]
+We have the compatibility properties for both the computation and value logical relations.
+\end{lemma}
+Showing that the logical relation is compatible is very similar to proving the fundamental theorem 
+for the logical relation. We want to show that the logical relation is preserved by all syntactic forms in the language. (In general, the fundamental theorem for binary logical relations shows that the relation is reflexive.)
+
+\subsection{$[[log]]$ implies $[[CIU]]$}
+
+\begin{lemma}[\link{untyped/equiv.v}{logtm_CIU}{$[[log]]$ implies $[[CIU]]$}]
+If $[[ X |- e log e' ]]$ then $[[ X |- e CIU e' ]]$.
+\end{lemma}
+\begin{proof}
+To show that $[[e]]$ is CIU-related to $[[e']]$, we need to pick an arbitrary stack $[[s]]$ and 
+arbitrary substitution $[[sigma]]$, and show that $[[ < s,e[sigma] > <= < s, e'[sigma] > ]]$.
+Now, suppose $[[< s,e[sigma] > |-k> < nil, ret v > ]]$. 
+From our reflexivity property, we know that $[[ null |- sigma log sigma ]]$ and $[[ |- s log s]]$. 
+Therefore, we know that $[[C e[sigma] e'[sigma] k]]$, and thus,
+$[[< s, e[sigma]> <k= < s, e'[sigma] > ]]$.
+\end{proof}
+
+\subsection{$[[CIU]]$ implies $[[log]]$}
+
+This follows from the reflexivity of the logical relation, and the fact that it is closed under CIU-equivalence (see lemma~\ref{lem:eqtm_closed_CIU}).
 
 \begin{lemma}[\link{untyped/equiv.v}{eqtm_closed_CIU}{$[[log]]$ is closed under $[[CIU]]$}]
 \label{lem:eqtm_closed_CIU}
 If $[[ X |- e log e']]$ and $[[ X |- e' CIU e'' ]]$, then $[[ X |- e log e'']]$.
 \end{lemma}
 
+At this point we know that the logical and and CIU preorders coincide.
+
+\subsection{$[[CIU]]$ implies $[[CTX]]$}
+This requires showing that it is adequate and transitive (this part is easy). To show that
+it is compatible, we use the fact that it is equivalent to a compatible
+relation ($[[log]]$). 
+
+\subsection{$[[CTX]]$ implies $[[CIU]]$}
+
+This happens in two steps. We first show this result for closed terms. Then,
+we extend the proof to open terms by showing that contextual equivalence is
+closed under substitution.
+
+\begin{lemma}[\link{untyped/equiv.v}{CTX_ciu}[Closed $[[CTX]]$ implies CIU]
+$[[ null |- e CTX e' ]]$ implies $[[ <s,e> <= <s,e'> ]]$ for any $s$.
+\end{lemma}
+We prove this by induction on the stack. For $[[let x=_ in e]]$ frames, we use the
+compatibility of contextual equivalence for let expressions and the
+fact that approximation is closed under forwards and reverse reduction.
+
+\begin{lemma}[\link{untyped/equiv.v}{value_substitutivity}[Substitutivity]
+If $[[ X |- e CTX e' ]]$ and $[[ X |- sigma ]]$ then $[[ null |- e[sigma] CTX e'[sigma] ]]$.
+\end{lemma}
+We prove this by induction on the length of $[[X]]$ (i.e. the number of variables in the 
+domain of $[[sigma]]$. We can show the substitivity result for single substiutions by 
+using the transitivity of $[[CTX]]$ to merge the following results 
+
+$ [[ X |- e [v/x] CTX let x = ret v in e ]]$ (by connection with $[[CIU]]$)
+$ [[ X |- let x = ret v in e CTX let x = ret v in e' ]]$ (by compatibility of any underlying relation in $[[CTX]]$)
+$ [[ X |- let x = ret v in e' CTX e' [v/x] ]]$ (by connection with $[[CIU]]$).
 
 
+\subsection{Show that $[[CTX]]$ implies $[[CON]]$}.
 
+For this result, we use the adequacy of $[[CTX]]$, the fact that contexts
+preserve compatible relations, and the compatibility of $[[CTX]]$. We can easily get the last part now
+because we have shown it equivalent to a compatible relation.
 
 \section{Further Reading}
 This chapter is inspired by Pitts\cite{pitts:DagSemProc.10351.6}. Similar

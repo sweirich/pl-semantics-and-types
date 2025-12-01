@@ -21,7 +21,8 @@ phi {{ tex \phi }} :: 'iProp_' ::=
 
 
 scope , X :: '' ::= 
-  |                     ::    :: empty
+  | null                ::    :: empty
+   {{ tex \emptyset }}
   | x                   ::    :: single_
   | scope1 , scope2     ::    :: cons
 
@@ -29,8 +30,8 @@ R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \math
   | kleene              ::    :: kleene
   {{ tex \leq_{\textit{K} } }}
   | USE                 ::    :: USE
-  {{ tex \leq_{\textit{U} } }}
-  | C                   ::    :: C
+  {{ tex \leq  }}
+  | CON                 ::    :: C
   {{ tex \leq_{\textit{C} } }}
   | CIU                 ::    :: CIU
   {{ tex \leq_{\textit{CIU} } }}
@@ -40,7 +41,8 @@ R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \math
   {{ tex \leq_{\textit{Log} } }}
 
 C :: 'C_' ::= 
-  | _               ::  :: hole
+  | #               ::  :: hole
+   {{ tex \# }}
   | C v2            ::  :: app1
   | v1 C            ::  :: app2 
   | let x = C in e2 ::  :: let1
@@ -85,12 +87,16 @@ formula :: 'formula_' ::=
     {{ tex \ottkw{halts}^{[[k]]} [[m]] }}
   | m |- k > m'         ::    :: steps_n
     {{ tex [[m]] \mapsto^{[[k]]} [[m']] }}
+  | e <= e'             ::    :: approx_u
+    {{ tex [[e]] \sqsubseteq [[e']] }}
   | m <= m'             ::     :: approx
     {{ tex [[m]] \sqsubseteq [[m']] }}
   | m < k = m'          ::     :: approx_n
     {{ tex [[m]] \sqsubseteq^{[[k]]} [[m']] }} 
-  | X |- sigma1 log sigma2 @ k :: M :: RelSigma
+  | X |- sigma1 log sigma2 @ k :: M :: RelSigmak
    {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{Log}^{[[k]]} [[sigma2]]  }}
+  | X |- sigma1 log sigma2 :: M :: RelSigma
+   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{Log} [[sigma2]]  }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 

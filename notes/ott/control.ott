@@ -211,6 +211,12 @@ by
 ||- < s , e > ok
 
 
+||- s : tau1
+||- e : tau1
+----------------- :: ok_s
+||- < s , e > ok
+
+
 defns 
 JStackSmall :: '' ::= 
 

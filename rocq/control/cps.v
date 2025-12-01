@@ -109,8 +109,8 @@ with transVal {n} (v : Val n) {m} (ξ : ren n m) {struct v} : Val m  :=
   | cont s => transStack s ξ
   | _ => zero
   end
-where "E{ e } ξ" := (transTm e ξ) (only parsing)
-and "V{ v } ξ" := (transVal v ξ) (only parsing).
+where "E{ e } ξ" := (transTm e ξ)
+and "V{ v } ξ" := (transVal v ξ).
 
 (* Repeat the definition of the stack translation at top level *)
 Fixpoint transStack {n} (s : Stack n) {m} (ξ : ren n m) : Val m := 
