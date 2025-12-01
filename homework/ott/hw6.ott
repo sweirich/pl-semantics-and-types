@@ -1,0 +1,18 @@
+grammar 
+
+tau :: '' ::=
+  | ANS  ::   :: answer_type
+
+
+defns 
+JRecTyping :: '' ::= 
+
+
+defn 
+||- s : tau ::  :: typing_stack_simple :: 'tss_' 
+{{ tex \vdash [[s]] \in [[tau]] }}
+by
+
+--------------- :: nil_ANS
+||- nil : ANS
+

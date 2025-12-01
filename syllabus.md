@@ -9,7 +9,7 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 3. [HW3](homework/hw3.pdf), due Monday, October 20th at midnight
 4. [HW4](homework/hw4.pdf), due Monday, November 10th at midnight   
 5. [HW5](homework/hw5.pdf), due Monday, November 24th at midnight   
-6. [HW6](homework/hw6.pdf), due Monday, December 18th at midnight (part 1, more to come)
+6. [HW6](homework/hw6.pdf), due Monday, December 18th at midnight
 
 ## Schedule
 
@@ -47,9 +47,9 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 11/19 | PFPL Ch. 13 |      | Classical Logic                                                                             |
 | M 11/24 | Ch. 11   | untyped | **HW #5 due** <br/> Untyped program equivalence                                             |
 | W 11/26 | | | **No Class**: Friday schedule for Thanksgiving                                                     |
-| M 12/1  | | |                                                                                                   |
+| M 12/1  |          | untyped | Untyped program equivalence                                                                 |
 | W 12/3  | | |                                                                                                   |
-| M 12/8  | | | HW #6 due                                                                                          |
+| M 12/8  | | | **HW #6 due**                                                                                          |
 | T 12/16 | | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
 
 ## Grading and Assignments

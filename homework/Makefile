@@ -1,9 +1,9 @@
-TOP=hw4
+TOP=hw6
 
 BIBFILES = 
 
-OTT_NOTES  = stlc bigstep rec eff modal stack control
-OTT_HW     = hw1 hw2 hw3 hw4 hw5
+OTT_NOTES  = stlc bigstep rec eff modal stack control equiv
+OTT_HW     = hw1 hw2 hw3 hw4 hw5 hw6
 OTT_SOURCE = $(foreach i, $(OTT_NOTES), ../notes/ott/$(i)) $(foreach i, $(OTT_HW), ott/$(i))
 OTTFILES  = $(foreach i, $(OTT_SOURCE), $(i).ott)
 OTTIFLAGS = $(foreach i, $(OTT_SOURCE), -i $(i).ott) -merge true

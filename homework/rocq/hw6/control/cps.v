@@ -90,7 +90,7 @@ with transVal {n} (v : Val n) {m} (ξ : ren n m) {struct v} : Val m  :=
   let fix transStack {n} (s : Stack n) {m} (ξ : ren n m) : Val m := 
   match s with 
   | nil => 
-      abs (exit (var f0))
+      abs (exit (var f0)) 
   | f_let e2 :: s' => 
       abs (E{ e2 }ξ⤉ (transStack s' ξ)⟨↑⟩) 
   | _ => zero

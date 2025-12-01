@@ -1,8 +1,8 @@
 COQMAKEFILE=rocq makefile
 LIBNAME=plst
-SYNTAX=control/syntax.sig control/typesyntax.sig
+SYNTAX=control/syntax.sig control/typesyntax.sig untyped/syntax.sig
 SYNTAXV = $(SYNTAX:.sig=.v)
-LANGS=control 
+LANGS=control untyped rec
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
 .PHONY: rocq syntax clean fullclean

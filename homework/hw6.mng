@@ -30,6 +30,7 @@
 }
 
 
+
 % force footnotes to be on a single page
 \interfootnotelinepenalty=10000
 
@@ -137,8 +138,8 @@ class. The core language is the stack based language with $\ottkw{letcc}$,
 $\ottkw{throw}$, $\ottkw{cont}$, and $\ottkw{exit}$.
 
 For reference, the files
-\hwlink{control/letcc.v}{}{\texttt{homework/rocq/hw5/control/letcc.v}} and
-\hwlink{control/cps.v}{}{\texttt{homework/rocq/hw5/control/cps.v}} contains
+\hwlink{control/letcc.v}{}{\texttt{homework/rocq/hw6/control/letcc.v}} and
+\hwlink{control/cps.v}{}{\texttt{homework/rocq/hw6/control/cps.v}} contain
 definitions to help you get started.
 
 Recall the theorem that states that the CPS translation is type preserving.
@@ -158,7 +159,7 @@ translations, as well as the relation $[[G ~ D]]$, which are available in the
 lecture notes.
 
 \begin{enumerate}
-\item Prove this lemma. Note you don't need to type set all of the cases
+\item Prove this lemma. You don't need to type set all of the cases
   here: just pick a small number that you believe are representative.
 
 \item (Optional) This translation is not the only possible CPS
@@ -179,5 +180,80 @@ lecture notes.
   the double negation translation studied since the 1930s.
 \end{enumerate}
 
+\newpage
+
+\section{Untyped Program Equivalence}
+
+Add products and sums to the proofs about program equivalence for the untyped lambda calculus.
+This means extending all proofs with these syntactic forms. 
+
+\begin{definition}[\hwlink{untyped/syntax.sig}{}{Syntax}]
+\[
+\begin{array}{lrcl}
+\textit{values} & [[v]] & ::= & \ldots |\ [[(v1, v2)]]\  |\ [[inj1 v]]\ |\ [[inj2 v]] \\
+\textit{terms}  & [[e]] & ::= & \ldots |\ [[prj1 v]]\ |\ [[prj2 v]]\ |\ [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] \\
+\end{array}
+\]
+\end{definition}
+
+These new features means extending the definition of program contexts accordingly.
+\begin{definition}[\hwlink{equiv/contextual.v}{Context}{Program Context}]
+\[
+\begin{array}{lcl}
+[[C]] &::= & [[_]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
+      & |   & [[ret C]]\ |\ [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
+\\
+[[C]] &::= & [[_]]\ |\ [[succ C]]\ |\  [[fun_ x y . C ]] \\
+\end{array}
+\]
+\end{definition}
+
+\noindent
+For your homework, typeset your extensions of the following definitions and proofs.
+\begin{enumerate}
+\item The definition of what it means for a relation to be compatible.
+
+\begin{definition}[\hwlink{untyped/equiv.v}{Compatible}{Compatible}]
+A pair of scoped relations $[[RE]]$ and $[[RV]]$ are compatible when the following properties hold: 
+\begin{enumerate}
+\item $[[X |- x RV x]]$
+\item $[[X |- unit RV unit ]]$
+\item $[[X |- zero RV zero ]]$
+\item $[[X |- v1 RV v2 ]]$ implies $[[X |- succ v1 RV succ v2]]$
+\item $[[X, x |- e1 RE e2 ]]$ implies $[[ X |- \x.e1 RV \x.e2]]$
+\item $[[X |- v1 RV v2 ]]$ implies $[[X |- ret v1 RE ret v2 ]]$
+\item $[[X |- e1 RE e2 ]]$ and $[[X , x |- e1' RE e2' ]]$
+  implies $[[X |- let x = e1 in e1' RE let x = e2 in e2' ]]$
+\item $[[X |- v1 RV v2 ]]$ and $[[X |- v1' RV v2']]$ implies
+  $[[X |- v1 v1' RE v2 v2' ]]$.
+\item $[[X |- v1 RV v2 ]]$ and $[[X |- e1 RE e2]]$  and $[[ X, x |- e1' RE e2']]$
+  implies $[[X |- case v1 of { 0 => e1 ; S x => e1' }  RE case v1' of { 0 => e1' ; S x => e2' } ]]$
+\end{enumerate}
+\end{definition}
+
+\item The definition of the \hwlink{untyped/ctx.v}{V}{Logical pre-order}.
+
+\begin{definition}[\hwlink{untyped/equiv.v}{C}{Step-indexed Logical Relation}]
+\[ 
+\begin{array}{lclcl} 
+   [[C e1 e2 k]] 
+      & = & \forall [[s1]], [[s2]], [[St s1 s2 ===>k <s1,e1> <=. <s2,e2> ]] \\
+\\
+   [[St s1 s2 k]] &=& \forall [[v1]], [[v2]], 
+       [[V v1 v2 ===>k <s1,ret v1> <=. <s2,ret v2> ]] \\
+\\
+   [[V unit unit k]]             &=& \textit{always} \\
+   [[V zero zero k]]             &=& \textit{always} \\
+   [[V (succ v1) (succ v2) k]]   &=& [[|> k V v1 v2]] \\
+   [[V (fun_ x y.e) v2 k]]        &=& \forall [[v]][[v']], 
+   [[V v v' ===>k C e[(fun_ x y. e)/y, v1/x] (v2 v') ]] \\
+\end{array}
+\]                 
+\end{definition}
+
+\item The $[[prj1]]$ case of the lemma that shows that the \hwlink{untyped/equiv.v}{compat_eq}{logical relation is compatible}.
+
+\item The product and $[[prj1]]$ cases of the lemma that shows that \hwlink{contextual.v}{Compatible_contextual}{contextual equivalence is compatible}.
+\end{enumerate}
 
 \end{document}
