@@ -168,6 +168,25 @@ Proof.
   done.
 Qed.
 
+Lemma Transitive_Contextual : ScopedTransitive Contextual.
+Proof.
+  intros n e1 e2 e3 CT1 CT2 C h.
+  unfold Contextual in CT1, CT2.
+  eauto.
+Qed.
+
+(** If two terms are contextually related, then any larger terms from plugging 
+    them into a context are also related. *)
+Lemma Contextual_Replacement n e1 e2 : 
+  Contextual n e1 e2 -> 
+  forall m (C : Context n m TmCtx TmCtx), Contextual m (C{| e1 |}) (C{| e2|}).
+Proof.
+  intros h m C.
+  unfold Contextual in *.
+  intros C0. 
+  repeat rewrite compose_plug.
+  eapply h.
+Qed.
 
 Ltac compose_rewrite C1 := 
   repeat rewrite <- compose_plug in C1; cbn in C1; asimpl in C1; auto.
@@ -217,15 +236,7 @@ all: repeat unfold Contextual, ContextualVal.
 
 Qed.
 
-Lemma Transitive_Contextual : ScopedTransitive Contextual.
-Proof.
-  intros n e1 e2 e3 CT1 CT2 C h.
-  unfold Contextual in CT1, CT2.
-  eauto.
-Qed.
-
-Lemma Contextual_CTX n e1 e2 : 
-  Contextual n e1 e2 -> CTX n e1 e2.
+Lemma Contextual_CTX n e1 e2 : Contextual n e1 e2 -> CTX n e1 e2.
 Proof.
   intro h. 
   exists Contextual ContextualVal; eauto.
@@ -234,6 +245,10 @@ Proof.
   eapply Transitive_Contextual.
 Qed.
 
+
+(* ---------------------------------------------------- *)
+
+(** * *)
 Fixpoint Compatible_plug n (e1 e2 : Tm n) 
   (RE : scoped_relation Tm)
   (RV : scoped_relation Val)
@@ -254,7 +269,8 @@ Proof.
   all: specialize (Compatible_plug n e1 e2 RE RV H h).
   all: specialize (Compatible_vplug n e1 e2 RE RV H h).
   + auto.
-  + eapply comp_app. eapply Compatible_vplug; eauto.
+  + eapply comp_app. 
+    eapply Compatible_vplug; eauto.
     eapply scoped_refl. typeclasses eauto.
   + eapply comp_app. eapply scoped_refl. typeclasses eauto.
     eapply Compatible_vplug; eauto.
@@ -288,7 +304,8 @@ Proof.
 
 Qed.
 
-
+(** This needs the adequacy and compatibility of CTX along with the 
+    above relation. *)
 Lemma CTX_Contextual n e1 e2 : 
   CTX n e1 e2 -> Contextual n e1 e2.
 Proof.

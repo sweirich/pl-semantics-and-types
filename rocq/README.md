@@ -99,3 +99,5 @@
   * [untyped.ctx.v](untyped/ctx.v) CTX relation as largest adequate compatible pre-order
   * [untyped.equiv.v](untyped/equiv.v) CTX is equivalent to CIU (via step-indexed logical relation)
   * [untyped.contextual.v](untyped/contextual.v) CTX is equivalent to Contextual equivalence
+  * [untyped.example_equiv.v](untyped/example_equiv.v) Examples
+  * [rec.simple_equiv.v](rec/simple_equiv.v) Equivalence for simply-typed language

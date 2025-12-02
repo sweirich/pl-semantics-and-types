@@ -190,6 +190,7 @@ Proof.
     eapply dclosed; eauto. lia.
 Qed.
 
+
 (** * failure of eta-expansion rules *)
 
 

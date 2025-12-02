@@ -705,7 +705,6 @@ Proof.
   - specialize (H0 _ _ Re) => A.
     eauto.
   - destruct a.
-    repeat rewrite halts_LET.
     intro h1.
     move: (@comp_let _ _ H) => CC.
     have Rtt: RE 1 t t. eapply scoped_refl. typeclasses eauto.
