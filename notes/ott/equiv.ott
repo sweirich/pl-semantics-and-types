@@ -2,11 +2,11 @@ grammar
 
 e :: '' ::= 
   | C {| e |}   ::   :: plug
-
+  {{ tex [[C]] \{\!| [[e]] |\!\} }}
 
 v :: '' ::= 
   | C {| v |}   ::   :: plug
-
+  {{ tex [[C]] \{\!| [[v]] |\!\} }}
 
 phi {{ tex \phi }} :: 'iProp_' ::= 
   | V v1 v2         :: M :: VPE
@@ -38,7 +38,7 @@ R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \math
   | CTX                 ::    :: CTX
   {{ tex \leq_{\textit{CTX} } }}
   | log                 ::    :: log
-  {{ tex \leq_{\textit{Log} } }}
+  {{ tex \leq_{\textit{log} } }}
 
 C :: 'C_' ::= 
   | #               ::  :: hole
@@ -46,7 +46,9 @@ C :: 'C_' ::=
   | C v2            ::  :: app1
   | v1 C            ::  :: app2 
   | let x = C in e2 ::  :: let1
+  {{ tex \ottkw{let}\, [[x]]\,=\,[[C]]\,\ottkw{in}\,[[e2]] }}
   | let x = e1 in C ::  :: let2
+  {{ tex \ottkw{let}\, [[x]]\,=\,[[e1]]\,\ottkw{in}\,[[C]] }}
   | ret C           ::  :: ret 
   | prj1 C          ::  :: prj1
   | prj2 C          ::  :: prj2
@@ -74,6 +76,7 @@ formula :: 'formula_' ::=
   | scope |- sigma      ::    :: closing_sub
   | scope |- e1 RE e2   ::    :: scoped_relation
   | scope |- v1 RV v2   ::    :: scoped_value_relation
+  | |- s                ::    :: scoped_stack
   | |- s1 RE s2         ::    :: stack_relation
   | e1 USE e2           ::    :: closed_relation
   | G |- e1 == e2 : tau ::    :: typed_eq
