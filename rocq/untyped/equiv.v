@@ -25,6 +25,7 @@ Require Export untyped.stack.
 Require Export rec.iprop.
 
 Require Export untyped.ctx.
+Require Export untyped.contextual.
 
 Import SyntaxNotations.
 Import Lists.List.ListNotations.
@@ -521,6 +522,8 @@ Qed.
 Lemma refl_St E : logst E E.
 Proof.
 (* FILL IN HERE *) Admitted.
+
+(* --------------------------------------------- *)
 
 (* --------------------------------------------- *)
 

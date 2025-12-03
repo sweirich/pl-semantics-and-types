@@ -298,7 +298,7 @@ A pair of scoped relations $[[RE]]$ and $[[RV]]$ are \emph{compatible} when the 
 \item $[[X |- unit RV unit ]]$
 \item $[[X |- zero RV zero ]]$
 \item $[[X |- v1 RV v2 ]]$ implies $[[X |- succ v1 RV succ v2]]$
-\item $[[X, x |- e1 RE e2 ]]$ implies $[[ X |- \x.e1 RV \x.e2]]$
+\item $[[X, x,y |- e1 RE e2 ]]$ implies $[[ X |- fun_ x y.e1 RV fun_ x y.e2]]$
 \item $[[X |- v1 RV v2 ]]$ implies $[[X |- ret v1 RE ret v2 ]]$
 \item $[[X |- e1 RE e2 ]]$ and $[[X , x |- e1' RE e2' ]]$
   implies $[[X |- let x = e1 in e1' RE let x = e2 in e2' ]]$
@@ -458,10 +458,10 @@ We don't do this all at once: it takes several steps to make all of these defini
 \begin{figure}
 \[
 \begin{array}{ccccccc}
-        & (1) &           & (5) &           & (3) & \\ 
+        & (1) &           & (6) &           & (4) & \\ 
         & \Rightarrow &   & \Rightarrow &   & \Rightarrow & \\
 [[CON]] &     & [[CTX]] &     & [[CIU]] &     & [[log]] \\
-        & (6) &           & (4) &           & (2) & \\
+        & (2) &           & (5) &           & (3) & \\
         & \Leftarrow &    & \Leftarrow &    & \Leftarrow & \\
 \end{array}
 \]
@@ -470,6 +470,8 @@ We don't do this all at once: it takes several steps to make all of these defini
 
 \begin{enumerate}
 \item Show that $[[CON]]$ implies $[[CTX]]$ by showing that it is an adequate and compatible preorder.
+\item Show that $[[CTX]]$ implies $[[CON]]$, by using the adequacy of any
+  relation in $[[CTX]]$, the fact that contexts preserve compatible relations.
 \item Show that $[[log]]$ implies $[[CIU]]$, by showing that the logical relation is 
 reflexive.
 \item Show that $[[CIU]]$ implies $[[log]]$. This also follows from the reflexivity of the logical relation, and the fact that it is closed under CIU-equivalence.
@@ -477,11 +479,7 @@ reflexive.
   showing that it is adequate and transitive (easy). To show that it is compatible, we use the fact that it is equivalent to a compatible relation ($[[log]]$).
 \item Show that $[[CTX]]$ implies $[[CIU]]$. This happens in two steps, first for closed terms, by induction over the arbitrary stack. Then, we extend the proof to open terms 
 by showing that contextual equivalence is closed under substitution.
-\item Show that $[[CTX]]$ implies $[[CON]]$, by using the adequacy of $[[CTX]]$, the fact that 
-  contexts preserve compatible relations, and the compatibility of $[[CTX]]$.
 \end{enumerate}
-
-
 
 
 \subsection{$[[CON]]$ implies $[[CTX]]$}
@@ -516,6 +514,31 @@ with the context $[[v2 # o C]]$ to conclude that $[[  C{| v2 v1' |} <= C{| v2 v2
 Then, we instantiate the second assumption with $[[ # v1 o C]]$ to conclude that 
 $[[ C{| v1 v1' |} <= C {| v2 v1' |} ]]$. Chaining these approximations together 
 transitively gives us the desired result.
+\end{proof}
+
+\subsection{Show that $[[CTX]]$ implies $[[CON]]$}.
+
+Next, note that if $[[X |- e1 CTX e2]]$, then we have $[[X |- e1 RE e2]]$ for
+some adequate compatible relation $[[RE]]$.
+
+\begin{lemma}[\link{untyped/contextual.v}{CTX_Contextual}{$[[CTX]]$ implies $[[CON]]$} ]
+If $[[ X |- e1 CTX e2 ]]$ then $[[ X |- e1 CON e2 ]]$.
+\end{lemma}
+\begin{proof}
+Let $[[C]]$ be an arbitrary context. We want to show that $[[C{|e1|} <= C{|e2|}]]$.
+By adequacy, it suffices to show that $[[ null |- C{|e1|} RE C{|e2|} ]]$. 
+But this follows by lemma~\ref{lem:Compatible_plug} and the compatibility of $[[CTX]]$.
+\end{proof}
+
+\begin{lemma}[\link{untyped/contextual.v}{Compatible_plug}{Compatible plug}]
+\label{lem:Compatible_plug}
+If $[[RE]]$ and $[[RV]]$ are compatible, then 
+$[[ X |- e1 RE e2 ]]$ implies $[[ X |- C{| e1|} RE C{|e2|} ]]$ and
+$[[ X |- v1 RV v2 ]]$ implies $[[ X |- C{| v1|} RV C{|v2|} ]]$.
+\end{lemma}
+\begin{proof} 
+This result follows by induction on the structure of $[[C]]$, using the 
+compatibility properties of $[[RE]]$ and $[[RV]]$ along with reflexivity.
 \end{proof}
 
 \subsection{$[[log]]$ implies $[[CIU]]$}
@@ -646,30 +669,6 @@ At this point we have shown that the relations $[[CTX]]$, $[[log]]$ and
 $[[CIU]]$ are equivalent. Because of this equivalence, it is now not difficult to 
 show that $[[CTX]]$ is compatible.
 
-\subsection{Show that $[[CTX]]$ implies $[[CON]]$}.
-
-For the final result, we use the adequacy of $[[CTX]]$, the fact that contexts
-preserve compatible relations, and the compatibility of $[[CTX]]$. 
-
-\begin{lemma}[\link{untyped/contextual.v}{Compatible_plug}{Compatible plug}]
-\label{lem:Compatible_plug}
-If $[[RE]]$ and $[[RV]]$ are compatible, then 
-$[[ X |- e1 RE e2 ]]$ implies $[[ X |- C{| e1|} RE C{|e2|} ]]$ and
-$[[ X |- v1 RV v2 ]]$ implies $[[ X |- C{| v1|} RV C{|v2|} ]]$.
-\end{lemma}
-\begin{proof} 
-This result follows by induction on the structure of $[[C]]$, using the 
-compatibility properties of $[[RE]]$ and $[[RV]]$ along with reflexivity.
-\end{proof}
-
-\begin{lemma}[\link{untyped/contextual.v}{CTX_Contextual}{$[[CTX]]$ implies $[[CON]]$} ]
-If $[[ X |- e1 CTX e2 ]]$ then $[[ X |- e1 CON e2 ]]$.
-\end{lemma}
-\begin{proof}
-Let $[[C]]$ be an arbitrary context. We want to show that $[[C{|e1|} <= C{|e2|}]]$.
-By adequacy, it suffices to show that $[[ null |- C{|e1|} CTX C{|e2|} ]]$. 
-But this follows by lemma~\ref{lem:Compatible_plug} and the compatibility of $[[CTX]]$.
-\end{proof}
 
 \section{Further Reading}
 This chapter is inspired by Pitts\cite{pitts:DagSemProc.10351.6}. Similar

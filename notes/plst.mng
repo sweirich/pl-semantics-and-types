@@ -81,6 +81,7 @@
 \input{stack}
 \input{control}
 \input{equiv}
+% \input{typed_equiv}
 
 \backmatter
 

@@ -13,17 +13,14 @@
     C we have: 
             C{|e|} halts implies C{|e'|} halts
 
-    we can use the adequacy of CTX to show this as long as we can show
-    that plugging preserves CTX
+    If e and e' are related by CTX, they are related by some adequate
+    compatible R. Therefore, we can use the adequacy of R to show this 
+    as long as we can show that plugging preserves R
 
-          e <=CTX e' implies  C{|e|} <=CTX C{|e'|}
-
-    For this we use the fact that CTX is compatible and that plugging 
-    preserves compatible relations.
-
+          e <=R e' implies  C{|e|} <=R C{|e'|}
 *)
 
-Require Export untyped.equiv.
+Require Export untyped.ctx.
 
 Import SyntaxNotations.
 Import stack.Notations.
@@ -304,17 +301,16 @@ Proof.
 
 Qed.
 
-(** This needs the adequacy and compatibility of CTX along with the 
-    above relation. *)
+(** This uses the above. *)
 Lemma CTX_Contextual n e1 e2 : 
   CTX n e1 e2 -> Contextual n e1 e2.
 Proof.
   intro h. 
   unfold Contextual.
   intros C.
-  eapply Adequate_CTX.
+  destruct h.
+  eapply H0.
   eapply Compatible_plug; eauto.
-  eapply Compatible_CTX.
 Qed.
 
 

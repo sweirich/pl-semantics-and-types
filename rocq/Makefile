@@ -5,7 +5,18 @@ SYNTAXV = $(SYNTAX:.sig=.v)
 LANGS=stlc rec div modal control untyped
 SOURCEV = $(addsuffix /*.v,$(LANGS))
 
-.PHONY: rocq syntax clean fullclean
+COQDOCJS_DIR ?= coqdocjs
+EXTRA_DIR = $(COQDOCJS_DIR)/extra
+COQDOCFLAGS ?= \
+  --toc --toc-depth 2 --html --interpolate \
+  --index indexpage --no-lib-name --parse-comments \
+  --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
+export COQDOCFLAGS
+COQMAKEFILE_NAME ?= CoqSrc.mk
+COQDOCJS_LN ?= false
+
+
+.PHONY: rocq syntax clean fullclean coqdoc
 
 all: rocq
 
@@ -57,3 +68,13 @@ vos:  CoqSrc.mk
 
 %.vos:  %.v CoqSrc.mk
 	@make -f CoqSrc.mk $*.vos
+
+
+coqdoc: $(COQMAKEFILE_NAME)
+	$(MAKE) -f $^ html
+ifeq ($(COQDOCJS_LN),true)
+	ln -sf ../$(EXTRA_DIR)/resources html
+else
+	cp -R $(EXTRA_DIR)/resources html
+endif
+

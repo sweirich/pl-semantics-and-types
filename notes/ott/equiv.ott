@@ -29,6 +29,8 @@ scope , X :: '' ::=
 R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \mathcal{R}_\mathcal{V} }} :: '' ::= 
   | kleene              ::    :: kleene
   {{ tex \leq_{\textit{K} } }}
+  | ==k              ::    :: kleene_eq
+  {{ tex \equiv_{\textit{K} } }}
   | USE                 ::    :: USE
   {{ tex \leq  }}
   | CON                 ::    :: C
@@ -39,6 +41,14 @@ R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \math
   {{ tex \leq_{\textit{CTX} } }}
   | log                 ::    :: log
   {{ tex \leq_{\textit{log} } }}
+  | =CON                 ::    :: eC
+  {{ tex \equiv_{\textit{C} } }}
+  | =CIU                 ::    :: eCIU
+  {{ tex \equiv_{\textit{CIU} } }}
+  | =CTX                 ::    :: eCTX
+  {{ tex \equiv_{\textit{CTX} } }}
+  | =log                 ::    :: elog
+  {{ tex \equiv_{\textit{log} } }}
 
 C :: 'C_' ::= 
   | #               ::  :: hole
@@ -68,8 +78,6 @@ C :: 'C_' ::=
    {{ tex [[C1]] \circ [[C2]] }}
 
 
-
-
 formula :: 'formula_' ::=
   | e1 == e2            ::    :: closed
   | scope |- e          ::    :: scope_check
@@ -97,9 +105,23 @@ formula :: 'formula_' ::=
   | m < k = m'          ::     :: approx_n
     {{ tex [[m]] \sqsubseteq^{[[k]]} [[m']] }} 
   | X |- sigma1 log sigma2 @ k :: M :: RelSigmak
-   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{Log}^{[[k]]} [[sigma2]]  }}
+   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{log}^{[[k]]} [[sigma2]]  }}
   | X |- sigma1 log sigma2 :: M :: RelSigma
-   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{Log} [[sigma2]]  }}
+   {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{log} [[sigma2]]  }}
+
+  | m ==k m'            ::    :: mach_eq
+    {{ tex [[m]] \equiv_{k} [[m']] }} 
+  | G |- e1 RE e2 : tau ::    :: typed_tm_eq
+  | G |- v1 V2 v2 : tau ::    :: typed_val_eq
+  | V v1 v2 tau         ::    :: logical_val
+  {{ tex \mathcal{V}[\![ [[v1]] \equiv [[v2]] \in [[tau]] ]\!] }}
+  | C e1 e2 tau         ::    :: logical_tm
+  {{ tex \mathcal{C}[\![ [[e1]] \equiv [[e2]] \in [[tau]] ]\!] }}
+  | St s1 s2 tau        ::   :: logical_st
+  {{ tex \mathcal{S}[\![ [[s1]] \equiv [[s2]] \in [[tau]] ]\!] }}
+  | G |- sigma          ::   :: check_sigma
+  | G |- sigma1 R sigma2 ::   :: log_sigma
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
