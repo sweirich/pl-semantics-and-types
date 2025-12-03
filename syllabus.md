@@ -15,9 +15,6 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 
 The course content is summarized in the [Lectures notes](notes/plst.pdf).
 
-> [!WARNING]
-> This schedule is tentative and may be revised.
-
 | Date    | Chapter(s) | Lang | Topic |
 |---------|----------|--------|-----------------------------------------------------------------------------------|
 | W 8/27  |          | | **No Class**: Instructor travel                                                                     |
@@ -50,7 +47,7 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | M 12/1  |          | untyped | Untyped program equivalence examples                                                                |
 | W 12/3  |          | untyped | Untyped program equivalence proofs                        |
 | M 12/8  | Ch. 12   | rec     | **HW #6 due** <br/> Typed program equivalence             |
-| T 12/16 | | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
+| T 12/16 | | | Final exam: **Tuesday, December 16, 2025**: 9:00am to 11:00am in TOWNE 305                        |
 
 ## Grading and Assignments
 
@@ -62,7 +59,7 @@ volunteering your insights and reactions. You can also participate by chatting
 during office hours or submitting pull-requests on the lecture notes. Let me
 know if you are sick or otherwise need to miss class.
 
-* **Homework (40%)**: There will be approximately five homework assignments
+* **Homework (40%)**: There will be six homework assignments
 throughout the semester. These will involve written proofs, with
 opportunities for machine assistance. These assignments are designed to
 solidify your understanding of the core concepts.
