@@ -9,7 +9,7 @@ Submit via [gradescope](https://www.gradescope.com/courses/1126105)
 3. [HW3](homework/hw3.pdf), due Monday, October 20th at midnight
 4. [HW4](homework/hw4.pdf), due Monday, November 10th at midnight   
 5. [HW5](homework/hw5.pdf), due Monday, November 24th at midnight   
-6. [HW6](homework/hw6.pdf), due Monday, December 18th at midnight
+6. [HW6](homework/hw6.pdf), due Monday, December 8th at midnight
 
 ## Schedule
 
