@@ -45,11 +45,11 @@ The course content is summarized in the [Lectures notes](notes/plst.pdf).
 | W 11/12 |          | control | Semantics of effect handlers                                                                |
 | M 11/17 | Ch. 10.2 | control | CPS conversion                                                                              |
 | W 11/19 | PFPL Ch. 13 |      | Classical Logic                                                                             |
-| M 11/24 | Ch. 11   | untyped | **HW #5 due** <br/> Untyped program equivalence                                             |
+| M 11/24 | Ch. 11   | untyped | **HW #5 due** <br/> Untyped program equivalence definitions                                 |
 | W 11/26 | | | **No Class**: Friday schedule for Thanksgiving                                                     |
-| M 12/1  |          | untyped | Untyped program equivalence                                                                 |
-| W 12/3  | | |                                                                                                   |
-| M 12/8  | | | **HW #6 due**                                                                                          |
+| M 12/1  |          | untyped | Untyped program equivalence examples                                                                |
+| W 12/3  |          | untyped | Untyped program equivalence proofs                        |
+| M 12/8  | Ch. 12   | rec     | **HW #6 due** <br/> Typed program equivalence             |
 | T 12/16 | | | Final exam: Tuesday, December 16, 2025: 9:00am to 11:00am in TOWN 305                              |
 
 ## Grading and Assignments
