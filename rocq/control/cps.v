@@ -217,17 +217,17 @@ Qed.
 (* ----------------------------------------------------------- *)
 (** * The translation preserves types *)
 
-Fixpoint typing_transTm {n} (Γ : Ctx n) (e : Tm n) τ : 
-  Γ |-e e ∈ τ -> forall {m} (Δ : Ctx m) ξ w, 
+Fixpoint typing_transTm {n} (Γ : Ctx n) (e : Tm n) τ (h: Γ |-e e ∈ τ) {struct h}
+  : forall {m} (Δ : Ctx m) ξ w, 
       transCtx Γ Δ ξ ->
       Δ |-v w ∈ C{ τ } ->
       Δ |-e E{ e }ξ w ∈ Void
-with typing_transVal {n} (Γ : Ctx n) (v : Val n) τ : 
-  Γ |-v v ∈ τ -> forall {m} (Δ : Ctx m) ξ, 
+with typing_transVal {n} (Γ : Ctx n) (v : Val n) τ (h:Γ |-v v ∈ τ) {struct h} : 
+   forall {m} (Δ : Ctx m) ξ, 
   transCtx Γ Δ ξ ->
   Δ |-v V{v}ξ ∈ T{τ}
-with typing_transStack {n} (Γ : Ctx n) (s : Stack n) τ : 
-  Γ |-s s ∈ τ -> forall {m} (Δ : Ctx m) ξ, 
+with typing_transStack {n} (Γ : Ctx n) (s : Stack n) τ (h : Γ |-s s ∈ τ) {struct h} : 
+  forall {m} (Δ : Ctx m) ξ, 
   transCtx Γ Δ ξ ->
   Δ |-v S{s}ξ ∈ C{τ}.
 Proof. (* FILL IN HERE *) Admitted.
