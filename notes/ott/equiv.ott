@@ -18,7 +18,9 @@ phi {{ tex \phi }} :: 'iProp_' ::=
   | m1 <=. m2        :: M :: Approx
    {{ tex [[m1]] \sqsubseteq^\cdot [[m2]] }}
 
-
+t :: '' ::= 
+  | e ::  :: Term
+  | v ::  :: Value
 
 scope , X :: '' ::= 
   | null                ::    :: empty
@@ -27,10 +29,8 @@ scope , X :: '' ::=
   | scope1 , scope2     ::    :: cons
 
 R {{ tex \mathcal{R} }} , RE {{ tex \mathcal{R}_\mathcal{E} }} , RV {{ tex \mathcal{R}_\mathcal{V} }} :: '' ::= 
-  | kleene              ::    :: kleene
-  {{ tex \leq_{\textit{K} } }}
-  | ==k              ::    :: kleene_eq
-  {{ tex \equiv_{\textit{K} } }}
+  | ==N              ::    :: nat_eq
+  {{ tex \equiv_{\mathbb{N} } }}
   | USE                 ::    :: USE
   {{ tex \leq  }}
   | CON                 ::    :: C
@@ -109,8 +109,8 @@ formula :: 'formula_' ::=
   | X |- sigma1 log sigma2 :: M :: RelSigma
    {{ tex [[X]] \vdash [[sigma1]] \leq_\textit{log} [[sigma2]]  }}
 
-  | m ==k m'            ::    :: mach_eq
-    {{ tex [[m]] \equiv_{k} [[m']] }} 
+  | m ==N m'            ::    :: mach_eq
+    {{ tex [[m]] \equiv_{\mathbb{N} } [[m']] }} 
   | G |- e1 RE e2 : tau ::    :: typed_tm_eq
   | G |- v1 V2 v2 : tau ::    :: typed_val_eq
   | V v1 v2 tau         ::    :: logical_val
@@ -121,6 +121,10 @@ formula :: 'formula_' ::=
   {{ tex \mathcal{S}[\![ [[s1]] \equiv [[s2]] \in [[tau]] ]\!] }}
   | G |- sigma          ::   :: check_sigma
   | G |- sigma1 R sigma2 ::   :: log_sigma
+
+  | G |- t R t' : tau    ::   :: arb_rel
+  | G |- t : tau         ::   :: arb_ty
+    {{ tex [[G]] \vdash [[t]] \in [[tau]] }}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  

@@ -30,6 +30,8 @@ Inductive typing {n} (Γ : Ctx n) : Tm n -> Ty -> Prop :=
 
   | t_lit k : 
     typing Γ (lit k) Nat
+  | t_unit : 
+    typing Γ unit Unit
 .
 
 Module TypingNotations.

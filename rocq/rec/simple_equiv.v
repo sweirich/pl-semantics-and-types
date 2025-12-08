@@ -1,10 +1,12 @@
-(** Binary type-indexed logical relation for stack-based, fine-grained, STLC *)
-
-(** Start with stack-based operational semantics *)
+(** Type-indexed equivalence relations for a stack-based, 
+    fine-grained CBV, simply-typed lambda calculus
+ *)
 
 Require Export rec.typesyntax.
 Disable Notation "↑__Ty" (all).
 Disable Notation "'__Ty'" (all).
+
+(** Use stack-based operational semantics *)
 
 Require Export rec.stack.
 From Stdlib Require Import FunctionalExtensionality.
@@ -17,7 +19,7 @@ Import Lists.List.ListNotations.
 Open Scope list_scope.
 Open Scope rec_scope.
 
-(** * Typing rules *)
+(** * STLC typing rules *)
 
 Definition Ctx (n : nat) := fin n -> Ty 0.
 
@@ -53,6 +55,7 @@ with typing {n} (Γ : Ctx n) : Tm n -> Ty 0 -> Prop :=
     typing_val Γ v1 (Arr τ1 τ2) -> 
     typing_val Γ v2 τ1 -> 
     typing Γ (app v1 v2) τ2
+
   | t_ifz v e0 e1 τ :
     typing_val Γ v Nat -> 
     typing Γ e0 τ -> 
@@ -215,37 +218,36 @@ Proof.
 Qed.
 
 
-(** * Kleene equivalence and approximation *)
+(** * Nat-based equivalence and approximation *)
 
 (* Because we are working with a terminating language, we don't need
    to use step counts in our definitions. 
    Furthermore, as we don't need to work with approximations, our 
    base relation can be equivalence.
 
-   Note that this definition does not require the two machines 
+   Note that this definition does *not* require the two machines 
    to terminate.
 *)
 
-Definition kleene_approx : relation machine := 
+Definition nat_approx : relation machine := 
   fun m1 m2 => 
   forall v, is_nat v = true -> 
        m1 ↦* (nil,ret v) -> m2 ↦* (nil, ret v).
 
-Definition kleene_equiv : relation machine := 
-  fun m1 m2 => kleene_approx m1 m2 /\ kleene_approx m2 m1.
+Definition nat_equiv : relation machine := 
+  fun m1 m2 => nat_approx m1 m2 /\ nat_approx m2 m1.
 
+Infix "⊑ℕ" := nat_approx (at level 70).
+Infix "≡ℕ" := nat_equiv  (at level 70).
 
-Infix "⊑k" := kleene_approx (at level 70).
-Infix "≡k" := kleene_equiv  (at level 70).
+(* Nat approximation is a preorder *)
 
-(* Kleene approximation is a preorder *)
+Instance nat_approx_reflexive : Reflexive nat_approx.
+Proof. intros m. unfold nat_approx. intros v h. tauto. Qed.
 
-Instance kleene_approx_reflexive : Reflexive kleene_approx.
-Proof. intros m. unfold kleene_approx. intros v h. tauto. Qed.
-
-Instance kleene_approx_transitive : Transitive kleene_approx. 
+Instance nat_approx_transitive : Transitive nat_approx. 
 Proof. intros m n p.
-       unfold kleene_approx. 
+       unfold nat_approx. 
        intros h1 h2 v hV.
        specialize(h1 v hV).
        specialize(h2 v hV).
@@ -254,18 +256,18 @@ Proof. intros m n p.
        eapply ms_refl.
 Qed.
 
-(* Kleene equivalence is an equivalence relation *)
+(* Nat equivalence is an equivalence relation *)
 
-Instance kleene_equiv_reflexive : Reflexive kleene_equiv.
+Instance nat_equiv_reflexive : Reflexive nat_equiv.
 intros m. split; reflexivity. Qed.
-Instance kleene_equiv_transitive : Transitive kleene_equiv.
-intros m n p [h1 h1'] [h2 h2']. split; eauto using kleene_approx_transitive. Qed.
-Instance kleene_equiv_symmetric : Symmetric kleene_equiv.
+Instance nat_equiv_transitive : Transitive nat_equiv.
+intros m n p [h1 h1'] [h2 h2']. split; eauto using nat_approx_transitive. Qed.
+Instance nat_equiv_symmetric : Symmetric nat_equiv.
 intros m n [h h']. split; eauto. Qed.
 
-(* Kleene equivalence includes the step relation *)
+(* Nat equivalence includes the step relation *)
 
-Lemma kleene_step m1 m2: m1 ↦ m2 -> m1 ≡k m2.
+Lemma nat_step m1 m2: m1 ↦ m2 -> m1 ≡ℕ m2.
 Proof. 
   intro h. split.
   - intros v IsNat EV1.
@@ -276,11 +278,11 @@ Proof.
     eapply ms_trans; eauto.
 Qed.
 
-Lemma kleene_multi m1 m2: m1 ↦* m2 -> m1 ≡k m2.
+Lemma nat_multi m1 m2: m1 ↦* m2 -> m1 ≡ℕ m2.
 Proof. 
   intros h. induction h.
   reflexivity.
-  transitivity e2; eauto using kleene_step.
+  transitivity e2; eauto using nat_step.
 Qed.
 
 (** * Typed relations on open terms *)
@@ -315,7 +317,7 @@ forall n Γ (t1 t2 t3 : T n) τ,
 Existing Class TypedTransitive.
 
 Definition Adequate (RE : typed_relation Tm) := 
-  forall e e', RE _ null e e' Nat -> kleene_equiv (nil, e) (nil, e').
+  forall e e', RE _ null e e' Nat -> nat_equiv (nil, e) (nil, e').
 Existing Class Adequate.
 
 Class Compatible (RE : typed_relation Tm)
@@ -405,7 +407,7 @@ Qed.
 
 (* ------------------------------------------------------------------ *)
 
-(** Transtivity of CTX is more difficult to show *)
+(** Transtivity of CTX *)
 
 Inductive OR_star {T : nat -> Type} 
   (RE1 RE2: typed_relation T) n (Γ : Ctx n) (t1 t2 : T n) τ : Prop := 
@@ -534,7 +536,7 @@ Definition CIU : typed_relation Tm :=
          Γ |-e e' ∈ τ /\
     forall σ, typing_subst null σ Γ -> 
     forall s, typing_stack s τ Nat -> 
-         kleene_equiv (s, e[σ]) (s, e'[σ]).
+         nat_equiv (s, e[σ]) (s, e'[σ]).
 
 Instance TypedRelation_CIU : TypedRelation Tm (@typing) CIU.
 split; intros; inversion H; inversion H1; eauto.
@@ -614,11 +616,11 @@ Fixpoint V (τ : Ty 0) {struct τ} : Val 0 -> Val 0 -> Prop :=
   let St (τ : Ty 0) (s s' : stack) := 
   typing_stack s τ Nat /\
   typing_stack s' τ Nat /\ 
-  (forall v v', V τ v v' -> (s, ret v) ≡k (s', ret v')) in
+  (forall v v', V τ v v' -> (s, ret v) ≡ℕ (s', ret v')) in
   let C (τ : Ty 0) (e e' : Tm 0) := 
   typing null e τ /\
   typing null e' τ /\ 
-  forall s s', St τ s s' -> (s,e) ≡k (s',e') in
+  forall s s', St τ s s' -> (s,e) ≡ℕ (s',e') in
   match τ with
   | Nat => eqnat
   | Unit => fun v1 v2 => null |-v v1 ∈ Unit /\ null |-v v2 ∈ Unit
@@ -637,12 +639,12 @@ Fixpoint V (τ : Ty 0) {struct τ} : Val 0 -> Val 0 -> Prop :=
 Definition St (τ : Ty 0) (s s' : stack) := 
     typing_stack s τ Nat  /\
     typing_stack s' τ Nat /\ 
-    forall v v', V τ v v' -> (s, ret v) ≡k (s', ret v').
+    forall v v', V τ v v' -> (s, ret v) ≡ℕ (s', ret v').
 
 Definition C (τ : Ty 0) (e e' : Tm 0) := 
   typing null e τ /\
   typing null e' τ /\ 
-  forall s s', St τ s s' -> (s,e) ≡k (s',e').
+  forall s s', St τ s s' -> (s,e) ≡ℕ (s',e').
 
 
 Lemma V_typed1 {τ v1 v2} : V τ v1 v2 -> null |-v v1 ∈ τ.
@@ -673,14 +675,14 @@ Qed.
 
 
 Lemma St_def τ s s' : 
-  St τ s s' -> forall v v', V τ v v' -> (s, ret v) ≡k (s', ret v').
+  St τ s s' -> forall v v', V τ v v' -> (s, ret v) ≡ℕ (s', ret v').
 Proof.
 intros. destruct H as [T1 [T2 H]].  eauto.
 Qed.
 
 Lemma C_def (τ : Ty 0) (e e' : Tm 0) : 
   C τ e e' ->
-  forall s s', St τ s s' -> (s,e) ≡k (s',e').
+  forall s s', St τ s s' -> (s,e) ≡ℕ (s',e').
 Proof.
   intros [_ [_ h]]. done. 
 Qed. 
@@ -742,7 +744,7 @@ Proof.
   specialize (h _ _ Sts).
   transitivity (s', e2'); eauto.
   symmetry.
-  eapply kleene_step. 
+  eapply nat_step. 
   eapply StackSmall.s_prim; eauto. 
 Qed.
 
@@ -756,7 +758,7 @@ Proof.
   intros s s' Sts.
   specialize (h _ _ Sts).
   transitivity (s, e1'); eauto.
-  eapply kleene_step.
+  eapply nat_step.
   eapply StackSmall.s_prim; eauto. 
 Qed.
 
@@ -882,18 +884,18 @@ Proof.
   split; eauto with rec.
   intros s s' [Ts [Ts' Sts]].
   transitivity (f_let e2[⇑σ] :: s, e1[σ]).
-  { eapply kleene_step. eapply StackSmall.s_push. } 
+  { eapply nat_step. eapply StackSmall.s_push. } 
   transitivity (f_let e2'[⇑σ'] :: s', e1'[σ']).
-  2: { symmetry. eapply kleene_step. eapply StackSmall.s_push. }
+  2: { symmetry. eapply nat_step. eapply StackSmall.s_push. }
   eapply h1.
   split; eauto with rec.
   split; eauto with rec.
   intros v v' Vv.
   transitivity (s, e2[v .: σ]).
-  { eapply kleene_multi. eapply ms_trans. eapply StackSmall.s_pop. 
+  { eapply nat_multi. eapply ms_trans. eapply StackSmall.s_pop. 
     asimpl. eapply ms_refl. } 
   transitivity (s', e2'[v' .: σ']).
-  2: { symmetry. eapply kleene_multi. eapply ms_trans. eapply StackSmall.s_pop. 
+  2: { symmetry. eapply nat_multi. eapply ms_trans. eapply StackSmall.s_pop. 
     asimpl. eapply ms_refl. } 
   eapply h2; eauto.
   unfold log_sig; auto_case.
@@ -1001,12 +1003,12 @@ Proof.
   move: (refl_tm H) => [_ [_ h1]].
   intros v1 v1' VV.
   transitivity (s1, e1[v1 ..]).
-  { eapply kleene_step. eapply StackSmall.s_pop. } 
+  { eapply nat_step. eapply StackSmall.s_pop. } 
   transitivity (s2, e1[v1' ..]).
   { eapply h1. unfold log_sig. auto_case. destruct f. 
     split; eauto. } 
   symmetry.
-  { eapply kleene_step. eapply StackSmall.s_pop. } 
+  { eapply nat_step. eapply StackSmall.s_pop. } 
 Qed.
 
 
@@ -1022,6 +1024,22 @@ Qed.
 
 
 (* --------------------------------------------- *)
+(*** log <-> CIU *)
+
+Lemma log_tm_CIU n (Γ : Ctx n) e e' τ : 
+  log_tm n Γ e e' τ -> CIU n Γ e e' τ.
+Proof.
+  intros [T1 [T2 h]].
+  split; auto.
+  split; auto.
+  intros s Ts E TE. 
+  have ES: log_sig n Γ s s. eapply refl_sig; eauto. 
+  specialize (h _ _ ES).
+  have EE: St τ E E. eapply refl_St; eauto. 
+  move: h => [T1' [T2' h]].
+  eapply h; eauto.
+Qed.
+
 
 (* Logical equivalence is closed under CIU *)
 Lemma log_tm_closed_CIU n (Γ : Ctx n) e e' e'' τ :
@@ -1045,20 +1063,6 @@ Proof.
   done.
 Qed.
 
-Lemma log_tm_CIU n (Γ : Ctx n) e e' τ : 
-  log_tm n Γ e e' τ -> CIU n Γ e e' τ.
-Proof.
-  intros [T1 [T2 h]].
-  split; auto.
-  split; auto.
-  intros s Ts E TE. 
-  have ES: log_sig n Γ s s. eapply refl_sig; eauto. 
-  specialize (h _ _ ES).
-  have EE: St τ E E. eapply refl_St; eauto. 
-  move: h => [T1' [T2' h]].
-  eapply h; eauto.
-Qed.
-
 Lemma CIU_log_tm {n Γ e e' τ} : 
   CIU n Γ e e' τ -> log_tm n Γ e e' τ.
 Proof.
@@ -1067,6 +1071,10 @@ Proof.
   eapply log_tm_closed_CIU; eauto.
   split; eauto.
 Qed.
+
+(* --------------------------------------------- *)
+(*** CIU -> CTX *)
+
 
 Instance Compatible_CIU : Compatible CIU log_val.
 constructor.
@@ -1105,6 +1113,8 @@ Proof.
 Qed.
 
 (* -------------------------------------------- *)
+(*** CTX -> CIU *)
+
 
 Lemma substitutivity { n Γ e e' v τ1 τ2} : 
   CTX (S n) (τ1 .: Γ) e e' τ2 ->
@@ -1131,7 +1141,7 @@ Proof.
     intros σ Tσ s Ts.
     asimpl.
     symmetry.
-    eapply kleene_multi.
+    eapply nat_multi.
     eapply ms_trans.
     eapply StackSmall.s_push.
     eapply ms_trans.
@@ -1146,7 +1156,7 @@ Proof.
     split; eauto with rec.
     intros σ Tσ s Ts.
     asimpl.
-    eapply kleene_multi.
+    eapply nat_multi.
     eapply ms_trans.
     eapply StackSmall.s_push.
     eapply ms_trans.
@@ -1158,7 +1168,7 @@ Proof.
   eapply Transitive_CTX; eauto.
 Qed.
 
-Lemma CTX_CIU {e e' τ} :
+Lemma CTX_CIU_closed {e e' τ} :
   CTX 0 null e e' τ -> CIU 0 null e e' τ.
 Proof. 
   intros h.
@@ -1175,18 +1185,163 @@ Proof.
     done.
   - destruct a.
     transitivity (s, let_ e t).
-    { symmetry. eapply kleene_step. eapply StackSmall.s_push. } 
+    { symmetry. eapply nat_step. eapply StackSmall.s_push. } 
     transitivity (s, let_ e' t).
-    2:{ eapply kleene_step. eapply StackSmall.s_push. }
+    2:{ eapply nat_step. eapply StackSmall.s_push. }
     repeat invert_typing.
     eapply IHs; eauto.
     eapply comp_let; eauto.
     eapply Compatible_refl_RE; eauto.
 Qed.
 
+Lemma split_sigma (n : nat) (e : Tm (S n)) (σ : fin (S n) -> Val 0) :
+  e[(σ var_zero)⟨null⟩..][↑ >> σ] = e[σ].
+Proof. 
+  asimpl.
+  rewrite idSubst_Val. auto_case.
+  asimpl.
+  auto.
+Qed.
+
+
+Lemma value_substitutivity n Γ e e' τ : 
+  CTX n Γ e e' τ -> 
+  forall σ, typing_subst null σ Γ -> CTX 0 null e[σ] e'[σ] τ.
+Proof.
+  move: Γ e e' τ.
+  induction n.
+  all: intros Γ e e' τ h σ σT.
+  - auto_unfold. 
+    have EQ: (Γ = null).
+    { eapply functional_extensionality. auto_case.   } 
+    rewrite EQ in h.
+    repeat rewrite idSubst_Tm; try auto_case. auto.
+  - remember ((σ var_zero)⟨null⟩ : Val n) as v.
+    have EQΓ: Γ = (Γ var_zero .: ↑ >> Γ ).
+    { eapply functional_extensionality. auto_case. }
+    rewrite EQΓ in h, σT.
+    have EQσ: σ = (σ var_zero .: ↑ >> σ ).
+    { eapply functional_extensionality. auto_case. }
+    rewrite EQσ in σT.
+    unfold typing_subst in σT.
+    specialize (IHn (↑ >> Γ) e[v..] e'[v..] τ).
+    have h1:  CTX n (↑ >> Γ) e[v..] e'[v..] τ.
+    { eapply substitutivity; eauto. 
+      specialize (σT var_zero). cbn in σT.
+      rewrite Heqv.
+      eapply renaming_val; eauto.
+      unfold typing_renaming. auto_case.
+    }
+    specialize (IHn h1 (↑ >> σ)).
+    rewrite Heqv in IHn.
+    repeat rewrite split_sigma in IHn.
+    eapply IHn.
+    unfold typing_subst. intro x.
+    specialize (σT (Some x)). cbn in σT.
+    done.
+Qed.
+
+
+Lemma CTX_CIU n Γ e e' τ :
+  CTX n Γ e e' τ -> CIU n Γ e e' τ.
+Proof. 
+  intros h.
+  unfold CIU.
+  destruct (TypedRelation_CTX) as [typed1 typed2].
+  split. eapply typed1; eauto.
+  split. eapply typed2; eauto.
+  intros σ Tσ s Ts.
+  eapply value_substitutivity with (σ := σ) in h. 2: eassumption.
+  move: (CTX_CIU_closed h) => [_ [_ h1]].
+  have Tnull: typing_subst null null null. eapply typing_subst_null.
+  specialize (h1 null Tnull s Ts).
+  auto_unfold in *. rewrite idSubst_Tm in h1. auto_case. rewrite idSubst_Tm in h1. auto_case.
+  auto.
+Qed.
+
 
 (* -------------------------------------------- *)
 
+
+(*** Examples: Beta-equiv *)
+
+Lemma s_prim' : 
+  forall s e e1 e2, e ~>> e1 -> e1 = e2 -> (s, e) ↦ (s, e2). 
+Proof.
+  intros. eapply StackSmall.s_prim. subst. auto.
+Qed.
+
+Lemma fun_beta :
+  forall n Γ e v τ , 
+    Γ |-e (app (abs e) v) ∈ τ -> 
+       CIU n Γ (app (abs e) v) e[v..] τ.
+Proof.
+  intros.
+  unfold CIU. 
+  split. auto.
+  split. inversion H; subst. inversion H2; subst. eapply substitution_tm; eauto using typing_subst_cons, typing_subst_id.
+  intros σ Tσ s Ts.
+  cbn. 
+  eapply nat_step.
+  eapply s_prim'.
+  eapply s_beta.
+  asimpl.
+  done.
+Qed.
+
+Lemma let_beta n Γ e v τ : 
+    Γ |-e let_ (ret v) e ∈ τ -> 
+       CIU n Γ (let_ (ret v) e) e[v..] τ.
+Proof.
+  intro h.
+  inversion h; subst. inversion H1; subst.
+  unfold CIU.
+  split; auto.
+  split. eapply substitution_tm; eauto using typing_subst_cons, typing_subst_id.
+  intros σ Tσ s Ts.
+  cbn. asimpl.
+  eapply nat_multi.
+  eapply ms_trans.
+  eapply StackSmall.s_push.
+  eapply ms_trans.
+  eapply StackSmall.s_pop.
+  asimpl.
+  eapply ms_refl.
+Qed.
+
+Lemma ifz_zero_beta n Γ e0 e1  τ : 
+    Γ |-e ifz zero e0 e1 ∈ τ -> 
+       CIU n Γ (ifz zero e0 e1) e0 τ.
+Proof.
+  intro h.
+  inversion h; subst. 
+  unfold CIU.
+  split; auto.
+  split; auto. 
+  intros σ Tσ s Ts.
+  cbn. asimpl.
+  eapply nat_step.
+  eapply StackSmall.s_prim.
+  eapply s_ifz_zero.
+Qed.
+
+Lemma ifz_succ_beta n Γ v e0 e1 τ : 
+    Γ |-e ifz (succ v) e0 e1 ∈ τ -> 
+       CIU n Γ (ifz (succ v) e0 e1) e1[v..] τ.
+Proof.
+  intro h.
+  inversion h; subst. inversion H2; subst. 
+  unfold CIU.
+  split; auto.
+  split. eapply substitution_tm; eauto using typing_subst_cons, typing_subst_id.
+  intros σ Tσ s Ts.
+  cbn. 
+  eapply nat_step.
+  eapply s_prim'.
+  eapply s_ifz_succ.
+  asimpl.
+  done.
+Qed.
 
 (*** Examples: Full Eta-equiv *)
 
@@ -1241,6 +1396,6 @@ Proof.
   asimpl. 
   rewrite EQ. 
   transitivity (s', app (abs t0) w2); eauto.
-  eapply kleene_step. eapply StackSmall.s_prim. eapply s_beta.
+  eapply nat_step. eapply StackSmall.s_prim. eapply s_beta.
 Qed.
-  
+

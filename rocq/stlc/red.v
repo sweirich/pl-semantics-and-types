@@ -12,9 +12,9 @@ Import ScopedNotations.
 
 Definition is_value {n} (e : Tm n) : bool := 
   match e with 
-  | var _ => true  (* is this ok? why or why not? *)
   | abs _ => true
   | lit k => true
+  | unit  => true
   | _ => false
   end.
 
@@ -37,6 +37,35 @@ Inductive step : Tm 0 -> Tm 0 -> Prop :=
     step e2 e2' ->
     step (app v e2) (app v e2')
 .
+
+(*
+Lemma is_value_nostep : 
+  forall v, is_value v = true -> forall e, not (step v e).
+Proof.
+  intro v. dependent induction v.
+  all: cbn; intro h; try done.
+  all: intros e h1.
+  all: try inversion h1.
+Qed.
+
+Lemma deterministic : 
+  forall e1 e2 e2', step e1 e2  -> step e1 e2' -> e2 = e2'.
+Proof.
+  intros e1 e2 e2' h.
+  move: e2'.
+  induction h.
+  all: intros e2'' h2; inversion h2; subst.
+  all: eauto.
+  all: try solve [inversion H3].
+  all: try solve [  erewrite IHh; eauto ].
+  all: try solve [  eapply is_value_nostep in h; done ].
+  all: try solve [match goal with 
+    [ H: is_value ?v = true, H1 : step ?v ?e |- _ ] => 
+      eapply is_value_nostep in H1; done
+  end].
+  eapply is_value_nostep in H0; done.
+Qed.
+*)
 
 End Small.
 

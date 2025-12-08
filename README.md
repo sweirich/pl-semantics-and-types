@@ -2,9 +2,6 @@
 # Programming Languages: Semantics and Types
 CIS 7000-01 Fall 2025
 
-> [!IMPORTANT]
-> The first class will be Wednesday, September 3rd. There is no class on 8/27.
-
 ## Course Description
 
 What makes a programming language useful, expressive, safe, or even elegant?
@@ -35,7 +32,7 @@ view of computation.
   inductive/algebraic datatypes. CIS 5000 is recommended, especially
   familiarity with the basics of the untyped and simply-typed lambda calculus.
   
-* [*Syllabus*](syllabus.md): *Under construction*
+* [*Syllabus*](syllabus.md)
 
 * [*Website*](https://sweirich.github.io/pl-semantics-and-types/)
 
@@ -45,10 +42,9 @@ view of computation.
 ##  Topics
 
 * Operational semantics. How do we model a program using an abstract machine?
-* Denotational semantics. How do we model a program as a mathematical object?
 * Relational semantics. How do we model a program as a logical formula?
 * Contextual equivalence. How do we know when two programs are equal?
-* Type abstraction and parametricity. How do types interact with semantics?
+* How do types interact with semantics? What is semantic soundness?
 * Computations are not values. How does evaluation order interact with our models? Where do monads come from?
 * Continuations. What is the relationship between type systems and control effects?
 

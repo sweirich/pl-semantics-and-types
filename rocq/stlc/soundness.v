@@ -33,6 +33,7 @@ Abort.
  *)
 Fixpoint V (τ : Ty) : Tm 0 -> Prop := 
   match τ with 
+  | Unit => fun v => is_value v = true
   | Nat => 
       (* all terms v that are equal to some literal *)
       fun v =>
@@ -81,6 +82,10 @@ Proof.
     cbn.
     intros [e' [-> h]].
     cbn. done.
+  - (* unit type *)
+    intro h.
+    cbn in h.
+    done.
 Qed.
 
 Lemma semantic_subst_cons {τ v} {n} {Γ : Ctx n} {ρ} : 
@@ -156,6 +161,16 @@ Proof.
   eapply s_val; eauto.
 Qed.
 
+
+Lemma semantic_unit {n} {Γ : Ctx n} : 
+  Γ ⊨ unit ∈ Unit.
+Proof.
+  intros ρ ρH.
+  cbn.
+  unfold C.
+  exists unit. split; auto. eapply s_val. auto.
+  simpl. auto.
+Qed.
 
 Lemma soundness n (Γ : Ctx n) e τ : 
   Γ |- e ∈ τ -> Γ ⊨ e ∈ τ.

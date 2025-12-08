@@ -2,6 +2,7 @@
 Require Export stlc.syntax.
 Require Export stlc.typing.
 Require Export stlc.red.
+Require Export stlc.small_step.
 
 Import TypingNotations.
 Import RedNotations.
@@ -58,6 +59,7 @@ Proof.
     eapply typing_renaming_lift; auto.
   - eapply t_app; eauto.
   - eapply t_lit; eauto.
+  - eapply t_unit; eauto.
 Qed.
 
 (* Here's a more automated proof of the renaming lemma. *)
@@ -214,6 +216,7 @@ Proof.
   dependent induction hT.
   all: cbn.
   all: try solve [left; reflexivity].
+  + destruct x.
   + destruct (IHhT1 e1); auto.
     ++ right. destruct (IHhT2 e2); auto.
        eapply canonical_forms_Arr in H; eauto.

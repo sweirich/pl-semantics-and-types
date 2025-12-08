@@ -8,6 +8,7 @@ nat : Type
 Ty  : Type
 Nat : Ty
 Arr : Ty -> Ty -> Ty
+Unit : Ty 
 
 -- declare name of var constructor
 Tm(var) : Type 
@@ -15,6 +16,8 @@ Tm(var) : Type
 abs     : (bind Tm in Tm) -> Tm
 -- application
 app     : Tm -> Tm -> Tm
+-- unit 
+unit    : Tm
 -- literal numbers
 lit     : nat -> Tm   
 -- successor operation

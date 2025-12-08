@@ -1,6 +1,6 @@
-(** This file is Pitt's definition of Contextual Approximation
+(** This file defines Pitt's definition of Contextual Approximation
     as the largest compatible, adequate, preorder 
-    for scoped relations.
+    for scoped relations.  
 *)
 
 Require Export untyped.stack.

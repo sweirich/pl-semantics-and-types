@@ -2,7 +2,7 @@
     contexts (i.e. terms/values with a hole that can be filled in by open 
     terms. 
 
-    It also shows that this relation is the same as CTX. i.e. 
+    It also shows that this relation is the same as CTX (defined in ctx.v). i.e. 
 
             Contextual e e' <-> CTX e e'
     
@@ -149,6 +149,7 @@ Proof.
   done.
 Qed.
 
+(** * "Contextual Equivalence" *)
 Definition Contextual (n : nat) (e1 : Tm n) (e2 : Tm n) :=
   forall (C :Context n 0 TmCtx TmCtx), Small.halts (nil, C {|e1|}) -> Small.halts (nil, C{|e2|}).
 Definition ContextualVal (n : nat) (v1 : Val n) (v2 : Val n) := 
@@ -233,6 +234,7 @@ all: repeat unfold Contextual, ContextualVal.
 
 Qed.
 
+(** * Contextual equivalence implies CTX *)
 Lemma Contextual_CTX n e1 e2 : Contextual n e1 e2 -> CTX n e1 e2.
 Proof.
   intro h. 
@@ -245,7 +247,8 @@ Qed.
 
 (* ---------------------------------------------------- *)
 
-(** * *)
+(** * If RE is a compatible relation and relates two terms, then it 
+      also related the terms in an arbitrary context *)
 Fixpoint Compatible_plug n (e1 e2 : Tm n) 
   (RE : scoped_relation Tm)
   (RV : scoped_relation Val)
@@ -301,7 +304,7 @@ Proof.
 
 Qed.
 
-(** This uses the above. *)
+(** * CTX implies Contextual *)
 Lemma CTX_Contextual n e1 e2 : 
   CTX n e1 e2 -> Contextual n e1 e2.
 Proof.

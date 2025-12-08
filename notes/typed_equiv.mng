@@ -1,0 +1,258 @@
+\chapter{Typed Program Equivalence}
+
+In the last chapter we developed several definitions of contextual equivalence for an untyped lambda calculus and showed them equivalent. 
+
+Here, we add types. 
+
+Our goal is twofold. 
+
+First, with the addition of a simple type system, all programs in our language
+terminate. That means that we cannot use the approximation relation from the
+last chapter as the basis of our equivalence. Instead, we need to use an
+\emph{observable} base type, such as booleans or natural numbers. The good
+news is that because all well-typed terms produce values, we get to work with
+equality directly. There is no need to bother with approximation; we will work
+with equivalence relations.
+
+Second, the addition of types means that our equivalences will be able to
+relate \emph{more} terms and values. We saw in the last chapter that
+$\eta$-expansion was not valid in the untyped language. Here, because we can
+use types to rule out stuck terms, and control the contexts, substitutions and
+stacks that we use for observations, we will be able to relate more programs.
+
+That said, the general format of this development follows the previous chapter. 
+
+\section{Preliminaries}
+
+The language that we are working with is similar to that from before: a
+fine-grained call-by-value language with a stack based semantics. The
+semantics and type system is similar to that of Chapter~\ref{ch:control}. For
+concreteness, we show the syntax of the language below.
+
+\begin{definition}[\link{rec/syntax.sig}{}{Syntax}]
+\[
+\begin{array}{lrcl}
+\textit{values} & [[v]] & ::= & [[x]]\ |\ [[unit]]\ |\ [[\ x.e]]\ |\ [[0]]\ |\ [[S v]]\ \\ 
+\textit{terms}  & [[e]] & ::= & [[ret v]]\ |\ [[let x = e1 in e2]]\ |\ [[v1 v2]]\ |\ [[case v of { 0 => e0 ; S y => e1 } ]]\\
+\textit{frame} & [[frame]] & ::= & [[ let x = _ in e2]] \\
+\textit{stack} & [[s]]     & ::= & [[nil]]\ |\ [[frame : s]] \\
+\end{array}
+\]
+\end{definition}
+
+\subsection{Nat-equivalence}
+
+Instead of relating terms by their termination behavior, we equate closed
+machines when they return the same natural number.  (Note: types are not yet
+part of this definition. Machines that do not finish with natural numbers or
+that get stuck will all be related to each other.)
+
+
+\begin{definition}[\link{rec/simple_equiv.v}{nat_equiv}{Nat equivalence}]
+We say $[[m ==N m']]$ when $[[ m |->* <nil, ret k> ]]$ iff $[[ m' |->* <nil, ret k>]]$.
+\end{definition}
+
+This is an equivalence relation: it is reflexive, symmetric and
+transitive. Furthermore, it is closed under evaluation. If we have
+$[[m |->* m']]$, then $[[m ==N m']]$.
+
+\subsection{Typed (equivalence) relations}
+
+Next, instead of talking about relations between terms in the same scope, as
+we did in the previous chapter, we will talk about relations between terms
+that have the same \emph{type}. This means that we need to define what it
+means to have a typed relation and define their properties.
+
+\begin{definition}[\link{rec/simple_equiv.v}{TypedRelation}{Typed Term Relation}]
+A typed term relation $[[G |- e RE e' : tau]]$ is a relation between terms
+$[[e]]$ and $[[e']]$, such that $[[ G |- e : tau ]]$ and $[[G |- e' : tau]]$.
+\end{definition}
+
+Similarly, we also have typed \emph{value} relations, written $[[G |- v RV v'
+    : tau]]$, which imply that both values are well-typed. When we want to
+generalize over typed term and typed value relations, we use the notation $[[G
+    |- t : tau]]$ for the typing relation and $[[G |- t R t' : tau]]$ for the
+typed binary relation.
+
+\begin{definition}[\link{rec/simple_equiv.v}{TypedReflexive}{Typed Reflexive}]
+A typed relation is \emph{reflexive} when $[[ G |- t : tau ]]$ implies $[[ G |- t R t : tau ]]$.
+\end{definition}
+\begin{definition}[\link{rec/simple_equiv.v}{TypedTransitive}{Typed Transitive}]
+A typed relation is \emph{transitive} when $[[ G |- t1 R t2 : tau ]]$ and $[[G |- t2 R t3 : tau]]$ implies $[[ G |- t1 R t3 : tau ]]$.
+\end{definition}
+
+We also have typed variants of adequacy (for term relations) and compatibility (for a term and value relation together).
+
+\begin{definition}[\link{rec/simple_equiv.v}{Adequate}{Adequate}]
+A typed relation is \emph{adequate} when $[[ |- e1 RE e2 : Nat ]]$ implies $[[ e1 ==N e2 ]]$.
+\end{definition}
+
+\begin{definition}[\link{rec/simple_equiv.v}{Compatible}{Compatible}]
+A pair of scoped relations $[[RE]]$ and $[[RV]]$ are \emph{compatible} when the following properties hold: 
+\begin{enumerate}
+\item $[[G |- x RV x : G x ]]$
+\item $[[G |- unit RV unit : Unit ]]$
+\item $[[G |- zero RV zero : Nat ]]$
+\item $[[G |- v1 RV v2 : Nat ]]$ implies $[[G |- succ v1 RV succ v2 : Nat ]]$
+\item $[[G , x : tau1 |- e1 RE e2 : tau2 ]]$ implies 
+  $[[ G |- \x.e1 RV \x.e2 : tau1 -> tau2 ]]$
+\item $[[G |- v1 RV v2 : tau ]]$ implies $[[G |- ret v1 RE ret v2 : tau]]$
+\item $[[G |- e1 RE e2 : tau1 ]]$ and $[[G , x : tau1 |- e1' RE e2' : tau2 ]]$
+  implies $[[G |- let x = e1 in e1' RE let x = e2 in e2' : tau2 ]]$
+\item $[[G |- v1 RV v2 : tau1 -> tau2 ]]$ and $[[G |- v1' RV v2' : tau1 ]]$ implies
+  $[[G |- v1 v1' RE v2 v2' : tau2  ]]$.
+\item $[[G |- v1 RV v2 : Nat]]$ and $[[G |- e1 RE e2 : tau ]]$  and $[[ G, x:Nat |- e1' RE e2' : tau ]]$
+  implies $[[G |- case v1 of { 0 => e1 ; S x => e1' }  RE case v1' of { 0 => e1' ; S x => e2' } : tau ]]$
+\end{enumerate}
+\end{definition}
+
+Compatible relations are reflexive on well typed terms and values. 
+\begin{lemma}[\link{rec/simple_equiv.v}{Compatible_refl_RE}{Compatible relations are reflexive}]
+If the typed relations $[[G |- e RE e' : tau]]$ and $[[G |- v RV v' : tau]]$
+are compatible, then 
+\begin{enumerate}
+\item If $[[G |- e : tau]]$ then $[[ G |- e RE e : tau]]$.
+\item If $[[G |- v : tau]]$ then $[[ G |- v Rv v : tau]]$.
+\end{enumerate}
+\end{lemma}
+
+\section{Contextual, CIU, and logical equivalence}
+
+As before, we have several definitions of equivalence. (For simplicity, we drop 
+the traditional notion of contextual equivalence and concentrate on the other 
+three definitions in this chapter.)
+
+\begin{definition}[\link{rec/simple_equiv.v}{CTX}{Pitt's contextual equivalence}]
+Define $[[G |- e =CTX e' : tau]]$ if there is some transitive, adequate typed
+term relation $[[RE]]$, with compatible typed value relation $[[RV]]$, such
+that $[[G |- e RE e' : tau]]$.
+\end{definition}
+
+\begin{definition}[\link{rec/simple_equiv.v}{CIU}{CIU equivalence}]
+Define $[[G |- e =CIU e' : tau]]$ when 
+  $[[ G |- e : tau ]]$, and $[[ G |- e' : tau]]$, and for all 
+$[[ G |- sigma ]]$ and $[[ ||- s : tau ~> Nat ]]$, we have 
+$[[ < s, e[sigma] > ==N < s, e'[sigma] > ]]$.
+\end{definition} 
+
+\begin{definition}[\link{rec/simple_eqiuv.v}{eqtm}{Logical relation}]
+Define the following mutual logical relations by recursion on type
+structure.
+\[ 
+\begin{array}{lclcl} 
+   [[C e1 e2 tau]] 
+      & = & 
+   [[ |- e1 : tau ]] \mbox{ and }
+   [[ |- e2 : tau ]] \mbox{ and }  \\
+   &&\forall [[s1]], [[s2]], 
+           [[St s1 s2 tau]] \mbox{ implies } [[ <s1,e1> ==N <s2,e2> ]] \\
+\\
+   [[St s1 s2 tau]] &=& 
+     [[ ||- s1 : tau ~> Nat ]] \mbox{ and }
+     [[ ||- s2 : tau ~> Nat ]] \mbox{ and }  \\
+     &&\forall [[v1]], [[v2]], 
+       [[V tau v1 v2]] \mbox{ implies } [[<s1,ret v1> ==N <s2,ret v2> ]] \\
+\\
+   [[V v1 v2 tau]]             &=& [[ |- v1 : Unit ]] 
+   \mbox{ and } [[ |- v2 : Unit ]] \\
+   [[V k1 k2 Nat ]]             &=& [[k1]] = [[k2]] \\
+   [[V \x.e1 \x.e2 tau1 -> tau2]]  &=& 
+     [[ x:tau1 |- e1 : tau2 ]] \mbox{ and }
+     [[ x:tau1 |- e2 : tau2 ]] \mbox{ and } \\
+   && \forall [[v]][[v']], 
+   [[V v v' tau1]] \mbox{ implies } 
+   [[C e1[v1/x] e2[v2/x] tau2 ]] \\
+\end{array}
+\]                 
+\end{definition}
+
+We can then extend the logical relation to open terms and values in the usual 
+way.
+\begin{definition}[\link{rec/simple_equiv.v}{log_sig}{Open Logical Relation}]\ \\
+\begin{enumerate}
+\item $[[ G |- sigma1 =log sigma2 ]]$ when $[[ V (sigma1 x) (sigma2 x) (G x) ]]$
+\item $[[ G |- e =log e' : tau]]$ when $[[ C e[sigma] e'[sigma'] tau]]$, for 
+  arbitrary $[[ G |- sigma1 log sigma2 ]]$.
+\item $[[ G |- v =log v' : tau]]$ when $[[ V v[sigma] v'[sigma'] tau]]$, for 
+  arbitrary $[[ G |- sigma1 log sigma2 ]]$.
+\end{enumerate}
+\end{definition}
+
+\section{Examples}
+
+We can prove the same equalities as in the previous chapter. For example, we
+can use this definition to show that inlining or ``beta-reduction'' is a sound
+program transformation. This sort of reasoning is available for any pair of
+terms, where one steps to another.
+
+\begin{lemma}[\link{rec/simple_equiv.v}{fun_beta}{Beta reduction}]
+If $[[ G |- (\x.e) v : tau ]]$ then $[[ G |- (\x.e) v =CIU e [ v/x] : tau ]]$.
+\end{lemma}
+\begin{lemma}[Let reduction]
+If $[[ G |- let x = ret v in e2 : tau]]$ 
+  then $[[ G |- let x = ret v in e2 =CIU e2 [v/x] : tau]]$
+\end{lemma}
+
+However, with the addition of types, we can also show \emph{new properties}
+that only hold for typed relations.
+
+Any value with a function type is equal to an explicit function value.
+\begin{lemma}[\link{rec/simple_equiv.v}{fun_val_eta}{Unit eta equivalence}]\ \\
+If $[[G |- v : tau1 -> tau2]]$ then $[[G |- v =log \x. v x : tau1 -> tau2]]$.
+\end{lemma}
+
+Any value with type $[[unit]]$ is equal to the unit value. (And by transitivity and symmetry, all values with type $[[unit]]$ are equal.)
+\begin{lemma}[\link{rec/simple_equiv.v}{unit_val_eta}{Unit eta equivalence}]\ \\
+If $[[G |- v : Unit]]$ then $[[G |- v =log unit : Unit]]$.
+\end{lemma}
+
+\section{Equivalence between the relations}
+
+We follow the same path as the previous chapter when showing that our
+definitions are the same. We are skipping the first two steps, but we can
+recreate the remaining four steps in order.
+
+\begin{enumerate}
+\item We show that logical equivalence is compatible. This gives us the fact
+  that it is reflexive, which we can use to show that logical equivalence
+  implies CIU equivalence.
+\item Next we show that logical equivalence is closed under CIU equivalence. 
+  This, plus the reflexivity of logical equivalence, gives us that CIU equivalence
+  implies logical equivalence.
+\item Now, because CIU equivalence is the same as logical equivalence, we can
+  show that it is compatible. This, along with easy proofs of adequacy the
+  fact that CIU is an equivalence relation, allows us to show that CIU
+  equivalence implies CTX equivalence.
+\item Finally, we next show that CTX equivalence implies CIU equivalence for closed 
+  terms. After showing that CTX equivalence is closed under substitution, we 
+  can lift the result to open terms terms too.
+\end{enumerate}
+
+\section{What next?} 
+
+Types strengthen our definition of program equivalence. In CIU equivalence, we
+only need to think about arbitrary stacks and substitutions of the correct
+type. That means that we limit in the sorts of observations we need to make to
+argue that terms are equivalent. We don't need to consider the case where we
+put a function on a stack that will immediately test for zero. That gives us
+the important $\eta$-laws about values. Notably, these $\eta$-laws hold even
+if we add nontermination (via recursive definitions or recursive types) to the
+language, because they are properties of values. 
+
+However, our definitions of program equivalence in this chapter is weaker than
+we might expect because it doesn't tell us that programs terminate. We have
+presented it this way for easy comparison to the previous chapter, but this is
+not the only way to set up these definitions. For example, PFPL Chapter
+46~\cite{harper:pfpl} defines (traditional) contextual equivalence such that
+terms are related only when they both terminate with the same natural number,
+after being plugged into any arbitrary, appropriately typed program
+context. (PFPL calls this relation observational equivalence.)  This chapter
+then shows that this definition is equivalent to a logical relation that
+relates terms of type nat that evaluate to the same natural number, and terms
+of function type that take related arguments to related results.  One can use
+this logical relation to show that all programs terminate.
+
+
+
+
+

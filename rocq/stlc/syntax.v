@@ -9,6 +9,7 @@ Inductive Tm (n_Tm : nat) : Type :=
   | var : fin n_Tm -> Tm n_Tm
   | abs : Tm (S n_Tm) -> Tm n_Tm
   | app : Tm n_Tm -> Tm n_Tm -> Tm n_Tm
+  | unit : Tm n_Tm
   | lit : nat -> Tm n_Tm
   | succ : Tm n_Tm -> Tm n_Tm
   | nrec : Tm n_Tm -> Tm n_Tm -> Tm (S n_Tm) -> Tm n_Tm
@@ -26,6 +27,11 @@ Lemma congr_app {m_Tm : nat} {s0 : Tm m_Tm} {s1 : Tm m_Tm} {t0 : Tm m_Tm}
 Proof.
 exact (eq_trans (eq_trans eq_refl (ap (fun x => app m_Tm x s1) H0))
          (ap (fun x => app m_Tm t0 x) H1)).
+Qed.
+
+Lemma congr_unit {m_Tm : nat} : unit m_Tm = unit m_Tm.
+Proof.
+exact (eq_refl).
 Qed.
 
 Lemma congr_lit {m_Tm : nat} {s0 : nat} {t0 : nat} (H0 : s0 = t0) :
@@ -77,6 +83,7 @@ Fixpoint ren_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
   | var _ s0 => var n_Tm (xi_Tm s0)
   | abs _ s0 => abs n_Tm (ren_Tm (upRen_Tm_Tm xi_Tm) s0)
   | app _ s0 s1 => app n_Tm (ren_Tm xi_Tm s0) (ren_Tm xi_Tm s1)
+  | unit _ => unit n_Tm
   | lit _ s0 => lit n_Tm s0
   | succ _ s0 => succ n_Tm (ren_Tm xi_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -105,6 +112,7 @@ Fixpoint subst_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
   | var _ s0 => sigma_Tm s0
   | abs _ s0 => abs n_Tm (subst_Tm (up_Tm_Tm sigma_Tm) s0)
   | app _ s0 s1 => app n_Tm (subst_Tm sigma_Tm s0) (subst_Tm sigma_Tm s1)
+  | unit _ => unit n_Tm
   | lit _ s0 => lit n_Tm s0
   | succ _ s0 => succ n_Tm (subst_Tm sigma_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -143,6 +151,7 @@ subst_Tm sigma_Tm s = s :=
       congr_abs (idSubst_Tm (up_Tm_Tm sigma_Tm) (upId_Tm_Tm _ Eq_Tm) s0)
   | app _ s0 s1 =>
       congr_app (idSubst_Tm sigma_Tm Eq_Tm s0) (idSubst_Tm sigma_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (idSubst_Tm sigma_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -185,6 +194,7 @@ Fixpoint extRen_Tm {m_Tm : nat} {n_Tm : nat} (xi_Tm : fin m_Tm -> fin n_Tm)
   | app _ s0 s1 =>
       congr_app (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
         (extRen_Tm xi_Tm zeta_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (extRen_Tm xi_Tm zeta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -231,6 +241,7 @@ Fixpoint ext_Tm {m_Tm : nat} {n_Tm : nat} (sigma_Tm : fin m_Tm -> Tm n_Tm)
   | app _ s0 s1 =>
       congr_app (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
         (ext_Tm sigma_Tm tau_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (ext_Tm sigma_Tm tau_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -277,6 +288,7 @@ ren_Tm zeta_Tm (ren_Tm xi_Tm s) = ren_Tm rho_Tm s :=
   | app _ s0 s1 =>
       congr_app (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
         (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (compRenRen_Tm xi_Tm zeta_Tm rho_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -332,6 +344,7 @@ subst_Tm tau_Tm (ren_Tm xi_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
         (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (compRenSubst_Tm xi_Tm tau_Tm theta_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -408,6 +421,7 @@ ren_Tm zeta_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
         (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 =>
       congr_succ (compSubstRen_Tm sigma_Tm zeta_Tm theta_Tm Eq_Tm s0)
@@ -486,6 +500,7 @@ subst_Tm tau_Tm (subst_Tm sigma_Tm s) = subst_Tm theta_Tm s :=
   | app _ s0 s1 =>
       congr_app (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
         (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 =>
       congr_succ (compSubstSubst_Tm sigma_Tm tau_Tm theta_Tm Eq_Tm s0)
@@ -603,6 +618,7 @@ Fixpoint rinst_inst_Tm {m_Tm : nat} {n_Tm : nat}
   | app _ s0 s1 =>
       congr_app (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
         (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s1)
+  | unit _ => congr_unit
   | lit _ s0 => congr_lit (eq_refl s0)
   | succ _ s0 => congr_succ (rinst_inst_Tm xi_Tm sigma_Tm Eq_Tm s0)
   | nrec _ s0 s1 s2 =>
@@ -681,7 +697,8 @@ Qed.
 
 Inductive Ty : Type :=
   | Nat : Ty
-  | Arr : Ty -> Ty -> Ty.
+  | Arr : Ty -> Ty -> Ty
+  | Unit : Ty.
 
 Lemma congr_Nat : Nat = Nat.
 Proof.
@@ -693,6 +710,11 @@ Lemma congr_Arr {s0 : Ty} {s1 : Ty} {t0 : Ty} {t1 : Ty} (H0 : s0 = t0)
 Proof.
 exact (eq_trans (eq_trans eq_refl (ap (fun x => Arr x s1) H0))
          (ap (fun x => Arr t0 x) H1)).
+Qed.
+
+Lemma congr_Unit : Unit = Unit.
+Proof.
+exact (eq_refl).
 Qed.
 
 Class Up_Tm X Y :=
@@ -828,6 +850,8 @@ Arguments nrec {n_Tm}.
 Arguments succ {n_Tm}.
 
 Arguments lit {n_Tm}.
+
+Arguments unit {n_Tm}.
 
 Arguments app {n_Tm}.
 

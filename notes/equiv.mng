@@ -228,13 +228,13 @@ formed by the following grammar:
 \begin{array}{lcl}
 [[C]] &::= & [[#]]\ |\ [[C v2]]\ |\ [[v1 C]]\ |\ [[let x = C in e2]]\ |\ [[let x = e1 in C]] \\
       & |  & [[ret C]]\ |\ [[case v of { 0 => C ; S y => e1 }]]\ |\ [[ case v of { 0 => e0 ; S y => C }]] \\
-      & |  & [[succ C]]\ |\  [[fun_ x y . C ]] \\
+      & |  & [[succ C]]\ |\  [[fun_ x y . C ]]\ |\ [[case C of { 0 => e0 ; S y => e1 }]]\  \\
 \end{array}
 \]
 \end{definition}
 
 We use the notation $[[C{|e|}]]$ and $[[C{|v|}]]$ for plugging the hole in a
-context with a value or term. This notation has the implicit constraint that
+context with a term or value. This notation has the implicit constraint that
 the hole is in a term position for the first operation and a value position
 for the second operation. For example, we can only plug a value into the 
 context $[[# zero]]$, and we can only plug an expression into the context 
@@ -351,7 +351,7 @@ mutually defined in terms of a term relation $[[C e1 e2 k]]$, stack relation $[[
    [[V zero zero k]]             &=& \textit{always} \\
    [[V (succ v1) (succ v2) k]]   &=& [[|> k V v1 v2]] \\
    [[V (fun_ x y.e) v2 k]]        &=& \forall [[v]][[v']], 
-   [[V v v' ===>k C e[(fun_ x y. e)/y, v1/x] (v2 v') ]] \\
+   [[|> k (V v v' ===> C e[(fun_ x y. e)/y, v1/x] (v2 v')) ]] \\
 \end{array}
 \]                 
 \end{definition}

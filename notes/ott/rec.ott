@@ -79,6 +79,7 @@ phi {{ tex \phi }}   :: 'iProp_' ::=
    {{ tex [[phi1]][[===>]] [[phi2]] }}
   | G sigma           :: M :: iEnv
     {{ tex [\![ [[sigma]] \in [[G]] ]\!] }}
+  | ( phi )           :: M :: paren
 
 
 terminals :: 'terminals_' ::=
