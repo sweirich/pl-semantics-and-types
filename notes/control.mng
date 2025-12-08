@@ -565,7 +565,7 @@ Suppose $[[G ~ D ]]$.
 \end{enumerate}
 \end{lemma}
 
-The proof of this lemma is by structural recursion on terms and values.  By
+The proof of this lemma is by mutual induction on the typing derivation.  By
 choosing a single variable as the initial continuation, we can observe how
 this translation uses double negation on the input type. Alternatively, we can
 use an initial continuation to get a complete program.
