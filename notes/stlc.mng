@@ -58,7 +58,7 @@ and numbers to be applied to names.
 
 Now, the above definitions are a wordy way of describing an
 inductively-defined grammar of abstract syntax trees.  In the future, we will
-use a more concise notation, called Bakus-Naur form. For example, in BNF form,
+use a more concise notation, called Bakus-Naur form. For example, in BNF,
 we can provide a concise definition of the grammars for types and terms as
 follows.
 
@@ -149,7 +149,7 @@ function. For example, if we rename $x$ to $y$, in the function $[[\x. y< x/y>
 Therefore, we pick some fresh variable $[[y]]$, and updating the renaming to
 $[[(y/x,xi)]]$ in the recursive call. (If $[[x]]$ is already fresh, we can
 keep using it.)  That way, we force the renaming that we use for the body of
-the abstraction to not change the bounding structure of the term.
+the abstraction to not change the binding structure of the term.
 
 \paragraph{Substitution}
 There is one final definition of a function defined by structural recursion
@@ -158,7 +158,7 @@ variables in the term.
 
 A \emph{substitution}, $[[sigma]]$ is a mapping from variables to terms. As
 above, it has a \emph{domain} (a set of variables) and a \emph{range} (this
-time a set of terms). We use the notation $[[(e/x,sigma)]]$ to refer to the
+time a set of terms). We use the notation $[[ e/x,sigma ]]$ to refer to the
 substitution that maps variable $[[x]]$ to term $[[e]]$, but otherwise acts
 like $[[sigma]]$.
 
@@ -211,7 +211,7 @@ However, because using a named representation is standard practice, we will
 continue to use that approach in these notes, glossing over details. This will
 allow us to stay roughly equivalent to the proof scripts (which have other
 details). Because of the informal nature of our discussion, there will be
-minor omissions related to variable naming; but we won't stress about them.
+minor omissions related to variable naming; we won't stress about them.
 
 \section{Type system}
 Next we will define a typing relation for STLC. This relation has the form
@@ -242,7 +242,7 @@ relation.
 In the variable rule, we look up the type of the variable in the typing
 context. This variable must have a definition in $[[G]]$ for this rule to be
 used. If there is no type associated with $[[x]]$, then we say that the
-variable is unbound and that the term fails to \emph{scope-check}.
+variable is unbound and that the term fails to \emph{scope check}.
 
 In \rref{t-abs}, the rule for abstractions, we type check the body of the
 function with a context that has been extended with a type for the bound
@@ -250,8 +250,8 @@ variable. The type of an abstraction is a function type $[[tau1->tau2]]$, that
 states the required type of the parameter $[[tau1]]$ and the result type of
 the body $[[tau2]]$.
 
-\Rref{t-app}, which checks the application of functions, requires that the
-argument to the function has the same type required by the function.
+\Rref{t-app}, which checks the application of functions, requires the
+argument to have the type required by the function.
 
 \section{Operational Semantics}
 
@@ -266,7 +266,7 @@ errors.
 
 One way to describe the evaluation of programs is through a \emph{small-step}
 operational semantics. This is a mathematical definition of a relation between
-a program $[[e]]$ and its value. We build up a small step semantics in two
+a program $[[e]]$ and its value. We build up a small-step semantics in two
 parts. First, we define a single step relation, written $[[e ~> e']]$, to mean
 that a term reduces to $[[e]]$ in one step.  Then we iterate this relation,
 called the multistep relation and written $[[e ~>* e']]$, to talk about all of
@@ -289,11 +289,11 @@ that state when one term steps to another.
 
 \begin{definition}[\link{stlc/red.v}{Small.step}{Small-step relation}]\ \\
 \drules[s]{$[[e ~> e']]$}{term $e$ steps to $[[e']]$}
-{beta,app-congTwo,app-congTwo}
+{beta,app-congOne,app-congTwo}
 \end{definition}
 
 In each of these three rules, the part below the line says when the left term steps to the right term.
-\Rref{step-beta} describe what happens when an abstraction is applied to an argument. In this case, 
+\Rref{s-beta} describe what happens when an abstraction is applied to an argument. In this case, 
 we substitute the argument for the parameter in the 
 body of the function. Note in this rule that the 
 argument must be a value before substitution. If it
@@ -301,15 +301,15 @@ is not a value, then we cannot use this rule to take
 a step. This rule is the
 key of a \emph{call-by-value} semantics. 
 
-The second two rules each have premises that must be satisfied before they can be used. \Rref{step-app-congOne} applies when the function part of an application is not (yet) an abstraction. Similarly, the last rule applies when the argument part of an application is not (yet) a value. 
+The second two rules each have premises that must be satisfied before they can be used. \Rref{s-app-cong1} applies when the function part of an application is not (yet) an abstraction. Similarly, the last rule applies when the argument part of an application is not (yet) a value. 
 
-This small step relation is intended to be deterministic. Any term steps to at
+This small-step relation is intended to be deterministic. Any term steps to at
 most one new term.
 \begin{lemma}[\link{stlc/red.v}{small_step_determinism}{Determinism}]
 If $[[e ~> e1]]$ and $[[e ~> e2]]$ then $[[e1]]=[[e2]]$.
 \end{lemma}
 
-The small step relation is \emph{not} a function. For some terms $[[e]]$,
+The small-step relation is \emph{not} a function. For some terms $[[e]]$,
 there is no term $[[e']]$ such that $[[e ~> e']]$. For example, if we have a
 number in the function position, e.g. $[[(3 e)]]$, then the term does not step
 and these terms do not evaluate to any value.
@@ -340,7 +340,7 @@ If $[[ |- e : tau ]]$ and $[[e ~> e']]$ then $[[ |- e' : tau]]$.
 \end{lemma}
 We can prove this lemma in three separate ways: by structural induction 
 on the syntax of $[[e]]$, or by induction on the derivations of $[[|- e: tau]]$ or 
-$[[e ~> e']]$. This flexibility is enabled by the simplicity of this type system. For example, we have exacltly one typing rule for each syntactic form, and each typing rule has a corresponding premise for each subterm. 
+$[[e ~> e']]$. This flexibility is enabled by the simplicity of this type system. For example, we have exactly one typing rule for each syntactic form, and each typing rule has a corresponding premise for each subterm. 
 
 Because this is our first inductive proof, we will first prove it by induction on the syntax and then by 
 induction on the step relation.
@@ -365,8 +365,8 @@ $[[e']]$ is $[[e1'[v/x] ]]$. Therefore, we need to show that the result of this 
 By inverting the typing judgement for $[[|- \x.e1' : tau2 -> tau]]$, we know that $[[ x:tau2 |- e' : tau]]$. At this point we, we will 
 appeal to a \emph{substitution lemma} (see \ref{lem:single-subst} below) to 
 finish this case of the proof. 
-\item The application could step using \rref{s-app-congOne}. In this case, we know that $[[e1 ~> e1']]$ and that $[[e']]$ is $[[e1' e2]]$. Because $[[e1]]$ is a subterm of $[[e1 e2]]$, we can assume that the preservation holds for that term. Therefore, we know that $[[|- e1' : tau2 -> tau]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1' e2 : tau]]$.
-\item The application could step using \rref{s-app-congTwo}. In this case, we know that $[[e1]]$ is a value and that $[[e2 ~> e2']]$.  As above, we can assume that the preservation holds for $[[e2]]$. Therefore, we know that $[[|- e2' : tau2]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1 e2' : tau]]$.
+\item The application could step using \rref{s-app-cong1}. In this case, we know that $[[e1 ~> e1']]$ and that $[[e']]$ is $[[e1' e2]]$. Because $[[e1]]$ is a subterm of $[[e1 e2]]$, we can assume that the preservation holds for that term. Therefore, we know that $[[|- e1' : tau2 -> tau]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1' e2 : tau]]$.
+\item The application could step using \rref{s-app-cong2}. In this case, we know that $[[e1]]$ is a value and that $[[e2 ~> e2']]$.  As above, we can assume that the preservation holds for $[[e2]]$. Therefore, we know that $[[|- e2' : tau2]]$. We then use this fact with \rref{t-app} to conclude that $[[ |- e1 e2' : tau]]$.
 \end{itemize}
 \end{itemize}
 \end{proof}
@@ -385,7 +385,7 @@ rule \rref{t-abs}, so we must have also shown
 $[[ x : tau1 |- e : tau ]]$. At this point we, we will again
 appeal to the substitution lemma (see \ref{lem:single-subst} below) to 
 finish this case of the proof. 
-\item In the case of \rref{s-app-congOne}, we have the 
+\item In the case of \rref{s-app-cong1}, we have the 
 conclusion $[[e1 e2 ~> e1' e2]]$, and premise $[[e1 ~> e1']]$. For the first term to type check, we again must have also used \rref{t-app}, so we know that $[[|- e1 : tau1 -> tau]]$ and $[[|- e2 : tau1]]$. In this case we can use induction, because we know that $[[e1]]$, a term in the subderivation both steps and
 type checks. So we know that $[[|- e1':tau1]]$. Now 
 we can use \rref{t-app} to conclude that $[[|- e1' e2:tau]]$.
@@ -417,7 +417,7 @@ function type $[[tau3 -> tau4]]$ and that $[[ x:tau1, y:tau3 |- e1 : tau4]]$.
 From \rref{t-abs}, it suffices to show $[[ y : tau1 |- e1 [v/x] : tau4 ]]$.
 However, this result is not available to us through induction: the lemma only 
 applies to terms that type check in a context with exactly one variable.
-However, although $[[e1]]$ is a subterm, it type checks in a context with 
+Although $[[e1]]$ is a subterm, it type checks in a context with 
 two variables. So we cannot make any more progress on this proof.
 
 Therefore, we generalize the substitution lemma in two ways. First, we
@@ -474,7 +474,7 @@ we set $[[D]]$ = $[[G,x:tau]]$ and $[[sigma]]$ to be the identity function.
 
 \paragraph{Progress}
 
-The second lemma, called \emph{progress} states that any well-typed term that
+The second lemma, called \emph{progress}, states that any well-typed term that
 has not been completely reduced can always take at least one more reduction
 step. It ensures that a well-typed term is not ``stuck.'' (i.e. is not a value
 but cannot step).
@@ -484,7 +484,7 @@ If $[[ |- e : tau ]]$ then either $e$ is a value or there exists an $[[e']]$ suc
 $[[ e ~> e' ]]$.
 \end{lemma}
 \begin{proof}
-We prove this lemma by induction in the typing derivation. In the rules where 
+We prove this lemma by induction on the typing derivation. In the rules where 
 $[[e]]$ is already a value, then the proof is trivial.
 Therefore we only need to consider when $[[e]]$ is an application of the 
 form $[[e1 e2]]$, where $[[ |- e1 : tau1 -> tau]]$ and $[[ |- e2 : tau1 ]]$.
@@ -503,11 +503,11 @@ Part of this proof involves inferring the structure of a closed value from its
 type. Although this is a straightforward bit of reasoning by inversion, this is a 
 key step of any progress proof. Therefore, we explicitly state the lemma (and its analogue for natural numbers below).
 
-\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr} Canonical forms (arrow types)]
-If $[[|- v : tau1 -> tau2]]$ then $[[v]]$ is some $[[abs e]]$.
+\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr}{Canonical forms (arrow types)}]
+If $[[|- v : tau1 -> tau2]]$ then $[[v]]$ is some $[[\x. e]]$.
 \end{lemma}
 
-\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr} Canonical forms (nat)]
+\begin{lemma}[\link{stlc/safety.v}{canonical_forms_Arr}{Canonical forms (nat)}]
 If $[[|- v : Nat]]$ then $[[v]]$ is some natural number $[[k]]$.
 \end{lemma}
 
@@ -542,8 +542,8 @@ eventually reach a value in some finite number of steps?
 It turns out that this conjecture is true, but we are not yet ready to prove
 it directly. But even though the conjecture is true, it is not a good
 definition of type safety: even though all well-typed STLC programs halt, that
-is not true of most programming languages. And we would like to have a
-definition of type safety that also applies to those languages. One that shows that 
+is not true of most programming languages. We would like to have a
+definition of type safety that also applies to nonterminating languages---one that shows that 
 well-typed programs do not get stuck, while not requiring them to produce values.
 
 There are several solutions to this issue.
@@ -573,8 +573,8 @@ $[[|-e1 : tau]]$. Then we can use induction to say that $[[e']]$ is not stuck.
 
 \paragraph{A coinductive definition}
 
-What if we want to state type safety a little more positively. In other words, 
-we want to say that a well typed term either produces a value or runs forever, without 
+What if we want to state type safety a little more positively? In other words, 
+we want to say that a well-typed term either produces a value or runs forever, without 
 having to talk about stuckness. 
 
 We can do that using the following \emph{coinductive} definition.
