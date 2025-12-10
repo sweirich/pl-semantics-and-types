@@ -304,8 +304,8 @@ A pair of scoped relations $[[RE]]$ and $[[RV]]$ are \emph{compatible} when the 
   implies $[[X |- let x = e1 in e1' RE let x = e2 in e2' ]]$
 \item $[[X |- v1 RV v2 ]]$ and $[[X |- v1' RV v2']]$ implies
   $[[X |- v1 v1' RE v2 v2' ]]$.
-\item $[[X |- v1 RV v2 ]]$ and $[[X |- e1 RE e2]]$  and $[[ X, x |- e1' RE e2']]$
-  implies $[[X |- case v1 of { 0 => e1 ; S x => e1' }  RE case v1' of { 0 => e1' ; S x => e2' } ]]$
+\item $[[X |- v1 RV v2 ]]$ and $[[X |- e1 RE e2]]$ and $[[ X, x |- e1' RE e2']]$
+  implies $[[X |- case v1 of { 0 => e1 ; S x => e1' } RE case v2 of { 0 => e2 ; S x => e2' } ]]$
 \end{enumerate}
 \end{definition}
 
