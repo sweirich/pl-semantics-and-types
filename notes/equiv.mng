@@ -42,7 +42,7 @@ stack-based operational semantics for evaluation.
 \begin{definition}[\link{untyped/syntax.sig}{}{Syntax}]
 \[
 \begin{array}{lrcl}
-\textit{values} & [[v]] & ::= & [[x]]\ |\ [[unit]]\ |\ [[fun_ f x.e]]\ |\ [[0]]\ |\ [[S v]]\ \\ % |\ [[(v1, v2)]]\ |\ [[inj1 v]] |\ [[inj2 v]] \\
+\textit{values} & [[v]] & ::= & [[x]]\ |\ [[unit]]\ |\ [[fun_ x y.e]]\ |\ [[0]]\ |\ [[S v]]\ \\ % |\ [[(v1, v2)]]\ |\ [[inj1 v]] |\ [[inj2 v]] \\
 \textit{terms}  & [[e]] & ::= & [[ret v]]\ |\ [[let x = e1 in e2]]\ |\ [[v1 v2]]\ |\ [[case v of { 0 => e0 ; S y => e1 } ]]\\
 %       && | & [[prj1 v]]\ |\ [[prj2 v]]\ |\ [[case v of { inj1 x => e1 ; inj2 x => e2 } ]] \\
 \textit{frame} & [[frame]] & ::= & [[ let x = _ in e2]] \\
@@ -304,8 +304,8 @@ A pair of scoped relations $[[RE]]$ and $[[RV]]$ are \emph{compatible} when the 
   implies $[[X |- let x = e1 in e1' RE let x = e2 in e2' ]]$
 \item $[[X |- v1 RV v2 ]]$ and $[[X |- v1' RV v2']]$ implies
   $[[X |- v1 v1' RE v2 v2' ]]$.
-\item $[[X |- v1 RV v2 ]]$ and $[[X |- e1 RE e2]]$  and $[[ X, x |- e1' RE e2']]$
-  implies $[[X |- case v1 of { 0 => e1 ; S x => e1' }  RE case v1' of { 0 => e1' ; S x => e2' } ]]$
+\item $[[X |- v1 RV v2 ]]$ and $[[X |- e1 RE e2]]$ and $[[ X, x |- e1' RE e2']]$
+  implies $[[X |- case v1 of { 0 => e1 ; S x => e1' } RE case v2 of { 0 => e2 ; S x => e2' } ]]$
 \end{enumerate}
 \end{definition}
 
@@ -351,7 +351,7 @@ mutually defined in terms of a term relation $[[C e1 e2 k]]$, stack relation $[[
    [[V zero zero k]]             &=& \textit{always} \\
    [[V (succ v1) (succ v2) k]]   &=& [[|> k V v1 v2]] \\
    [[V (fun_ x y.e) v2 k]]        &=& \forall [[v]][[v']], 
-   [[|> k (V v v' ===> C e[(fun_ x y. e)/y, v1/x] (v2 v')) ]] \\
+   [[|> k (V v v' ===> C e[v/x, (fun_ x y. e)/y] (v2 v')) ]] \\
 \end{array}
 \]                 
 \end{definition}
@@ -403,8 +403,8 @@ reduction. For example, we can use this definition to show that inlining or
 ``beta-reduction'' is a sound program transformation.
 \begin{lemma}[\link{untyped/equiv_examples.v}{fun_beta}{Beta reduction and expansion}]\ \\
 \begin{enumerate}
-\item $[[ X |- (fun_ x y.e) v CIU v [v/y, fun_ x y. e/x] ]]$
-\item $[[ X |- v [v/y, fun_ x y. e/x] CIU (fun_ x y.e) v ]]$
+\item $[[ X |- (fun_ x y.e) v CIU e[v/x, (fun_ x y.e)/y] ]]$
+\item $[[ X |- e[v/x, (fun_ x y.e)/y] CIU (fun_ x y.e) v ]]$
 \end{enumerate}
 \end{lemma}
 
@@ -428,7 +428,7 @@ Finally, the logical relation is the most convenient for showing the soundness
 of ``$\eta$-reductions''. 
 
 \begin{lemma}[\link{untyped/equiv_examples.v}{fun_eta}{Function $\eta$-reduction}]
-$[[ X |- fun_ x y. v y log v ]]$
+$[[ X |- fun_ x y. v x log v ]]$
 \end{lemma}
 
 \begin{lemma}[\link{untyped/equiv_examples.v}{nat_eta}{Nat $\eta$-reduction}]
@@ -440,7 +440,7 @@ On the other hand, using our definitions, \emph{$\eta$-expansions} are not valid
 definitions. We can use the traditional definition of contextual equivalence to show that 
 
 \begin{lemma}[Failure of $\eta$-expansion]
-It is not the case that $[[ X |- v CON fun_ x y. v y ]]$ for all $[[v]]$.
+It is not the case that $[[ X |- v CON fun_ x y. v x ]]$ for all $[[v]]$.
 \end{lemma}
 Choose $[[v]]$ as zero and the context as $[[ # zero ]]$.
 
@@ -509,9 +509,9 @@ If $[[X |- v1 CON v2 ]]$ and $[[ X |- v1' CON v2' ]]$ then $[[X |- v1 v1' CON v2
 \end{lemma}
 \begin{proof}
 To show $[[X |- v1 v1' CON v2 v2']]$, we pick an arbitrary context $[[C]]$, and show that 
-$[[ C {| v1 v1' |} <= C {| v2 v2' |} ]] $. We instantiate our first assumption
+$[[ C {| v1 v1' |} <= C {| v2 v2' |} ]] $. We instantiate our second assumption
 with the context $[[v2 # o C]]$ to conclude that $[[  C{| v2 v1' |} <= C{| v2 v2' |} ]]$.
-Then, we instantiate the second assumption with $[[ # v1 o C]]$ to conclude that 
+Then, we instantiate the first assumption with $[[ # v1' o C]]$ to conclude that 
 $[[ C{| v1 v1' |} <= C {| v2 v1' |} ]]$. Chaining these approximations together 
 transitively gives us the desired result.
 \end{proof}
