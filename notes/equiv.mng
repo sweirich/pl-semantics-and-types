@@ -509,9 +509,9 @@ If $[[X |- v1 CON v2 ]]$ and $[[ X |- v1' CON v2' ]]$ then $[[X |- v1 v1' CON v2
 \end{lemma}
 \begin{proof}
 To show $[[X |- v1 v1' CON v2 v2']]$, we pick an arbitrary context $[[C]]$, and show that 
-$[[ C {| v1 v1' |} <= C {| v2 v2' |} ]] $. We instantiate our first assumption
+$[[ C {| v1 v1' |} <= C {| v2 v2' |} ]] $. We instantiate our second assumption
 with the context $[[v2 # o C]]$ to conclude that $[[  C{| v2 v1' |} <= C{| v2 v2' |} ]]$.
-Then, we instantiate the second assumption with $[[ # v1 o C]]$ to conclude that 
+Then, we instantiate the first assumption with $[[ # v1' o C]]$ to conclude that 
 $[[ C{| v1 v1' |} <= C {| v2 v1' |} ]]$. Chaining these approximations together 
 transitively gives us the desired result.
 \end{proof}
