@@ -9,7 +9,7 @@
     Additional properties of fin type
   * [common.renaming](common/renaming.v)
     Language independent lemmas about renamings
-  * [common.relations](common/relations.v)x
+  * [common.relations](common/relations.v)
     Multistep reduction
 
 - STLC: Simply Typed Lambda Calculus
