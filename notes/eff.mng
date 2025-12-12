@@ -191,7 +191,7 @@ The key difference in this definition is that the computation set is also indexe
 by the effect. 
 \[ 
 \begin{array}{lcl} 
-[[ C tau bot ]] &=& [[ { e | e ~>* v and v elem V tau } ]]   \\
+[[ C tau bot ]] &=& [[ { e | e ~>* ret v and v elem V tau } ]]   \\
 [[ C tau top ]] &=& \textit{all terms}  \\
 \\
 \\
