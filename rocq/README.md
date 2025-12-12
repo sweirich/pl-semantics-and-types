@@ -9,7 +9,7 @@
     Additional properties of fin type
   * [common.renaming](common/renaming.v)
     Language independent lemmas about renamings
-  * [common.relations](common/relations.v)x
+  * [common.relations](common/relations.v)
     Multistep reduction
 
 - STLC: Simply Typed Lambda Calculus
@@ -28,7 +28,7 @@
   * [stlc.red_equiv](stlc/red_equiv.v)
     Equivalence between small-step and big-step
   * [stlc.soundness](stlc/soundness.v)
-    Termination (totality) for of big-step semantics
+    Termination (totality) of big-step semantics
 
 - REC: Fine-grained CBV with recursive values and recursive types
   * [syntax.sig](rec/syntax.sig)
