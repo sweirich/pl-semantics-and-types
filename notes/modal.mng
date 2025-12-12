@@ -11,7 +11,7 @@ previous chapter, we call the terminating part of the language \emph{pure}
 because it lacks the nontermination effect.)
 
 For comparison with the previous languages, we continue to work with a 
-variant of a fine-grained call-by-value language. However, for simplicitym we 
+variant of a fine-grained call-by-value language. However, for simplicity we 
 have removed a few constructs to the language (sums, products, and recursive types). 
 
 \section{Language definition}
@@ -62,7 +62,6 @@ substitutes this value into the body and continues evaluation.
 We also include three new typing rules, and modify the existing rule for let
 terms. 
 
-The $[[box v]]$
 \begin{definition}[\link{modal/modal.v}{typing}{Type system}]\ \\
 \drules[tv]{$[[G ||- v : tau ]]$}{in context $[[G]]$, value $v$ has type $[[tau]]$}
 {pure,rfun}
@@ -138,7 +137,7 @@ that the \emph{argument} of the application is not a box type.
 The restriction in the let rule is enough to be sure that our type system
 accurrately characterizes the effect of computation. We can use a logical
 relations proof to show that if $[[ |- e : tau ]]$ and $[[ not_box tau ]]$
-then $[[e ~> ret v]]$ for some value.
+then $[[e ~>* ret v]]$ for some value $[[v]]$.
 
 
 \section{Translation to Dependent Type Theory}
@@ -221,7 +220,7 @@ We can also translate our monadic language to our effect-tracking language.
 The key idea of the translation is that we are going to map all terms in \mon
 to pure terms in \eff. But what about nontermination? We will do that by
 suspending monadic computations in ``thunks'' (i.e. functions that take a
-trivial argument) and recording their potentially effect in the latent effect
+trivial argument) and recording their potential effect in the latent effect
 of the function type. For example, we have:
 
 \[  [[ [] Nat ]] = [[ Nat -> top Nat ]] \]
@@ -275,7 +274,7 @@ Here is the translation in full:
 [[ |case v of { 0 => e0 ; S x => e1 }| ]] &=& 
   [[ case v of { 0 => |e0| ; S x => |e1| } ]] \\
 [[ |let x = e1 in e2| ]] &=& [[ let x = |e1| in |e2| ]] \\
-[[ | x <- e1 ; e2 | ]] &=& [[ ret (\y. let x = |e1| 0 in |e1| 0) ]] \\
+[[ | x <- e1 ; e2 | ]] &=& [[ ret (\y. let x = (|e1| 0) in (|e2| 0)) ]] \\
 \end{array}
 \]
 
