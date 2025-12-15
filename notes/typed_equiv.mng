@@ -170,11 +170,11 @@ We can then extend the logical relation to open terms and values in the usual
 way.
 \begin{definition}[\link{rec/simple_equiv.v}{log_sig}{Open Logical Relation}]\ \\
 \begin{enumerate}
-\item $[[ G |- sigma1 =log sigma2 ]]$ when $[[ V (sigma1 x) (sigma2 x) (G x) ]]$
+\item $[[ G |- sigma =log sigma' ]]$ when $[[ V (sigma x) (sigma' x) (G x) ]]$
 \item $[[ G |- e =log e' : tau]]$ when $[[ C e[sigma] e'[sigma'] tau]]$, for 
-  arbitrary $[[ G |- sigma1 log sigma2 ]]$.
+  arbitrary $[[ G |- sigma =log sigma' ]]$.
 \item $[[ G |- v =log v' : tau]]$ when $[[ V v[sigma] v'[sigma'] tau]]$, for 
-  arbitrary $[[ G |- sigma1 log sigma2 ]]$.
+  arbitrary $[[ G |- sigma =log sigma' ]]$.
 \end{enumerate}
 \end{definition}
 

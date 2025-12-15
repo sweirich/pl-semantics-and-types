@@ -219,7 +219,7 @@ stacks.
 
 \subsection{Contextual pre-order and equivalence ($[[CON]]$)}
 
-A program context is any part of a term or value that can surrounds a single
+A program context is any part of a term or value that can surround a single
 hole, written $[[#]]$. We use the metavariable $[[C]]$ to refer to contexts,
 formed by the following grammar:
 
@@ -418,7 +418,7 @@ to another.
 From these (and other) facts, we can show that the usual definition of untyped
 $\beta$-equivalence implies contextual equivalence. However,
 $\beta$-equivalence is not as large as contextual equivalence: there are terms
-that are not $\beta$-equivalent that are not contextually equivalent.
+that are not $\beta$-equivalent that are contextually equivalent.
 
 For example, we cannot use $\beta$-equivalence to show that $[[fun_ x y. x]]$ is 
 equal to $[[fun_ x y. x + 0]]$. 

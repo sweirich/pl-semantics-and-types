@@ -17,7 +17,7 @@ invoking a continuation may take your program to a stack that is very
 different than the current one.
 
 First-class continuations can be used to implement other high-level control
-structures that are difficult implement cleanly otherwise, such as exceptions,
+structures that are difficult to implement cleanly otherwise, such as exceptions,
 coroutines or generators, or non-deterministic backtracking. Furthermore, even
 if languages do not include support for first-class continuations, they can be
 implemented through the use of ``continuation-passing-style'' or a concurrency
@@ -37,7 +37,7 @@ based language with new forms of control operations.
 
 Most languages include an extensible variant type for exceptions. For
 convenience, this type \texttt{exn} or \texttt{Exception} can be extended with
-new options corresponding various forms of errors (\texttt{Failure} or
+new options corresponding to various forms of errors (\texttt{Failure} or
 \texttt{NullPointerException}) and signals (\texttt{Not\_found} or
 \texttt{NoSuchElementException}).  For simplicity in our formalism, we will
 define a new type $[[Exn]]$ as our exception type, but this type will be
@@ -241,7 +241,7 @@ A \Rightarrow B & [[ tau1 -> tau2 ]] \\
 \end{definition}
 
 This chart shows the correspondence between common logical combinators
-(conjunction, disjunction, implication, negation) and types. And, it makes sense that constructive proofs of of these combinators correspond to programs. For example, a constructive proof of a conjunction $A \wedge B$ is a pair of proofs, one which shows $A$ and another that shows $B$. We can see this in the definition of conjunction in Rocq standard library:
+(conjunction, disjunction, implication, negation) and types. And, it makes sense that constructive proofs of these combinators correspond to programs. For example, a constructive proof of a conjunction $A \wedge B$ is a pair of proofs, one which shows $A$ and another that shows $B$. We can see this in the definition of conjunction in Rocq standard library:
 
 \begin{lstlisting}
 Inductive and (A B : Prop) : Prop := 
@@ -261,7 +261,7 @@ of $A$ to a proof of $B$. This corresponds to a function.  In constructive
 logic, negation $\neg A$ is the same as saying that $A$ is impossible. In
 other words, it is a function that takes a proof of $A$ to a proof of
 $\textit{False}$---i.e. a type that has no inhabitants (so there can never be
-a proof of $\textit{False}$.
+a proof of $\textit{False}$).
 
 For example, we can prove various properties by creating programs in Gallina, the
 language of the Rocq proof assistant. (Usually we don't write these programs directly; tactics let us construct them more conveniently.) For example, we can show (half)
@@ -321,10 +321,10 @@ Axiom callcc     : forall A, ((cont A) -> A) -> A.
 \end{lstlisting}
 
 If you look closely at the type of $\ottkw{callcc}$, you may recognize it as
-Pierce's law, usually written $((P \Rightarrow Q) \Rightarrow P) \Rightarrow
+Peirce's law, usually written $((P \Rightarrow Q) \Rightarrow P) \Rightarrow
 P$. This axiom is equivalent to the law of the excluded middle, which states
 that any proposition is either true or false, $P \vee \neg P$.  Adding either
-Pierce's law or the law of the excluded middle to constructive logic turns it
+Peirce's law or the law of the excluded middle to constructive logic turns it
 into classical logic. That means that these axioms are consistent with
 constructive logic, but cannot be proven constructively. If you would like to
 reason using classical logic in Rocq, you need to assume one of these axioms.
@@ -360,7 +360,7 @@ was $q$ that was not true. If, in this case, we also receive a proof of $Q$,
 we can use our assumption with the evidence for $P$ and $Q$ that we have
 already received.
 
-Another proposition that is equivalent to Pierce's law and the law of the excluded middle is double negation elimination. 
+Another proposition that is equivalent to Peirce's law and the law of the excluded middle is double negation elimination. 
 
 \[ not (not P) \Rightarrow P \]
 
