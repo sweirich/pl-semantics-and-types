@@ -129,9 +129,18 @@ formula :: 'formula_' ::=
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
+defns 
 
-defns
-  JStep :: '' ::=
+JPrim :: '' ::= 
+
+defn
+e ~>> e' ::   :: primitive :: 'prim_' 
+by 
+
+
+----------------------------------------------  :: fun_beta
+(fun_ x y. e) v ~>> e [ v / y, fun_x y. e / x]
+
 
 
 defn

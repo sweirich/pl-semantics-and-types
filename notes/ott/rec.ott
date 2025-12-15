@@ -45,9 +45,9 @@ e :: 'e_' ::=
    | unit        ::   :: unit
    | zero        ::   :: zero
    | S v         ::   :: succ
-   | 0           :: M :: zero_not
-   | 1           :: M :: one_not
-   | 2           :: M :: two_not
+%   | 0           :: M :: zero_not
+%   | 1           :: M :: one_not
+%   | 2           :: M :: two_not
 
 
 
@@ -62,9 +62,9 @@ v , w :: 'v_' ::=
    | zero        ::   :: zero
    | S v         ::   :: succ
    | unit        ::   :: unit
-   | 0           :: M :: zero_not
-   | 1           :: M :: one_not
-   | 2           :: M :: two_not
+%   | 0           :: M :: zero_not
+%   | 1           :: M :: one_not
+%   | 2           :: M :: two_not
 
    
 

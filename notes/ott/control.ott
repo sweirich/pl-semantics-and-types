@@ -186,17 +186,17 @@ defn
 {{ tex \vdash [[frame]] \in [[tau1]] [[~>]] [[tau2]] }}
 by
 
-, x : tau1 ||- e2 : tau2
+ x : tau1 ||- e2 : tau2
 ------------------------------------ :: let
 ||- let x = _ in e2 : tau1 ~> tau2
 
 
-, x : Exn ||- e2 : tau
+ x : Exn ||- e2 : tau
 ------------------------------------------ :: try
 ||- try _ with exn x => e2 : tau ~> tau
 
-, x : tau1 ||- e2 : tau
-, y : DeCont (Phi n) tau ||- e2' : tau
+ x : tau1 ||- e2 : tau
+ y : DeCont (Phi n) tau ||- e2' : tau
 ------------------------------------------ :: handle
 ||- try _ with x => e2 ; eff n y => e2' : tau1 ~> tau
 
@@ -277,3 +277,16 @@ G ~ D
 G ~ D
 ------------------------------------------------------------ :: up
 ( G, x : tau1 )  ~ ( D , x : T{ tau1 } )
+
+
+defns
+JSmall :: '' ::=
+
+defn
+e ~> e' ::   :: step :: 's_'
+{{ com small-step operational semantics }}
+by
+
+
+------------------------------- :: let_exit
+let x = exit v in e ~> exit v
