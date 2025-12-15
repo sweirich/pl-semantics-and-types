@@ -23,8 +23,18 @@ stack, s :: 's_'  ::=
 machine, m :: '' ::= 
    | < s , e > ::   :: config
 
+SSS :: 'ss_' ::= 
+  | S tau ::    :: Stackset
+  {{ tex \mathcal{S}[\![ [[tau]] ]\!] }}
+  | { s | formula1 } :: M :: Comp
+     {{ tex \{\ [[s]]\ |\ [[formula1]]\, \} }}
+
+
 formula :: 'formula_' ::= 
    | m |->* m' ::   :: multi_stack
+   | s elem SSS ::    :: StackComp  
+     {{ tex [[s]] \in [[SSS]] }}
+   | G |= s : tau  ::   :: semantic_stack
 
 terminals :: 'terminals_' ::=
    | ~>>   ::   :: prim       {{ tex \twoheadrightarrow }}
@@ -119,6 +129,19 @@ e ~>> e'
 
 ------------------------------------------------------------ :: pop
 < let x = _ in e2 : s , ret v > |-> < s, e2 [ v / x ] > 
+
+defn 
+m |->* m' ::   :: multi_stack :: 'msm_'
+by
+
+-------- :: refl
+m |->* m
+
+m1 |-> m2
+m2 |->* m3
+---------- :: trans
+m1 |->* m3
+
 
 defns
 JStackBig :: '' ::=

@@ -35,8 +35,9 @@ programs are equivalent? How can we make use of this property?
 
 In this chapter, we will examine a few different definitions of equivalence
 for a call-by-value version of the \emph{untyped} lambda calculus, augmented
-with numbers, recursive functions and unit.  As in the
-previous chapters, we will work with a fine-grained language, and use a
+with numbers, recursive functions, written $[[fun_ x y. e]]$, and unit. 
+\footnote{As we are working in the untyped lambda calculus, we can encode the Y-combinator, so recursive function do not add to expressiveness. But we include them in this chapter for demonstration purposes.}  As in
+the previous chapters, we will work with a fine-grained language, and use a
 stack-based operational semantics for evaluation.
 
 \begin{definition}[\link{untyped/syntax.sig}{}{Syntax}]
@@ -52,7 +53,12 @@ stack-based operational semantics for evaluation.
 \end{definition}
 
 The small-step operational semantics is similar to the one found in Chapter~\ref{ch:stack}, and makes use of a stack of frames.
-We define the stack semantics in terms of an underlying \link{untyped/prim.v}{primitive}{primitive reduction relation} (written $[[~>>]]$ but not shown here).
+We define the stack semantics in terms of an underlying \link{untyped/prim.v}{primitive}{primitive reduction relation} 
+that does not involve the stack. 
+
+\begin{definition}[\link{untyped/prim.v}{step}{Primitive reduction}]\ \\
+\drules{$[[e ~>> e']]$}{$[[e]]$ reduces to $[[e']]$}{prim-fun,prim-case-zero,prim-case-succ}
+\end{definition}
 
 \begin{definition}[\link{untyped/stack.v}{step}{Small-step semantics}]\ \\
 \drules{$[[m |-> m']]$}{$[[m]]$ small-steps to $[[m']]$ }
@@ -351,7 +357,7 @@ mutually defined in terms of a term relation $[[C e1 e2 k]]$, stack relation $[[
    [[V zero zero k]]             &=& \textit{always} \\
    [[V (succ v1) (succ v2) k]]   &=& [[|> k V v1 v2]] \\
    [[V (fun_ x y.e) v2 k]]        &=& \forall [[v]][[v']], 
-   [[|> k (V v v' ===> C e[v/x, (fun_ x y. e)/y] (v2 v')) ]] \\
+   [[|> k (V v v' ===> C e[v/y, (fun_ x y. e)/x] (v2 v')) ]] \\
 \end{array}
 \]                 
 \end{definition}
@@ -403,8 +409,8 @@ reduction. For example, we can use this definition to show that inlining or
 ``beta-reduction'' is a sound program transformation.
 \begin{lemma}[\link{untyped/equiv_examples.v}{fun_beta}{Beta reduction and expansion}]\ \\
 \begin{enumerate}
-\item $[[ X |- (fun_ x y.e) v CIU e[v/x, (fun_ x y.e)/y] ]]$
-\item $[[ X |- e[v/x, (fun_ x y.e)/y] CIU (fun_ x y.e) v ]]$
+\item $[[ X |- (fun_ x y.e) v CIU e[v/y, (fun_ x y.e)/x] ]]$
+\item $[[ X |- e[v/y, (fun_ x y.e)/x] CIU (fun_ x y.e) v ]]$
 \end{enumerate}
 \end{lemma}
 
@@ -420,29 +426,65 @@ $\beta$-equivalence implies contextual equivalence. However,
 $\beta$-equivalence is not as large as contextual equivalence: there are terms
 that are not $\beta$-equivalent that are not contextually equivalent.
 
-For example, we cannot use $\beta$-equivalence to show that $[[fun_ x y. x]]$ is 
-equal to $[[fun_ x y. x + 0]]$. 
+For example, we cannot use $\beta$-equivalence to show that $[[fun_ x y. y]]$ is 
+equal to $[[fun_ x y. y + 0]]$. 
 
 
 Finally, the logical relation is the most convenient for showing the soundness
 of ``$\eta$-reductions''. 
 
 \begin{lemma}[\link{untyped/equiv_examples.v}{fun_eta}{Function $\eta$-reduction}]
-$[[ X |- fun_ x y. v x log v ]]$
+$[[ X |- fun_ x y. v y log v ]]$
 \end{lemma}
+\begin{proof}
+We need to show, given an arbitrary step count $[[k]]$, and arbitrary 
+related substitutions $[[sigma1]]$ and $[[sigma2]]$ related at $[[k]]$,
+closed related values $[[V v1 v2 j]]$, at level $[[j <= k]]$, that 
+$[[ C (v y)[v/y, fun_ x y. v y/x, sigma1] v[sigma2] j]]$.
+Unfold the substitutions, this is equivalent to:
+$[[ C (v[sigma1] v2) (v[sigma2] v2) j]]$.
+We know that $[[C]]$ is closed under application, so this holds when 
+we have $[[V v[sigma1] v[sigma2] j]]$ and $[[V v1 v2 j]]$. The former 
+is derivable from reflexivity of the value relation, and the fact that 
+the substitution relation is downward closed.
+\end{proof}
 
 \begin{lemma}[\link{untyped/equiv_examples.v}{nat_eta}{Nat $\eta$-reduction}]
-$[[ X |- case v of { 0 => 0; S x => S x } log v ]]$
+$[[ X |- case v of { 0 => ret 0; S x => ret (succ x) } log ret v ]]$
 \end{lemma}
-
+\begin{proof}
+Given related substitutions $[[ X |- sigma1 log sigma2 @ k ]]$, 
+we want to show that 
+$[[ C case v of { 0 => ret 0; S x => ret (succ x) }[sigma1] (ret v)[sigma2] k ]]$.
+This is equivalent to 
+$[[ C case v[sigma1] of { 0 => ret 0; S x => ret (succ x) } (ret v)[sigma2] k ]]$.
+Unfolding the definition of the term relation, this means that we need to show that, given related stacks $[[St s s' j]]$, for some $[[j <= k]]$, 
+if 
+$[[ < s, case v[sigma1] of { 0 => ret zero; S x => ret (succ x) }> ]]$ halts within $[[j]]$ steps, then 
+$[[ < s, ret v[sigma2] > ]]$ halts. 
+Firthermore, because the value relation is reflexive, we also have that 
+$[[ V v[sigma1] v[sigma2] j ]]$.
+If the assumption holds, then we have two cases:
+\begin{enumerate}
+\item $[[v[sigma1] ]]$ is $[[zero]]$. 
+In this case, we know that $[[ < s, case v[sigma1] of { 0 => ret 0; S x => ret (succ x) }> ]]$ steps to $[[ < s, ret zero> ]]$, which then 
+steps to $[[<s, ret v1>]]$ within $[[j-1]]$ steps, for some $[[v1]]$.
+Because the stacks are related at  $[[j]]$, and the scrutinees are related, this means that 
+we also have $[[ <s', v[sigma2]> ]]$ halts.
+\item $[[v[sigma2] ]]$ is $[[succ v2]]$, for some $[[v2]]$.
+Similar reasoning as above case applies.
+\end{enumerate}
+\end{proof}
 
 On the other hand, using our definitions, \emph{$\eta$-expansions} are not validated by our 
 definitions. We can use the traditional definition of contextual equivalence to show that 
 
-\begin{lemma}[Failure of $\eta$-expansion]
-It is not the case that $[[ X |- v CON fun_ x y. v x ]]$ for all $[[v]]$.
+\begin{lemma}[\link{untyped/equiv_examples.v}{not_fun_eta_expand}{Failure of $\eta$-expansion}]
+It is not the case that $[[ X |- v CON fun_ x y. v y ]]$ for all $[[v]]$.
 \end{lemma}
-Choose $[[v]]$ as zero and the context as $[[ # zero ]]$.
+\begin{proof}
+Choose $[[v]]$ as zero and the context as $[[ case # of { 0 => ret 0 ; S y => ret 0 } ]]$.
+\end{proof}
 
 \section{Relating the relations}
 
