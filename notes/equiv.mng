@@ -57,7 +57,7 @@ We define the stack semantics in terms of an underlying \link{untyped/prim.v}{pr
 that does not involve the stack. 
 
 \begin{definition}[\link{untyped/prim.v}{step}{Primitive reduction}]\ \\
-\drules{$[[e ~>> e']]$}{$[[e]]$ reduces to $[[e']]$}{prim-fun,prim-case-zero,prim-case-succ}
+\drules{$[[e ~>> e']]$}{$[[e]]$ reduces to $[[e']]$}{prim-fun-beta,prim-case-zero,prim-case-succ}
 \end{definition}
 
 \begin{definition}[\link{untyped/stack.v}{step}{Small-step semantics}]\ \\
@@ -424,7 +424,7 @@ to another.
 From these (and other) facts, we can show that the usual definition of untyped
 $\beta$-equivalence implies contextual equivalence. However,
 $\beta$-equivalence is not as large as contextual equivalence: there are terms
-that are not $\beta$-equivalent that are not contextually equivalent.
+that are not $\beta$-equivalent that are contextually equivalent.
 
 For example, we cannot use $\beta$-equivalence to show that $[[fun_ x y. y]]$ is 
 equal to $[[fun_ x y. y + 0]]$. 
@@ -658,7 +658,7 @@ Reflexivity of the logical relation gives use $[[X |- e log e]]$. With
 Lemma~\ref{lem:eqtm_closed_CIU} above, we can conclude $[[ X |- e log e']]$.
 \end{proof}
 
-At this point we know that the logical and and CIU preorders coincide.
+At this point we know that the logical and CIU preorders coincide.
 
 \subsection{$[[CIU]]$ implies $[[CTX]]$}
 To show that $[[CIU]]$ implies $[[CTX]]$, we need to show that it is an adequate, compatible preorder.

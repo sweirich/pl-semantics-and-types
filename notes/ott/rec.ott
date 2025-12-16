@@ -106,6 +106,8 @@ formula :: 'formula_' ::=
    | j < k         ::  :: lt
      {{ tex [[j]] < [[k]] }}
    | j <= k        ::  :: le
+     {{ tex [[j]] \leq [[k]] }}
+
     
 
 parsing 
