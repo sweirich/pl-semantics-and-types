@@ -429,7 +429,7 @@ $[[C tau e]]$ and $[[V tau v]]$ are downward closed.
 \end{enumerate}
 \end{lemma}
 \begin{proof} We will prove this by strong induction on $[[k]]$.
-Let $[[j <= k]]$ be arbitrary, and suppose .
+Let $[[j <= k]]$ be arbitrary.
 We want to show that for any $[[v]]$,  $[[V tau v k implies V tau v j]]$ and 
 for any $[[e]]$, $[[C tau e k implies C tau e j]]$.
 Suppose $[[V tau v k]]$. Let's consider the cases for $[[tau]]$.
