@@ -225,7 +225,7 @@ stacks.
 
 \subsection{Contextual pre-order and equivalence ($[[CON]]$)}
 
-A program context is any part of a term or value that can surrounds a single
+A program context is any part of a term or value that can surround a single
 hole, written $[[#]]$. We use the metavariable $[[C]]$ to refer to contexts,
 formed by the following grammar:
 
