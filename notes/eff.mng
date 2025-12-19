@@ -167,7 +167,7 @@ cases: \rref{tv-ret} and \rref{tv-sub}. In the first case, the result is immedia
 In the second case, we must appeal to the induction hypothesis.
 \end{proof}
 
-In our type safety proof, the place where we commonly use inversion in in the
+In our type safety proof, the place where we commonly use inversion in the
 progress lemma: we need to know the form of a value given its type. Sometime
 we explicitly state these inversions as canonical forms lemmas. In this setting, 
 only the computation typing rule includes a non-syntax directed rule. In our 
@@ -414,8 +414,8 @@ necessary. Instead, subeffecting is worked into the other rules.
 By looking at the rules, we can see that sub-effecting is an \emph{admissible} rule for 
 the system. Even though we don't have a specific rule, we can always turn a derivation into 
 another with a larger effect.
-\begin{lemma}[Subeffecting for syntax-directed system]
-If $[[G !- e : tau @ eff1 ]]$ and $[[eff1 <: eff2]]$ then $[[G !- e : tau2 @ eff2]]$.
+\begin{lemma}[\link{div}{sd.v}{t\_sub}{Subeffecting for syntax-directed system}]
+If $[[G !- e : tau @ eff1 ]]$ and $[[eff1 <: eff2]]$ then $[[G !- e : tau @ eff2]]$.
 \end{lemma}
 
 Using the subeffecting property, we can show that this type system is equivalent to our previous 

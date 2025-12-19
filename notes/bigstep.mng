@@ -6,10 +6,12 @@ This semantics is useful because it provides a substitution-based,
 step-by-step explanation of how each expression evaluates.
 
 But, as we have seen, our operational semantics is deterministic! Why didn't
-we express the semantics using an interpreter instead. 
+we express the semantics as a function, instead of a relation? That would naturally 
+capture the property that every term evaluates to a value in exactly one way.
 
-Consider the following definition in the Roq programming language. We represent 
-the syntax of the language using the \texttt{Tm} datatype and the interpreter
+However, expressing our semantics using a function is problematic.
+Consider the following definition in the Rocq programming language. We represent 
+the syntax of the language using the \texttt{Tm} data type and the interpreter
 using the \texttt{eval} function.
 
 \begin{lstlisting}
@@ -79,7 +81,7 @@ We prove each direction of this lemma separately. For the forward direction (\li
 lemma:
 
 \begin{lemma}[\link{stlc/red_equiv.v}{same_semantics_step}{Step expansion}]
-If $[[e ~> e']]$ then for forall $v$, if $[[e' => v]]$ then $[[e => v]]$.
+If $[[e ~> e']]$ then for for all $v$, if $[[e' => v]]$ then $[[e => v]]$.
 \end{lemma}
 
 For the backwards direction (\link{stlc/red_equiv.v}{BigSmall.same_semantics}{big-step implies small-step}), we need to define multi-step analogues
@@ -103,7 +105,7 @@ If $[[e2 ~>* e2']]$ then $[[v1 e2 ~>* v1 e2']]$.
 
 \section{Big-step semantics and type safety?}
 
-The big-step semantics has fewer rules, and in some situations, may be easier
+The big-step semantics has fewer rules, and in some situations may be easier
 to understand as it is more directly connected to an interpreter. But, note that while the 
 relation $[[e => v]]$ is deterministic, it represents a \emph{partial function}. There are many
 expressions $[[e]]$ that are not related to values.
@@ -142,7 +144,7 @@ Kahn~\cite{kahn:natural-semantics} initially proposed the use of \emph{natural
   semantics}, which has since been referred to as \emph{big-step} semantics to
 contrast with \emph{small-step} semantics.
 
-Leroy~\cite{leroy:coinductive-big-step} explores the rammifications of using
+Leroy~\cite{leroy:coinductive-big-step} explores the ramifications of using
 coinductive definitions for big-step semantics.
 
 Chargu{\'e}raud develops a compromise between big-step semantics and

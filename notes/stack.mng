@@ -68,7 +68,7 @@ reductions as a separate judgement. That structure will allow us to focus only
 on the reductions that affect the control stack. Notice that all of these 
 rules are \emph{axioms}, they do not have any premises.
 
-\begin{definition}[Primitive reductions]
+\begin{definition}[\link{rec/prim.v}{primitive}{Primitive reductions}]
 \drules[prim]{$[[e ~>> e']]$}{$[[e]]$ primitive reduces to $[[e']]$}
        {beta,case-zero,case-succ,prjOne,prjTwo,case-injOne,case-injTwo,unfold,app-rec,prjOne-rec,prjTwo-rec}
 \end{definition}
@@ -79,7 +79,7 @@ semantics is trivially equivalent to the version presented in
 Chapter~\ref{ch:rec}.  (You should convince yourself of this fact.)  As
 before, the only rule of the semantics with a premise is \rref{s-let-cong}.
 
-\begin{definition}[Small-step semantics]
+\begin{definition}[\link{rec/stack.v}{Small.step}{Small-step semantics}]
 \drules[s]{$[[e ~> e']]$}{$[[e]]$ small-steps to $[[e']]$ }
 {prim,let-ret,let-cong}
 \end{definition}
@@ -87,28 +87,29 @@ before, the only rule of the semantics with a premise is \rref{s-let-cong}.
 Now let's design a big-step semantics for the \rec language. We can use
 primitive reductions to do so using only three rules.
 
-\begin{definition}[Big-step semantics]
+\begin{definition}[\link{rec/stack.v}{BIg.step}{Big-step semantics}]
 \drules[bs]{$[[e => v]]$}{$[[e]]$ big-steps to $[[v]]$ } {prim,val,let}
 \end{definition}
 
 Both of these semantics are deterministic. Furthermore, we can 
-show that they are also equivalent to eachother, using the same technique that 
+show that they are also equivalent to each other, using the same technique that 
 we used in Chapter~\ref{ch:bigstep}.
 
-\begin{theorem}[Equivalence of semantics] 
+\begin{theorem}[\link{rec/stack.v}{SmallBig_equivalence}{Equivalence of semantics}] 
 For closed expressions $e$, we have $[[e ~>* ret v]]$ if and only if $[[e => v]]$.
 \end{theorem}
+
 The proofs of both directions of these theorems is by straightforward
 induction on the derivations, with the assistance of the following two easy
 lemmas.
 
-As in Chapter~\ref{ch:bigstep}, we needed a step-expansion lemma to show the
+As we saw in Chapter~\ref{ch:bigstep}, we needed a step-expansion lemma to show the
 forward direction of the lemma. 
 \begin{lemma}[step-expansion]
 If $[[e1 ~> e2]]$ and $[[e2 => v]]$ then $[[e1 => v]]$.
 \end{lemma}
 
-As in Chapter~\ref{ch:bigstep}, to prove the reverse direction of this lemma,
+Like Chapter~\ref{ch:bigstep}, to prove the reverse direction of this lemma,
 we need to show that we can multistep let expressions.
 \begin{lemma}[ms-let-cong]
 If $[[e1 ~>* e1']]$ then $[[let x = e1 in e2 ~>* let x = e1' in e2]]$
@@ -154,7 +155,7 @@ reduction, the term is a $\ottkw{let}$ so we push a frame on the stack, or the
 term is a returned value, and there is a $\ottkw{let}$-frame waiting on the
 stack, so we pop it to access the next step.
 
-\begin{definition}[Stack based small-steps]\
+\begin{definition}[\link{rec/stack.v}{StackSmall.step}{Stack based small-steps}]\
 
 \drules{$[[m |-> m']]$}{$[[m]]$ small-steps to $[[m']]$ }
 {ssm-prim,ssm-push,ssm-pop}
@@ -353,7 +354,7 @@ It is more difficult to prove the soundness lemma: the fact that all
 executions on the machine semantics can be simulated by the original
 semantics.
 
-\begin{definition}[Unravel]
+\begin{definition}[\link{rec/stack.v}{unravel}{Unravel}]
 Define $[[s { e } ]]$ by recursion on the stack:
 \begin{itemize}
 \item $[[ nil { e } ]] = [[e]]$
@@ -361,20 +362,20 @@ Define $[[s { e } ]]$ by recursion on the stack:
 \end{itemize}
 \end{definition}
 
-\begin{lemma}[Stack congruence]
+\begin{lemma}[\link{rec/stack.v}{stack_cong}{Stack congruence}]
 If $[[e ~> e']]$ then $[[ s { e } ~> s { e' } ]]$ 
 \end{lemma}
 
-\begin{lemma}[Unravel step]
+\begin{lemma}[\link{rec/stack.v}{unravel_step}{Unravel step}]
 If $[[<s, e> |-> <s', e'>]]$ then $[[s{e} ~>* s'{e'}]]$.
 \end{lemma}
 
-\begin{lemma}[Unravel multistep]
+\begin{lemma}[\link{rec/stack.v}{unravel_multistep}{Unravel multistep}]
 If $[[<s, e> |->* <s', ret v>]]$ then $[[s{e} ~>* s'{ret v}]]$.
 \end{lemma}
 
 The soundness lemma is a corollary of the multistep lemma above.
-\begin{corollary}[Soundness]
+\begin{corollary}[\link{rec/stack.v}{smallstep_soundness}{Soundness}]
 If $[[<nil, e> |->* <nil, ret v>]]$ then $[[ e ~>* ret v ]]$.
 \end{corollary}
 
@@ -385,11 +386,11 @@ it is not difficult to show the equivalence of (2) and (4).
 Both of the directions follow by straightforward induction 
 on the derivations.
 
-\begin{lemma}
+\begin{lemma}[Small/Big soundness]
 If $[[ <s,e> |->* <nil, v> ]]$ then $[[<s,e> |=> v]]$.
 \end{lemma}
 
-\begin{lemma}
+\begin{lemma}[Small/Big completeness]
 If $[[<s,e> |=> v]]$ then $[[ <s,e> |->* <nil, v> ]]$.
 \end{lemma}
 

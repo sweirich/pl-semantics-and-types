@@ -7,7 +7,7 @@ programming languages. All STLC expressions terminate! In due time, we will
 extend this language with arbitrary recursive definitions, which make the
 language Turing complete.
 
-However, before we do that let's extend this system with a limited 
+However, before we do that, let's extend this system with a limited 
 form of recursion. Our definition of STLC includes the \emph{natural numbers}
 as constants, i.e. numbers starting from zero. Natural numbers can be 
 defined using an \emph{inductive datatype}. Any natural number is either zero or 
@@ -127,7 +127,7 @@ function:
 \[ [[ pred x]] = [[nrec x of { 0 => 0 ; S y => \ z. y } ]] \]
 
 This is not the case for all recursion principles. A more restricted form,
-sometimes called \emph{iteration} does not bind $[[y]]$ in the successor case.
+sometimes called \emph{iteration}, does not bind $[[y]]$ in the successor case.
 
 \section{Exercises}
 
@@ -146,7 +146,7 @@ recursor modified to for our call-by-value semantics.
 Harper calls this language G\"odel's System T~\cite{goedel:systemt}, which was designed 
 to study the consistency of arithmetic. The terminology that we use for ``primitive recursion'' is not quite the same as the related concept from computability theory. In that context, the natural number recursor is restricted 
 to produce functions with types of the form $[[Nat]] [[->]] [[Nat]] [[->]] \ldots [[->]] [[Nat]]$, i.e. functions that take any number of naturals as arguments and 
-return a natural number. This operator does not have that restriction, and can define functions that are not usually considered ``primitive recursive''.
+return a natural number. This operator does not have that restriction, and can define functions that are not usually considered ``primitive recursive.''
 
 In general, primitive recursion is not just for natural numbers. Any inductive
 type, such as lists or trees, can be equipped with its own primitive recursion

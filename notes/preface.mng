@@ -1,7 +1,6 @@
 \chapter{Preface}
-This document is a work in progress and summarizes lectures given in CIS
-7000-1 during the Fall 2025 semester at the University of Pennsylvania. Expect
-significant changes to the material over the course of this semester.
+This document summarizes lectures given in CIS 7000-1 during the Fall 2025
+semester at the University of Pennsylvania. 
 
 The website for the course is:
 \begin{center}
@@ -11,16 +10,17 @@ The website for the course is:
 The source files for this document are available
 (\url{https://github.com/sweirich/pl-semantics-and-types/tree/main/notes}) and
 have been processed using the LaTeX and Ott~\cite{sewell:ott} tools.
-Comments, typos and suggestions are appreciated.
+Comments, typos, and suggestions are appreciated.
 
-All mathematical definitions and proofs have been mechanized using the Rocq
-proof assistant, with the assistance of the \texttt{autosubst-ocaml} tool. The
-proof scripts are available at
+All mathematical definitions and proofs that appear in this text have been
+mechanized using the Rocq proof assistant, with the assistance of the
+\texttt{autosubst-ocaml} tool. The proof scripts are available at
 \url{https://github.com/sweirich/pl-semantics-and-types/tree/main/rocq} and
 the text includes hyperlinks to each corresponding part of the artifact.
 
-Acknowledgement: These lecture notes draw inspiration from a number of
-sources, most notably Harper's \emph{Practical Foundations for Programming
-Languages}~\cite{harper:pfpl} and Pierce's \emph{Types and Programming
-Languages}~\cite{pierce:tapl}. Thanks to Roger Burtonpatel, Chris Henson, Jason Liu, 
-and Evelyn Yu for comments and bugfixes.
+\emph{Acknowledgements and Thanks}: These lecture notes draw inspiration from a
+number of sources, most notably Harper's \emph{Practical Foundations for
+Programming Languages}~\cite{harper:pfpl} and Pierce's \emph{Types and
+Programming Languages}~\cite{pierce:tapl}. Thanks to One An, Roger
+Burtonpatel, Chris Henson, Jason Liu, Matthew Pattok, Franci Rinaldi, Daniel
+Sainati, Nishant Singh, Claire Wang, and Evelyn Yu for comments and bugfixes.

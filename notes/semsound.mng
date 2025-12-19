@@ -30,7 +30,7 @@ Proof by induction on $[[e => v]]$.
 
 The preservation lemma goes through readily. (However, note that unlike the
 small step relation, this proof must be done by induction on the evaluation
-relation, and not the typing judgement.)  By itself, this lemma isn't a type
+relation, and not the typing judgment.)  By itself, this lemma isn't a type
 safety theorem because it does not give use any confidence that the type
 system rules out run-time errors. The lemma is stated so that we can only make
 a conclusion when we already have a successful run to a value. But, even if a
@@ -94,7 +94,7 @@ from evaluating $[[e1]]$ and $[[e2]]$, so we can strengthen the conclusion of
 our lemma.  Above, all we know about $[[v]]$ is that it is a value. But,
 depending on this type, we can assert stronger properties about this value.
 
-\begin{definition}[\link{stlc/semsound.v}{V}{Value set}] Define the family of sets $[[V tau]]$ by structural 
+\begin{definition}[\link{stlc/soundness.v}{V}{Value set}] Define the family of sets $[[V tau]]$ by structural 
 recursion on $[[tau]]$.
 \[
 \begin{array}{lcl}
@@ -117,7 +117,7 @@ above---we know that the substitution we need $[[e'[v2/x] ]]$ will terminate
 This idea of evaluating a term to a value in a particular set will come up
 again, so let's name it. The computational interpretation of a type includes
 all expressions that evaluate to a value in the value set for that type.
-\begin{definition}[\link{stlc/semsound.v}{C}{Computation set}]
+\begin{definition}[\link{stlc/soundness.v}{C}{Computation set}]
 \[
 [[ C tau ]] = [[ { e | e => v and v elem V tau } ]]
 \]
@@ -143,7 +143,7 @@ appropriate sets. i.e. $[[ e1 => v1]]$ where $[[v1 elem V tau1 -> tau]]$ and
 $[[e2 => v2]]$ where $[[v2 elem V tau1]]$. To construct an evaluation in this 
 case, we need to know that $[[v1]]$ is some abstraction, and that if we substitute $[[v2]]$ for the parameter the program terminates. But this is exactly what the set $[[V tau1 -> tau]]$ gives us! We have fixed this case.
 
-However, now consider the application case. In this case we have 
+However, now consider the abstraction case. In this case, we have 
 $[[ |- \x.e : tau1 -> tau2]]$. We
 need to show that this abstraction is in $[[C tau1 -> tau2]]$. We know
 already that this term has the right type. It also terminates as it is already
@@ -161,14 +161,14 @@ The answer is that our revised lemma should quantify over \emph{closing
 closed values. Furthermore, to make sure that our theorem is strong enough, we
 also require that these closed values be part of our semantic sets.
 
-\begin{definition}[\link{stlc/semsound.v}{semantic_env}{Semantic substitution}]
+\begin{definition}[\link{stlc/soundness.v}{semantic_env}{Semantic substitution}]
 Define $[[ sigma elem [ G ] ]]$ when $\forall x \in [[dom G]], [[ sigma x elem V (G x) ]]$.
 \end{definition}
 
 With this definition, we can now restate our lemma in its final form.
 
-\begin{lemma}[\link{stlc/semsound.v}{soundness}{Semantic soundness}]
-If $[[G |- e : tau]]$ then forall $[[sigma elem [ G ]  ]]$, $[[e[sigma] elem C tau ]]$.
+\begin{lemma}[\link{stlc/soundness.v}{soundness}{Semantic soundness}]
+If $[[G |- e : tau]]$ then for all $[[sigma elem [ G ]  ]]$, $[[e[sigma] elem C tau ]]$.
 \end{lemma}
 \begin{proof}
 Proof is by induction on the derivation of $[[G |- e : tau]]$. 
@@ -231,30 +231,30 @@ Furthermore, we can also define a notion for ``semantic typing'': the idea that
 a term is well typed semantically when given any closing substitution, it is 
 an element of the appropriate substitution set.
 
-\begin{definition}[\link{stlc/semsound.v}{semantic_typing}{Semantic typing}]
-Define $[[G |= e : tau]]$ when forall $[[sigma elem [G] ]]$, $[[e[sigma] elem C tau ]]$.
+\begin{definition}[\link{stlc/soundness.v}{semantic_typing}{Semantic typing}]
+Define $[[G |= e : tau]]$ when for all $[[sigma elem [G] ]]$, $[[e[sigma] elem C tau ]]$.
 \end{definition}
 
 With this definition, we can prove semantic typing rules that are analogous
 to each syntactic typing rule. The proofs of these lemmas are the subcases 
 of the semantic soundness proof.
 
-\begin{lemma}[\link{stlc/semsound.v}{semantic_var}{Semantic var rule}]
+\begin{lemma}[\link{stlc/soundness.v}{semantic_var}{Semantic var rule}]
 $[[G |= x : G x ]]$.
 \end{lemma}
-\begin{lemma}[\link{stlc/semsound.v}{semantic_lit}{Semantic lit rule}]
+\begin{lemma}[\link{stlc/soundness.v}{semantic_lit}{Semantic lit rule}]
 $[[G |= k : Nat ]]$.
 \end{lemma}
-\begin{lemma}[\link{stlc/semsound.v}{semantic_abs}{Semantic abs rule}]
+\begin{lemma}[\link{stlc/soundness.v}{semantic_abs}{Semantic abs rule}]
 If $[[ G, x :tau |= e : tau1 -> tau]]$, then $[[ G |= \x.e : tau1 -> tau]]$.
 \end{lemma}
-\begin{lemma}[\link{stlc/semsound.v}{semantic_app}{Semantic app rule}]
+\begin{lemma}[\link{stlc/soundness.v}{semantic_app}{Semantic app rule}]
 If $[[ G |= e1 : tau1 -> tau2 ]]$ and $[[ G |= e2 : tau1 ]]$, then $[[ G |= e1 e2 : tau2 ]]$.
 \end{lemma}
 
 These lemmas allow us to rephrase the semantic soundness theorem nicely.
 
-\begin{theorem}[\link{stlc/semsound.v}{semantic_typing}{Semantic typing}]
+\begin{theorem}[\link{stlc/soundness.v}{semantic_typing}{Semantic typing}]
 If $[[G |- e : tau]]$ then $[[ G |= e : tau]]$
 \end{theorem}
 \begin{proof} Induction on the typing derivation, applying the appropriate 
@@ -283,13 +283,20 @@ can include any sort of stuck subterm, as long as that subterm
 is never executed. For example, consider $[[ (\x. 3) (\y. 1 0)]]$. This term doesn't type check 
 because it has the stuck application $[[1 0]]$ as a subterm. But it evaluates to $[[3]]$ which is in $[[V Nat]]$, so we can say that $[[ |= (\x. 3) (\y. 1 0) : Nat]]$. 
 
-The reason that semantic completeness fails, is that we include ill-typed terms in our sets as long as they are harmless. But, it you believe that only typed terms are worth discussing, you might prefer to restrict the sets to well-typed terms. In that case, completeness holds trivially.
+The reason that semantic completeness fails is that we include ill-typed terms in our sets as long as they are harmless. But, if you believe that only typed terms are worth discussing, you might prefer to restrict the sets to well-typed terms. In that case, completeness holds trivially.
 
 \section{Further reading}
 
-Robert Harper's note: \emph{How to (Re)Invent Tait’s Method}\url{https://www.cs.cmu.edu/~rwh/courses/chtt/pdfs/tait.pdf} includes this 
-proof for a small-step semantics of STLC with booleans, unit, products and functions. Harper calls the computation sets ``hereditarily terminating.'' 
+Robert Harper's note: \emph{How to (Re)Invent Tait’s
+Method}\url{https://www.cs.cmu.edu/~rwh/courses/chtt/pdfs/tait.pdf} includes
+this proof for a small-step semantics of STLC with booleans, unit, products
+and functions. Harper calls the computation sets ``hereditarily terminating.''
 
-This proof is the simplest example of a general proof technique called \emph{proof by logical relations}. The set $[[V tau]]$ is a \emph{unary} logical relation, also called a logical predicate. Binary logical relations can be used to show program equivalence or noninterference. Or, extending 
-the sets to include open terms means that we can show that full reduction for STLC (even inside functions) always terminates. However, these proofs take a few more steps than the one that we 
+This proof is the simplest example of a general proof technique called
+\emph{proof by logical relations}. The set $[[V tau]]$ is a \emph{unary}
+logical relation, also called a logical predicate. Binary logical relations
+can be used to show program equivalence or noninterference. Alternatively,
+extending the sets to include open terms means that we can show that full
+reduction for STLC (even inside functions) always terminates. However, these
+proofs take a few more steps than the one presented here.
 

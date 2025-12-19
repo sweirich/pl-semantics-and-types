@@ -17,7 +17,7 @@ theorem so that we can prove something that is true.
 First, we need to define our semantic sets for our fine-grained CBV
 language. Our definition is similar to last time, with a few changes.
 
-\begin{definition}[\link{rec/soundness.v}{C}{Semantic sets}]
+\begin{definition}[\link{rec/semsound.v}{C}{Semantic sets}]
 \[
 \begin{array}{lcl}
 [[ C tau ]] &=& [[ { e | e ~>* ret v and v elem V tau } ]]\\
@@ -304,7 +304,7 @@ downward-closed step-indexed sequence of sets.
 As before, we'll split our logical relation into two parts, mutually defining
 sets of values and sets of terms (computations). What is different this time
 is that these sets are also indexed by a step-count. So our relations are now
-three place relations, between types, values or terms, and step counts.  This
+three-place relations between types, values or terms, and step counts.  This
 time, we write $[[V tau v k]]$ and $[[C tau e k]]$, when $[[v]]$ and $[[e]]$
 are in their respective relations at step index $[[k]]$.
 
@@ -352,7 +352,7 @@ Define $[[phi]][[===>]]_k[[phi']]$ as
 \end{definition}
 
 \begin{definition}[\link{rec/iprop.v}{IProp}{Downward closed}]
-A step-indexed proposition is \emph{downward closed} when $j \leq k$ we have $[[phi k implies phi j]]$.
+A step-indexed proposition is \emph{downward closed} when for any $j \leq k$ we have $[[phi k implies phi j]]$.
 \end{definition}
 
 Suppose $[[phi]]$ and $[[phi']]$ are both downward closed. The step-indexed proposition, 
@@ -408,7 +408,7 @@ $[[V tau v k]]$ at the same index. However, $[[V tau v k]]$ makes all of its
 recursive calls to smaller indices so we never get back to $[[C tau e k]]$.)
 
 The way this works is through the use of the two auxiliary operations defined
-above: if $[[phi]]$ is a step-indexed set, then $[[|> phi k]]$ accesses
+above: if $[[phi]]$ is a step-indexed set, then $[[|> k phi]]$ accesses
 $[[phi]]$ at the predecessor of $k$.  The use of this operation in
 $[[C tau e k]]$ means that after taking a step, the next term must be in some
 set with a smaller index.
@@ -474,7 +474,7 @@ $[[V tau v 1]]$ includes: \\
 All values, except 
 functions with stuck bodies e.g. $[[\x. 0 0]]$ or $[[\x . 0 x]]$ \\
 And functions that use their arguments in the wrong way \emph{immediately}. \\
-e.g. $[[\x. x 0]]$ and $[[ \x. let z = x 0 in (\y.y) z]]$ are not in this set 
+e.g. $[[\x. x 0]]$ and $[[ \x. let z = (x 0) in (\y.y) z]]$ are not in this set 
 when $[[tau]]$ is $[[Nat -> tau2]]$, \\
 but these terms are in this set when $[[tau]]$ is $[[ (Nat -> tau1) -> tau2]]$. \\
 Furthermore $[[\x. (\y. (x 0) 1)]]$ is in this set at any type, but it is 
@@ -512,7 +512,7 @@ some $[[ret v]]$. We will prove this by induction on the evaluation $[[e ~>* e']
 \item If $[[e = e']]$, then $[[e]]$ is irreducible, so by the definition of $[[C tau e 0]]$, 
   we know that it must be some value.
 \item If $[[e ~> e1]]$ and $[[e1 ~>* e']]$, then we can prove this result by induction, assuming 
-  that we can show that $[[forall k, C tau e1 k]]$. So let $[[k]]$, be arbitrary. 
+  that we can show that $[[forall k, C tau e1 k]]$. So let $[[k]]$ be arbitrary. 
   By assumption, we have $[[C tau e (S k)]]$. Because $[[e ~> e1]]$, this means 
   that $[[ |> (S k) C tau e1 ]]$, which means that $[[C tau e1 k]]$.
 \end{itemize}
@@ -524,16 +524,16 @@ Continuing on, we find that our semantic substitution and semantic typing propos
 are also now step-indexed. Furthermore, to make sure that the typing relations are 
 downward closed, we use step-indexed implication.
 
-\begin{definition}[\link{rec/steps.v}{semantic_typing}{Semantic substitution and typing}]
+\begin{definition}[\link{rec/steps.v}{semantic_typing}{Semantic substitution and typing}]\ 
 \begin{enumerate}
 \item Define $[[ G sigma k]]$ when for all  $x \in [[dom G]]$, we have $[[V G x sigma x k]]$.
-\item Define $[[ G |= k e : tau]]$ when $[[ G sigma ===>k C tau e[sigma] ]]$.
-\item Define $[[ G |= k v : tau]]$ when $[[ G sigma ===>k V tau v[sigma] ]]$.
+\item Define $[[ G ||= k e : tau]]$ when $[[ G sigma ===>k C tau e[sigma] ]]$.
+\item Define $[[ G ||= k v : tau]]$ when $[[ G sigma ===>k V tau v[sigma] ]]$.
 \end{enumerate}
 \end{definition}
 
 \begin{lemma}[\link{rec/steps.v}{semantic_var}{Semantic var rule}]
-forall $k$, we have $[[G |=k x : G x ]]$.
+forall $k$, we have $[[G ||=k x : G x ]]$.
 \end{lemma}
 \begin{proof}
 We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
@@ -541,13 +541,13 @@ $[[V (G x) x[sigma] j]]$. But this is true by unfolding definitions.
 \end{proof}
 
 \begin{lemma}[\link{rec/steps.v}{semantic_zero}{Semantic zero rule}]
-forall $k$, $[[G |=k 0 : Nat ]]$.
+forall $k$, $[[G ||=k 0 : Nat ]]$.
 \end{lemma}
 We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
 $[[V Nat 0[sigma] j]]$. But this is again true by unfolding definitions.
 
 \begin{lemma}[\link{rec/steps.v}{semantic_succ}{Semantic succ rule}]
-forall $k$, if $[[G |=k v : Nat ]]$ then $[[G |=k S v : Nat ]]$.
+forall $k$, if $[[G ||=k v : Nat ]]$ then $[[G ||=k S v : Nat ]]$.
 \end{lemma}
 We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$. We want to show 
 $[[V Nat (S v)[sigma] j]]$. Our induction hypothesis gives us 
@@ -555,7 +555,7 @@ $[[V Nat v[sigma] j]]$, which means that $[[ v[sigma] ]]$ must be a natural numb
 So its successor must be a natural number.
 
 \begin{lemma}[\link{rec/steps.v}{semantic_abs}{Semantic abs rule}]
-forall $k$, if $[[ G, x :tau |=k e : tau1 -> tau2]]$, then $[[ G |=k \x.e : tau1 -> tau2]]$.
+forall $k$, if $[[ G, x :tau ||=k e : tau1 -> tau2]]$, then $[[ G ||=k \x.e : tau1 -> tau2]]$.
 \end{lemma}
 \begin{proof}
 We assume some $[[k]]$, $[[j<k]]$, and $[[ G sigma j ]]$.
@@ -569,7 +569,7 @@ the former, and the latter holds because $[[ G sigma ]]$ is downward closed.
 \end{proof}
 
 Before we continue further, what if our definition for function types had instead been in terms 
-of application, instead of substitution. i.e. we combined both cases above into the single 
+of application, instead of substitution? \emph{i.e.} What if we combined both cases above into the single 
 case:
 
 \[   [[V tau1 -> tau2 v k]]   = \forall [[v1]], [[V tau1 v1 ===>k C tau2 v v2 ]]  \]
@@ -589,7 +589,7 @@ here we are stuck. We know these results about $i$ but not $i'$.
 Now let's do the case where we were stuck before.
 
 \begin{lemma}[\link{rec/steps.v}{ST_rec_Arr}{Semantic rec rule}]
-For all $k$, if $[[G , x: tau |=k v : tau ]]$ then $[[G |=k rec x . v : tau ]]$.
+For all $k$, if $[[G , x: tau ||=k v : tau ]]$ then $[[G ||=k rec x . v : tau ]]$.
 \end{lemma}
 \begin{proof}
 Let's again consider the case only when $[[tau]]$ is a function type, i.e. $[[tau]] = [[tau1 -> tau2]]$. 
@@ -604,8 +604,8 @@ $[[ V tau1 -> tau2 v[rec x.v/x,sigma] i ]]$.
 This result holds by instantiating our assumption with $i$ and the 
 substitution $[[ rec x.v/x, sigma ]]$. We also need to show that 
 $[[ G,x:tau1 -> tau2 rec x.v/x, sigma i]]$. This holds because $[[ G sigma ]]$ is 
-downward closed. So we really only need to show $[[ G |=i rec x. v: tau ]]$. But as $i<k$ we 
-can use our induction hypothesis, and reduce this to $[[G, x:tau|=i v : tau]]$. 
+downward closed. So we really only need to show $[[ G ||=i rec x. v: tau ]]$. But as $i<k$ we 
+can use our induction hypothesis, and reduce this to $[[G, x:tau||=i v : tau]]$. 
 However, semantic typing is also downward closed, and we assumed this judgment at $k$, so 
 we can also have it at $i$.
 \end{proof}
@@ -615,8 +615,8 @@ recursive value, but only at a smaller index, which was available via
 induction. 
 
 \begin{lemma}[\link{rec/steps.v}{semantic_app}{Semantic app rule}]
-For all $k$, if $[[ G |=k v1 : tau1 -> tau2 ]]$ and $[[ G |=k v2 : tau1 ]]$, 
-then $[[ G |=k v1 v2 : tau2 ]]$.
+For all $k$, if $[[ G ||=k v1 : tau1 -> tau2 ]]$ and $[[ G ||=k v2 : tau1 ]]$, 
+then $[[ G ||=k v1 v2 : tau2 ]]$.
 \end{lemma}
 
 To prove this lemma, we can assume some $[[j<k]]$, and $[[ G sigma j ]]$.
@@ -644,7 +644,7 @@ as it steps to $[[v[rec x.v/x] v2]]$.
 So we focus on the second, where we need to show that $[[ |>k C tau2 v[rec x.v/x] v2]]$.
 Here we can assume that $k = S j$ as the zero case is trivial. So we need to 
 show that $[[C tau2 v[rec x.v/x] v2 j]]$. As $j$ is less than $k$, we can use 
-our induction hypothesis, with our initial assumption about $v1$ and the downward 
+our induction hypothesis, with our initial assumption about $[[v1]]$ and the downward 
 closure of $[[C tau2 v2]]$.
 \item If $[[v1]]$ is $[[\x.e]]$, then we know that 
 $\forall [[v1]], [[V tau1 v2 ===>k C tau2 e[v2/x] ]]$.
@@ -667,8 +667,8 @@ have isolated all sequencing to $\ottkw{let}$ terms, so here is where we will
 need to consider how our computation set is closed under evaluation.
 
 \begin{lemma}[\link{rec/steps.v}{semantic_let}{Semantic let rule}]
-For all $k$, if $[[ G |=k e1 : tau1 ]]$ and $[[ G , x : tau1 |=k e2 : tau2 ]]$, 
-then $[[ G |=k let x = e1 in e2 : tau2 ]]$.
+For all $k$, if $[[ G ||=k e1 : tau1 ]]$ and $[[ G , x : tau1 ||=k e2 : tau2 ]]$, 
+then $[[ G ||=k let x = e1 in e2 : tau2 ]]$.
 \end{lemma}
 
 Like the application rule, we show this result with the help of a
@@ -677,17 +677,17 @@ sub-lemma. However, the details of this proof have been left as an exercise.
 \begin{lemma}
 For all $k$, if $[[C tau1 e1 k]]$ and 
 $\forall v, [[V tau1 v ===>k C tau2 let x = ret v in e2]]$ 
-then $[[C tau2 (let x = e1 in e2) k]]$.
+then $[[C tau2 let x = e1 in e2 k]]$.
 \end{lemma}
 
 
 Putting the above lemmas together, we can show that all well-typed terms and values 
 are semantically sound.
 
-\begin{lemma}[Semantic Soundness]
+\begin{lemma}[Semantic Soundness]\ \\
 \begin{itemize}
-\item If $[[G |- e : tau ]]$ then for all $[[k]]$, $[[ G |=k e : tau]]$
-\item If $[[G |- v : tau ]]$ then for all $[[k]]$, $[[ G |=k v : tau]]$
+\item If $[[G |- e : tau ]]$ then for all $[[k]]$, $[[ G ||=k e : tau]]$
+\item If $[[G |- v : tau ]]$ then for all $[[k]]$, $[[ G ||=k v : tau]]$
 \end{itemize}
 \end{lemma}
 
@@ -699,7 +699,7 @@ Step-indexed logical relations were invented by Appel and
 McAllester~\cite{appel:steps} and developed by Ahmed~\cite{ahmed:phd}.
 
 This methodology forms the foundation of the Iris logic. Timany et
-al~\cite{timany:logical-soundness} describes how to prove this and more
+al.~\cite{timany:logical-soundness} describes how to prove this and more
 sophisticated results using Iris, while hiding the step-counts altogether
 using a special purpose logic.
 

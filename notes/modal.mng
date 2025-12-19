@@ -59,7 +59,7 @@ substitutes this value into the body and continues evaluation.
 {app-fun,bind,bind-cong}
 \end{definition}
 
-We also include three new typing rules, and modify the existing rule for let
+We also include three new typing rules and modify the existing rule for let
 terms. 
 
 \begin{definition}[\link{modal/modal.v}{typing}{Type system}]\ \\
@@ -269,7 +269,7 @@ Here is the translation in full:
 [[ |fun_ f x . e| ]] &=& 
      [[ eta (rec f . \ x . |e| [ eta f / f ] ) ]] \\
 \\
-[[ |v1 v1| ]] &=& [[ |v1| |v2| ]] \\
+[[ |v1 v2| ]] &=& [[ |v1| |v2| ]] \\
 [[ |ret v| ]] &=& [[ ret |v| ]] \\
 [[ |case v of { 0 => e0 ; S x => e1 }| ]] &=& 
   [[ case v of { 0 => |e0| ; S x => |e1| } ]] \\

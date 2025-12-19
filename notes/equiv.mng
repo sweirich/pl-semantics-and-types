@@ -1,4 +1,4 @@
-\chapter{(Untyped) program equivalence}
+\chapter{Untyped program equivalence}
 
 What does it mean for two closed programs $[[e1]]$ and $[[e2]]$ to be \emph{equivalent}?
 
@@ -90,8 +90,8 @@ Suppose $[[m |-> m']]$.
 \begin{enumerate} 
 \item $[[halts m]]$ implies $[[halts m']]$.
 \item $[[halts m']]$ implies $[[halts m]]$.
-\item $[[halts k m']]$ implies $[[halts (S k) m']]$
 \item $[[halts k m]]$ implies $[[halts j m']]$ for some $j$, such that $[[S j]] = k$.
+\item $[[halts k m']]$ implies $[[halts (S k) m]]$
 \end{enumerate}
 \end{lemma}
 

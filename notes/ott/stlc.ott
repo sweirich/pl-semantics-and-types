@@ -315,14 +315,14 @@ succ e ~> succ e'
 
 
 -------------------------- :: nrec_zero
-nrec 0 of { 0 => e1 ; S x =>  e2 } ~> e1
+nrec 0 of { 0 => e0 ; S x =>  e1 } ~> e0
 
 ----------------------------------------------- :: nrec_succ
-nrec (S k) of { 0 => e1 ; S x => e2 } ~> (e2[k/x]) (nrec k of {0 => e1 ; S x => e2})
+nrec (S k) of { 0 => e0 ; S x => e1 } ~> (e1[k/x]) (nrec k of {0 => e0 ; S x => e1})
 
 e ~> e'
 --------------------------------- :: nrec_cong
-nrec e of { 0 => e1 ; S x => e2 }  ~> nrec e' of { 0 => e1; S x => e2 }
+nrec e of { 0 => e0 ; S x => e1 }  ~> nrec e' of { 0 => e0; S x => e1 }
 
 defn
 e ~>* e' ::  :: multi :: 'ms_'

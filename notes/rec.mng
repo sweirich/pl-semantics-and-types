@@ -93,8 +93,10 @@ cause it to diverge.
 
 So far, we have been showing examples that use recursive value definitions as well 
 as recursive types. But, it turns out that we only need the latter to define 
-the former. At least for recursive functions. The trick is that we can use a 
-recursive type allow the Y-combinator to type check in OCaml. 
+the former---at least for recursive functions. 
+
+The trick is that we can use a recursive type to type check the Y-combinator 
+in OCaml.
 
 Let's use a simple \cd{length} function as an example.
 
@@ -133,7 +135,7 @@ But this code does not type check in OCaml.
 To get it to type check, we need to introduce a recursive type so that we 
 can apply a function to itself. The key part of the type definition is 
 that recursive reference occurs to the left of the arrow in its own definition. 
-This is called a negative occurrence and would be rejected by Rocq, but it is 
+This is called a negative occurrence and would be rejected by Rocq. It is 
 not an inductive type.
 
 \code{../ocaml/plst/lib/recursion.ml}{dom}
@@ -141,7 +143,7 @@ not an inductive type.
 Indeed, with this type, we can write the simplest infinite loop
 in the untyped  lambda-calculus. This term steps immediately to itself.
 
-\code{../ocaml/plst/lib/recursion.ml}{loop}
+\code{../ocaml/plst/lib/recursion.ml}{omegaloop}
 
 Putting this idea to work, we can use this type get the length function above
 to type check. 
@@ -157,7 +159,7 @@ the recursive definition.
 
 Now, before we consider the semantics of recursive definitions, let's refactor the
 base language to make it easier to extend. At the same time, we will add a few
-more common language features, such as products, sums and an empty type.
+more common language features, such as products, sums, and an empty type.
 
 Here is the \link{rec/syntax.sig}{Val}{syntax} of the base language that we
 will work with.
@@ -315,7 +317,7 @@ and computations!  We can only substitute values for values.
 
 Finally we add recursive types to the language.  This means adding a
 recursive definition form $\mu$ and type variables to the syntax of
-types.  And, in the syntax of terms, we introduce two coercions, for
+types.  And, in the syntax of terms, we introduce two coercions for
 introducing and eliminating values with the recursive type.
 
 \[ 

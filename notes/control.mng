@@ -80,7 +80,7 @@ $[[v]]$ is the thrown exception value (a natural number in this case) and is
 substituted for $[[x]]$ in the handler code.  If the $[[find_exn s v]]$ reaches
 the end of the stack without finding an exception handler, the machine stops
 with an empty stack and an uncaught exception (signified by the $[[raise v]]$ term).
-This term cannot step because the \rref{ssm-rule} applies only when the stack is not
+This term cannot step because the \rref{ssm-raise} applies only when the stack is not
 empty.
 
 \subsection{Type Safety in the presence of exceptions}
