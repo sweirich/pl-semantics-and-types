@@ -38,7 +38,7 @@ view of computation.
 
 * [*Lecture Notes*](notes/plst.pdf)
 
-* [*Proof Scripes*](rocq/README.md)
+* [*Proof Scripts*](rocq/README.md)
 
 * [*Course Materials*](https://github.com/sweirich/pl-semantics-and-types/tree/main)
   
