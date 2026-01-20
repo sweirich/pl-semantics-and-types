@@ -36,6 +36,10 @@ view of computation.
 
 * [*Website*](https://sweirich.github.io/pl-semantics-and-types/)
 
+* [*Lecture Notes*](notes/plst.pdf)
+
+* [*Proof Scripes*](rocq/README.md)
+
 * [*Course Materials*](https://github.com/sweirich/pl-semantics-and-types/tree/main)
   
 
